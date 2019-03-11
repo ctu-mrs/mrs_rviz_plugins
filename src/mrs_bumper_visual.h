@@ -15,7 +15,7 @@ namespace rviz
   class MeshShape;
 }
 
-namespace vis_mrs_bumper
+namespace mrs_rviz_plugins
 {
 
 // BEGIN_TUTORIAL
@@ -67,7 +67,7 @@ private:
 };
 // END_TUTORIAL
 
-} // end namespace vis_mrs_bumper
+} // end namespace mrs_rviz_plugins
 
 
 #endif // MRS_BUMPER_VISUAL_H

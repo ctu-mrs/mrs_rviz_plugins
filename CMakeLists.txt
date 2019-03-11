@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(vis_mrs_bumper)
+project(mrs_rviz_plugins)
 
 find_package(catkin REQUIRED COMPONENTS
   rviz
@@ -40,7 +40,7 @@ set(SRC_FILES
 
 ## An rviz plugin is just a shared library, so here we declare the
 ## library to be called ``${PROJECT_NAME}`` (which is
-## "vis_mrs_bumper", or whatever your version of this project
+## "mrs_rviz_plugins", or whatever your version of this project
 ## is called) and specify the list of source files we collected above
 ## in ``${SRC_FILES}``.
 add_library(${PROJECT_NAME} ${SRC_FILES})
@@ -50,10 +50,10 @@ add_library(${PROJECT_NAME} ${SRC_FILES})
 ## ``set(QT_LIBRARIES Qt5::Widgets)``, and with whatever libraries
 ## catkin has included.
 ##
-## Although this puts "vis_mrs_bumper" (or whatever you have
+## Although this puts "mrs_rviz_plugins" (or whatever you have
 ## called the project) as the name of the library, cmake knows it is a
 ## library and names the actual file something like
-## "libvis_mrs_bumper.so", or whatever is appropriate for your
+## "libmrs_rviz_plugins.so", or whatever is appropriate for your
 ## particular OS.
 target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 ## END_TUTORIAL

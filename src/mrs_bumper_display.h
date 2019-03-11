@@ -51,7 +51,7 @@ class IntProperty;
 
 // All the source in this plugin is in its own namespace.  This is not
 // required but is good practice.
-namespace vis_mrs_bumper
+namespace mrs_rviz_plugins
 {
 
 class MRS_Bumper_Visual;
@@ -113,7 +113,7 @@ private:
 };
 // END_TUTORIAL
 
-} // end namespace vis_mrs_bumper
+} // end namespace mrs_rviz_plugins
 
 #endif // IMU_DISPLAY_H
 // %EndTag(FULL_SOURCE)%

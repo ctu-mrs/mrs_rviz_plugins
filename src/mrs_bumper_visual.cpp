@@ -39,7 +39,7 @@
 
 #include "mrs_bumper_visual.h"
 
-namespace vis_mrs_bumper
+namespace mrs_rviz_plugins
 {
 
 // BEGIN_TUTORIAL
@@ -192,5 +192,5 @@ void MRS_Bumper_Visual::setColor( float r, float g, float b, float a )
 }
 // END_TUTORIAL
 
-} // end namespace vis_mrs_bumper
+} // end namespace mrs_rviz_plugins
 

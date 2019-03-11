@@ -42,7 +42,7 @@
 
 #include "mrs_bumper_display.h"
 
-namespace vis_mrs_bumper
+namespace mrs_rviz_plugins
 {
 
 // BEGIN_TUTORIAL
@@ -160,10 +160,10 @@ void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::Cons
   visuals_.push_back(visual);
 }
 
-} // end namespace vis_mrs_bumper
+} // end namespace mrs_rviz_plugins
 
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(vis_mrs_bumper::MRS_Bumper_Display,rviz::Display )
+PLUGINLIB_EXPORT_CLASS(mrs_rviz_plugins::MRS_Bumper_Display,rviz::Display )
 // END_TUTORIAL

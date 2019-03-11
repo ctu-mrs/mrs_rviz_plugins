@@ -1,8 +1,8 @@
 <package>
-  <name>vis_mrs_bumper</name>
+  <name>mrs_rviz_plugins</name>
   <version>0.1.0</version>
   <description>
-    Visualization plugin for vis_mrs_bumper
+    Pluginf for Rviz to work with the MRS system
   </description>
   <maintainer email="vrbamato@fel.cvut.cz">Matouš Vrba</maintainer>
   <license>BSD</license>
