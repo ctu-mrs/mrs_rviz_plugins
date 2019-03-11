@@ -12,7 +12,7 @@ namespace Ogre
 namespace rviz
 {
   class Arrow;
-  class BillboardLine;
+  class MeshShape;
 }
 
 namespace vis_mrs_bumper
@@ -51,8 +51,11 @@ public:
   void setColor( float r, float g, float b, float a );
 
 private:
+  void draw_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const Ogre::Vector3 pts[]);
+  void draw_topdown_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const double distance, const double vfov, const unsigned n_horizontal_sectors);
+
   // The object implementing the actual shape
-  std::vector<boost::shared_ptr<rviz::BillboardLine>> m_sector_lines;
+  std::vector<boost::shared_ptr<rviz::MeshShape>> m_sectors;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the MRS_Bumper_ message header.

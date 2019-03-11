@@ -33,6 +33,7 @@
 
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/billboard_line.h>
+#include <rviz/ogre_helpers/mesh_shape.h>
 
 #include <boost/smart_ptr/make_shared.hpp>
 
@@ -66,11 +67,73 @@ MRS_Bumper_Visual::~MRS_Bumper_Visual()
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
+void MRS_Bumper_Visual::draw_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const Ogre::Vector3 pts[])
+{
+  mesh_ptr->beginTriangles();
+
+  mesh_ptr->addVertex(pts[0]);
+  mesh_ptr->addVertex(pts[1]);
+  mesh_ptr->addVertex(pts[2]);
+
+  mesh_ptr->addVertex(pts[0]);
+  mesh_ptr->addVertex(pts[2]);
+  mesh_ptr->addVertex(pts[3]);
+
+  mesh_ptr->addVertex(pts[0]);
+  mesh_ptr->addVertex(pts[3]);
+  mesh_ptr->addVertex(pts[4]);
+
+  mesh_ptr->addVertex(pts[0]);
+  mesh_ptr->addVertex(pts[4]);
+  mesh_ptr->addVertex(pts[1]);
+
+  mesh_ptr->addVertex(pts[1]);
+  mesh_ptr->addVertex(pts[2]);
+  mesh_ptr->addVertex(pts[3]);
+
+  mesh_ptr->addVertex(pts[3]);
+  mesh_ptr->addVertex(pts[4]);
+  mesh_ptr->addVertex(pts[1]);
+
+  mesh_ptr->endTriangles();
+}
+
+void MRS_Bumper_Visual::draw_topdown_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const double distance, const double vfov, const unsigned n_horizontal_sectors)
+{
+  const double hfov = 2.0*M_PI/n_horizontal_sectors;
+  Ogre::Vector3 pts[n_horizontal_sectors];
+  const Ogre::Vector3 start_pt( 0, 0, 0);
+  const Ogre::Vector3 end_pt( 0, 0, distance);
+  for (unsigned sector_it = 0; sector_it < n_horizontal_sectors; sector_it++)
+  {
+    const double cur_yaw = hfov*sector_it;
+    const Ogre::Vector3 cur_pt( cos(cur_yaw-hfov/2.0)*distance, sin(cur_yaw-hfov/2.0)*distance, tan(+vfov/2.0)*distance);
+    pts[sector_it] = cur_pt;
+  }
+
+  mesh_ptr->beginTriangles();
+  for (unsigned sector_it = 0; sector_it < n_horizontal_sectors; sector_it++)
+  {
+    unsigned next_sector_it = sector_it+1;
+    if (next_sector_it >= n_horizontal_sectors)
+      next_sector_it = 0;
+    mesh_ptr->addVertex(start_pt);
+    mesh_ptr->addVertex(pts[sector_it]);
+    mesh_ptr->addVertex(pts[next_sector_it]);
+
+    mesh_ptr->addVertex(pts[sector_it]);
+    mesh_ptr->addVertex(pts[next_sector_it]);
+    mesh_ptr->addVertex(end_pt);
+  }
+  mesh_ptr->endTriangles();
+}
+
 void MRS_Bumper_Visual::setMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg )
 {
   const double hfov = 2.0*M_PI/msg->n_horizontal_sectors;
   const double vfov = msg->sectors_vertical_fov;
-  m_sector_lines.reserve(msg->n_horizontal_sectors+2);
+  m_sectors.clear();
+  m_sectors.reserve(msg->n_horizontal_sectors+2);
   
   for (unsigned sector_it = 0; sector_it < msg->n_horizontal_sectors; sector_it++)
   {
@@ -78,14 +141,35 @@ void MRS_Bumper_Visual::setMessage( const mrs_bumper::ObstacleSectors::ConstPtr&
     if (cur_len == mrs_bumper::ObstacleSectors::OBSTACLE_UNKNOWN)
       continue;
 
-    boost::shared_ptr<rviz::BillboardLine> line_ptr = boost::make_shared<rviz::BillboardLine>( scene_manager_, frame_node_ );
+    boost::shared_ptr<rviz::MeshShape> sector_ptr = boost::make_shared<rviz::MeshShape>( scene_manager_, frame_node_ );
     const double cur_yaw = hfov*sector_it;
-    line_ptr->addPoint(Ogre::Vector3( 0, 0, 0 ));
-    line_ptr->addPoint(Ogre::Vector3( cos(cur_yaw)*cur_len, sin(cur_yaw)*cur_len, tan(vfov/2.0)*cur_len ));
-    line_ptr->addPoint(Ogre::Vector3( cos(cur_yaw)*cur_len, sin(cur_yaw)*cur_len, tan(-vfov/2.0)*cur_len ));
-    line_ptr->addPoint(Ogre::Vector3( 0, 0, 0 ));
 
-    m_sector_lines.push_back(line_ptr);
+    Ogre::Vector3 pts[] = {
+      Ogre::Vector3( 0, 0, 0 ),
+      Ogre::Vector3( cos(cur_yaw-hfov/2.0)*cur_len, sin(cur_yaw-hfov/2.0)*cur_len, tan(+vfov/2.0)*cur_len ),
+      Ogre::Vector3( cos(cur_yaw-hfov/2.0)*cur_len, sin(cur_yaw-hfov/2.0)*cur_len, tan(-vfov/2.0)*cur_len ),
+      Ogre::Vector3( cos(cur_yaw+hfov/2.0)*cur_len, sin(cur_yaw+hfov/2.0)*cur_len, tan(-vfov/2.0)*cur_len ),
+      Ogre::Vector3( cos(cur_yaw+hfov/2.0)*cur_len, sin(cur_yaw+hfov/2.0)*cur_len, tan(+vfov/2.0)*cur_len )
+    };
+
+    draw_sector(sector_ptr, pts);
+    m_sectors.push_back(sector_ptr);
+  }
+
+  const double bottom_len = msg->sectors.at(msg->n_horizontal_sectors);
+  if (bottom_len != mrs_bumper::ObstacleSectors::OBSTACLE_UNKNOWN)
+  {
+    boost::shared_ptr<rviz::MeshShape> sector_ptr = boost::make_shared<rviz::MeshShape>( scene_manager_, frame_node_ );
+    draw_topdown_sector(sector_ptr, -bottom_len, vfov, msg->n_horizontal_sectors);
+    m_sectors.push_back(sector_ptr);
+  }
+
+  const double top_len = msg->sectors.at(msg->n_horizontal_sectors+1);
+  if (top_len != mrs_bumper::ObstacleSectors::OBSTACLE_UNKNOWN)
+  {
+    boost::shared_ptr<rviz::MeshShape> sector_ptr = boost::make_shared<rviz::MeshShape>( scene_manager_, frame_node_ );
+    draw_topdown_sector(sector_ptr, top_len, vfov, msg->n_horizontal_sectors);
+    m_sectors.push_back(sector_ptr);
   }
 }
 
@@ -103,8 +187,8 @@ void MRS_Bumper_Visual::setFrameOrientation( const Ogre::Quaternion& orientation
 // Color is passed through to the Arrow object.
 void MRS_Bumper_Visual::setColor( float r, float g, float b, float a )
 {
-  for (auto& line_ptr : m_sector_lines)
-    line_ptr->setColor( r, g, b, a );
+  for (auto& sector_ptr : m_sectors)
+    sector_ptr->setColor( r, g, b, a );
 }
 // END_TUTORIAL
 

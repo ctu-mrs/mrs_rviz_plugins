@@ -54,9 +54,11 @@ MRS_Bumper_Display::MRS_Bumper_Display()
                                              "Color to draw the shapes.",
                                              this, SLOT( updateColorAndAlpha() ));
 
-  alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
+  alpha_property_ = new rviz::FloatProperty( "Alpha", 0.1,
                                              "0 is fully transparent, 1.0 is fully opaque.",
                                              this, SLOT( updateColorAndAlpha() ));
+  alpha_property_->setMin( 0.0 );
+  alpha_property_->setMax( 1.0 );
 
   history_length_property_ = new rviz::IntProperty( "History Length", 1,
                                                     "Number of prior measurements to display.",
@@ -156,7 +158,6 @@ void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::Cons
 
   // And send it to the end of the circular buffer
   visuals_.push_back(visual);
-  ROS_INFO("[MRS_Bumper_Display]: visuals: %lu", visuals_.size());
 }
 
 } // end namespace vis_mrs_bumper
