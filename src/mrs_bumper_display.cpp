@@ -115,12 +115,22 @@ void MRS_Bumper_Display::updateHistoryLength()
 // This is our callback to handle an incoming message.
 void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg )
 {
+  // Sanitize the message to prevent Rviz crashes
   if (msg->n_horizontal_sectors != msg->sectors.size()-2)
   {
-    ROS_DEBUG( "n_horizontal_sectors (%u) is not equal to length of sectors (%lu)-2 in the ObstacleSectors message!",
+    ROS_DEBUG( "[MRS_Bumper_Visual]: n_horizontal_sectors (%u) is not equal to length of sectors (%lu)-2 in the ObstacleSectors message!",
                msg->n_horizontal_sectors, msg->sectors.size());
     return;
   }
+  for (const auto cur_len : msg->sectors)
+  {
+    if (std::isinf(cur_len) || std::isnan(cur_len))
+    {
+      ROS_DEBUG("[MRS_Bumper_Visual]: Invalid obstacle distance encountered in mrs_bumper::ObstacleSectors message: %.2f, skipping message", cur_len);
+      return;
+    }
+  }
+
   // Here we call the rviz::FrameManager to get the transform from the
   // fixed frame to the frame in the header of this MRS_Bumper_ message.  If
   // it fails, we can't do anything else so we return.
@@ -130,7 +140,7 @@ void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::Cons
                                                   msg->header.stamp,
                                                   position, orientation ))
   {
-    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'",
+    ROS_DEBUG( "[MRS_Bumper_Visual]: Error transforming from frame '%s' to frame '%s'",
                msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
     return;
   }
