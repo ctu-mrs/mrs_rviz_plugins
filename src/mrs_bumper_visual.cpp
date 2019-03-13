@@ -209,6 +209,7 @@ std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_lidar_2d(const double dist
   const double ang_step = hfov/(n_segments-1);
   const double vfov = 5.0/180.0*M_PI;
   const double h = tan(vfov/2.0)*dist;
+  const bool is_horizontal = sector_it < n_horizontal_sectors;
   const double yaw = hfov*sector_it;
   const double yaw_cos = cos(yaw);
   const double yaw_sin = sin(yaw);
@@ -220,8 +221,15 @@ std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_lidar_2d(const double dist
     const double cur_ang = -hfov/2.0 + ang_step*seg_it;
     const double x = dist*cos(cur_ang);
     const double y = dist*sin(cur_ang);
-    pts2d[seg_it][0] = yaw_cos*x - yaw_sin*y;
-    pts2d[seg_it][1] = yaw_sin*x + yaw_cos*y;
+    if (is_horizontal)
+    {
+      pts2d[seg_it][0] = yaw_cos*x - yaw_sin*y;
+      pts2d[seg_it][1] = yaw_sin*x + yaw_cos*y;
+    } else
+    {
+      pts2d[seg_it][0] = x;
+      pts2d[seg_it][1] = y;
+    }
   }
 
   mesh_ptr->beginTriangles();
@@ -236,6 +244,13 @@ std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_lidar_2d(const double dist
     Ogre::Vector3 pt2_top(pt2[0], pt2[1], h/2.0);
     Ogre::Vector3 pt1_bot(pt1[0], pt1[1], -h/2.0);
     Ogre::Vector3 pt2_bot(pt2[0], pt2[1], -h/2.0);
+    if (!is_horizontal)
+    {
+      pt1_top = Ogre::Vector3(pt1[0], h/2.0, pt1[1]);
+      pt2_top = Ogre::Vector3(pt2[0], h/2.0, pt2[1]);
+      pt1_bot = Ogre::Vector3(pt1[0], -h/2.0, pt1[1]);
+      pt2_bot = Ogre::Vector3(pt2[0], -h/2.0, pt2[1]);
+    }
     // top vertices
     mesh_ptr->addVertex(start_pt);
     mesh_ptr->addVertex(pt1_top);
