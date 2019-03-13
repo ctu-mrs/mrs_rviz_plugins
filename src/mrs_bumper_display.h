@@ -45,6 +45,7 @@ class SceneNode;
 namespace rviz
 {
 class ColorProperty;
+class EnumProperty;
 class FloatProperty;
 class IntProperty;
 }
@@ -97,6 +98,7 @@ protected:
 private Q_SLOTS:
   void updateColorAndAlpha();
   void updateHistoryLength();
+  void updateDisplayMode();
 
   // Function to handle an incoming ROS message.
 private:
@@ -110,6 +112,7 @@ private:
   rviz::ColorProperty* color_property_;
   rviz::FloatProperty* alpha_property_;
   rviz::IntProperty* history_length_property_;
+  rviz::EnumProperty* display_mode_property_;
 };
 // END_TUTORIAL
 

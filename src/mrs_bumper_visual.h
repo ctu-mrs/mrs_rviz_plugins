@@ -13,7 +13,7 @@ namespace rviz
 {
   class Arrow;
   class MeshShape;
-  class Shape;
+  class Object;
 }
 
 namespace mrs_rviz_plugins
@@ -28,6 +28,14 @@ namespace mrs_rviz_plugins
 // easily be expanded to include more of the message data.
 class MRS_Bumper_Visual
 {
+  public:
+    enum display_mode_t
+    {
+      WHOLE_SECTORS,
+      SENSOR_TYPES
+    };
+
+    using msg_t = mrs_bumper::ObstacleSectors;
 public:
   // Constructor.  Creates the visual stuff and puts it into the
   // scene, but in an unconfigured state.
@@ -37,7 +45,7 @@ public:
   virtual ~MRS_Bumper_Visual();
 
   // Configure the visual to show the data in the message.
-  void setMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg );
+  void setMessage( const msg_t::ConstPtr& msg );
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
@@ -51,12 +59,25 @@ public:
   // parameters and therefore don't come from the MRS_Bumper_ message.
   void setColor( float r, float g, float b, float a );
 
-private:
-  void draw_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const Ogre::Vector3 pts[]);
-  void draw_topdown_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const double distance, const double vfov, const unsigned n_horizontal_sectors);
+  void setDisplayMode( display_mode_t option );
 
-  // The object implementing the actual shape
-  std::vector<boost::shared_ptr<rviz::Shape>> m_sectors;
+private:
+  void draw_message( const msg_t::ConstPtr& msg, display_mode_t display_mode );
+  std::shared_ptr<rviz::Object> draw_sensor(const double dist, const double vfov, const double hfov, const int sensor_type, const unsigned sector_it, const unsigned n_horizontal_sectors);
+  std::shared_ptr<rviz::Object> draw_sector(const double dist, const double vfov, const double hfov, const unsigned sector_it, const unsigned n_horizontal_sectors);
+  std::shared_ptr<rviz::Object> draw_horizontal_sector(const double dist, const double vfov, const double hfov, const double yaw);
+  std::shared_ptr<rviz::Object> draw_topdown_sector(const double dist, const double vfov, const unsigned n_horizontal_sectors);
+  std::shared_ptr<rviz::Object> draw_lidar_1d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
+  std::shared_ptr<rviz::Object> draw_lidar_2d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
+
+  double m_arr_head_diameter;
+  double m_arr_shaft_diameter;
+  float m_color_r, m_color_g, m_color_b, m_color_a;
+
+  msg_t::ConstPtr m_msg;
+  display_mode_t m_display_mode;
+  // The object implementing the actual Object
+  std::vector<std::shared_ptr<rviz::Object>> m_sectors;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the MRS_Bumper_ message header.

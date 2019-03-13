@@ -34,6 +34,7 @@
 
 #include <rviz/visualization_manager.h>
 #include <rviz/properties/color_property.h>
+#include <rviz/properties/enum_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
 #include <rviz/frame_manager.h>
@@ -65,6 +66,12 @@ MRS_Bumper_Display::MRS_Bumper_Display()
                                                     this, SLOT( updateHistoryLength() ));
   history_length_property_->setMin( 1 );
   history_length_property_->setMax( 100000 );
+
+  display_mode_property_ = new rviz::EnumProperty( "Display mode", "whole sectors",
+                                                   "How to display the bumper message.",
+                                                   this, SLOT( updateDisplayMode() ));
+  display_mode_property_->addOptionStd("whole sectors", MRS_Bumper_Visual::display_mode_t::WHOLE_SECTORS);
+  display_mode_property_->addOptionStd("sensor types", MRS_Bumper_Visual::display_mode_t::SENSOR_TYPES);
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -112,6 +119,17 @@ void MRS_Bumper_Display::updateHistoryLength()
   visuals_.rset_capacity(history_length_property_->getInt());
 }
 
+// Set the number of past visuals to show.
+void MRS_Bumper_Display::updateDisplayMode()
+{
+  int option = display_mode_property_->getOptionInt();
+
+  for( size_t i = 0; i < visuals_.size(); i++ )
+  {
+    visuals_[ i ]->setDisplayMode( (MRS_Bumper_Visual::display_mode_t)option );
+  }
+}
+
 // This is our callback to handle an incoming message.
 void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg )
 {
@@ -157,14 +175,18 @@ void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::Cons
     visual = boost::make_shared<MRS_Bumper_Visual>( context_->getSceneManager(), scene_node_ );
   }
 
-  // Now set or update the contents of the chosen visual.
-  visual->setMessage( msg );
-  visual->setFramePosition( position );
-  visual->setFrameOrientation( orientation );
 
   float alpha = alpha_property_->getFloat();
   Ogre::ColourValue color = color_property_->getOgreColor();
   visual->setColor( color.r, color.g, color.b, alpha );
+
+  int option = display_mode_property_->getOptionInt();
+  visual->setDisplayMode( (MRS_Bumper_Visual::display_mode_t)option );
+
+  // Now set or update the contents of the chosen visual.
+  visual->setMessage( msg );
+  visual->setFramePosition( position );
+  visual->setFrameOrientation( orientation );
 
   // And send it to the end of the circular buffer
   visuals_.push_back(visual);
