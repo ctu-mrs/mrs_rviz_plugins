@@ -13,6 +13,7 @@ namespace rviz
 {
   class Arrow;
   class MeshShape;
+  class Shape;
 }
 
 namespace mrs_rviz_plugins
@@ -55,7 +56,7 @@ private:
   void draw_topdown_sector(const boost::shared_ptr<rviz::MeshShape>& mesh_ptr, const double distance, const double vfov, const unsigned n_horizontal_sectors);
 
   // The object implementing the actual shape
-  std::vector<boost::shared_ptr<rviz::MeshShape>> m_sectors;
+  std::vector<boost::shared_ptr<rviz::Shape>> m_sectors;
 
   // A SceneNode whose pose is set to match the coordinate frame of
   // the MRS_Bumper_ message header.

@@ -34,6 +34,7 @@
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/billboard_line.h>
 #include <rviz/ogre_helpers/mesh_shape.h>
+#include <rviz/ogre_helpers/shape.h>
 
 #include <boost/smart_ptr/make_shared.hpp>
 
@@ -107,7 +108,7 @@ void MRS_Bumper_Visual::draw_topdown_sector(const boost::shared_ptr<rviz::MeshSh
   for (unsigned sector_it = 0; sector_it < n_horizontal_sectors; sector_it++)
   {
     const double cur_yaw = hfov*sector_it;
-    const Ogre::Vector3 cur_pt( cos(cur_yaw-hfov/2.0)*distance, sin(cur_yaw-hfov/2.0)*distance, tan(+vfov/2.0)*distance);
+    const Ogre::Vector3 cur_pt( cos(cur_yaw-hfov/2.0)*distance/tan(vfov/2.0), sin(cur_yaw-hfov/2.0)*distance/tan(vfov/2.0), distance );
     pts[sector_it] = cur_pt;
   }
 
