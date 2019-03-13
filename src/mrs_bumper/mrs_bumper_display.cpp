@@ -39,9 +39,9 @@
 #include <rviz/properties/int_property.h>
 #include <rviz/frame_manager.h>
 
-#include "mrs_bumper_visual.h"
+#include "mrs_bumper/mrs_bumper_visual.h"
 
-#include "mrs_bumper_display.h"
+#include "mrs_bumper/mrs_bumper_display.h"
 
 namespace mrs_rviz_plugins
 {

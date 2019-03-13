@@ -36,7 +36,7 @@
 #include <rviz/ogre_helpers/mesh_shape.h>
 #include <rviz/ogre_helpers/object.h>
 
-#include "mrs_bumper_visual.h"
+#include "mrs_bumper/mrs_bumper_visual.h"
 
 namespace mrs_rviz_plugins
 {

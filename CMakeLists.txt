@@ -7,10 +7,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package()
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS} include)
 link_directories(${catkin_LIBRARY_DIRS})
 
-set(CMAKE_CXX_FLAGS "-g -O0")
+# set(CMAKE_CXX_FLAGS "-g -O0")
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -36,8 +36,10 @@ add_definitions(-DQT_NO_KEYWORDS)
 ## Here we specify the list of source files.
 ## The generated MOC files are included automatically as headers.
 set(SRC_FILES
-  src/mrs_bumper_display.cpp
-  src/mrs_bumper_visual.cpp
+  src/mrs_bumper/mrs_bumper_display.cpp
+  src/mrs_bumper/mrs_bumper_visual.cpp
+  include/mrs_bumper/mrs_bumper_display.h
+  include/mrs_bumper/mrs_bumper_visual.h
 )
 
 ## An rviz plugin is just a shared library, so here we declare the
