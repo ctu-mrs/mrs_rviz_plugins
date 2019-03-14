@@ -1,5 +1,5 @@
 <robot name="f550_visualization">
-  <material name="GrayTransparent">
+  <material name="PinkTransparent">
     <color rgba="1 8e-1 8e-1 8e-1"/>
   </material>
   <material name="Red">
@@ -13,14 +13,14 @@
   <link name="[REPLACEME]uav_name[/REPLACEME]">
     <!-- TOP AND BOTTOM -->
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 57e-2" />
+      <origin xyz="0 0 0" rpy="0 0 52e-2" />
       <geometry>
         <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/f550.dae" />
       </geometry>
       <material name="Gray" />
     </visual>
     <visual>
-      <origin xyz="0 0 -38e-3" rpy="0 0 57e-2" />
+      <origin xyz="0 0 -38e-3" rpy="0 0 52e-2" />
       <geometry>
         <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/f550.dae" />
       </geometry>
@@ -35,42 +35,42 @@
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
     <visual>
       <origin xyz="0 -270e-3 30e-3" rpy="0 0 0" />
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
     <visual>
       <origin xyz="234e-3 135e-3 30e-3" rpy="0 0 0" />
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
     <visual>
       <origin xyz="234e-3 -135e-3 30e-3" rpy="0 0 0" />
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
     <visual>
       <origin xyz="-234e-3 -135e-3 30e-3" rpy="0 0 0" />
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
     <visual>
       <origin xyz="-234e-3 135e-3 30e-3" rpy="0 0 0" />
       <geometry>
         <cylinder radius="120e-3" length="10e-3" />
       </geometry>
-      <material name="GrayTransparent" />
+      <material name="PinkTransparent" />
     </visual>
   </link>
 
