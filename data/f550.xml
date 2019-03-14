@@ -1,4 +1,7 @@
 <robot name="f550_visualization">
+  <material name="UAVSpecificColor">
+    <color rgba="[REPLACEME]uav_color[/REPLACEME]"/>
+  </material>
   <material name="PinkTransparent">
     <color rgba="1 8e-1 8e-1 8e-1"/>
   </material>
@@ -27,6 +30,22 @@
       <material name="Gray" />
     </visual>
   </link>
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]/uav_marker">
+    <!-- UAV specific-color marker -->
+    <visual>
+      <origin xyz="0 0 -10e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="400e-3" length="100e-3" />
+      </geometry>
+      <material name="UAVSpecificColor" />
+    </visual>
+  </link>
+
+  <joint name="joint_uav_marker" type="fixed">
+    <parent link="[REPLACEME]uav_name[/REPLACEME]" />
+    <child link="[REPLACEME]uav_name[/REPLACEME]/uav_marker" />
+  </joint>
 
   <link name="[REPLACEME]uav_name[/REPLACEME]/props">
     <!-- Prop -->
