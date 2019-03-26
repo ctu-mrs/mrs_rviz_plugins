@@ -71,6 +71,48 @@ MRS_Bumper_Visual::~MRS_Bumper_Visual()
   scene_manager_->destroySceneNode( frame_node_ );
 }
 
+/* draw_no_data() method //{ */
+/*  //{ */
+// compensate vetrical (used to make horizontal shapes into vertical)
+Ogre::Vector3 cove(const Ogre::Vector3& vec, bool compensate = false, bool up = true)
+{
+  if (!compensate)
+    return vec;
+  if (up)
+    return { vec.z, vec.y, vec.x };
+  else
+    return { vec.z, vec.y, -vec.x };
+}
+//}
+
+// should draw a nice little question mark
+std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_no_data(const unsigned sector_it, const unsigned n_horizontal_sectors)
+{
+  const bool v = sector_it >= n_horizontal_sectors; // whether the sector is vertical
+  const bool u = sector_it > n_horizontal_sectors;  // whether the sector is up
+  const float hfov = 2.0*M_PI/n_horizontal_sectors;
+  const float yaw = hfov*sector_it;
+  std::shared_ptr<rviz::BillboardLine> ret = std::make_shared<rviz::BillboardLine>(scene_manager_, frame_node_);
+  constexpr float base_len = 2.0;
+  constexpr int arc_pts = 10;
+  constexpr float arc_r = 1.0;
+  constexpr float arc_a_start = M_PI;
+  constexpr float arc_a_end = arc_a_start+3.0/2.0*M_PI;
+  ret->addPoint( cove({ 0.0, 0.0, 0.0}, v, u) );
+  ret->addPoint( cove({ cos(yaw)*base_len, sin(yaw)*base_len, 0.0 }, v, u) );
+  for (int it = 0; it < arc_pts; it++)
+  {
+    const float angle = yaw + arc_a_start + (arc_a_end - arc_a_start)/arc_pts*it;
+    ret->addPoint( cove({
+        cos(yaw)*(base_len+arc_r) + cos(angle)*arc_r,
+        sin(yaw)*(base_len+arc_r) + sin(angle)*arc_r,
+        0.0
+        }, v, u) );
+  }
+  return ret;
+}
+//}
+
 /* draw_sector() method //{ */
 std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_sector(const double dist, const double vfov, const double hfov, const unsigned sector_it, const unsigned n_horizontal_sectors)
 {
@@ -93,7 +135,7 @@ std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_sector(const double dist, 
 /* draw_horizontal_sector() method //{ */
 std::shared_ptr<rviz::Object> MRS_Bumper_Visual::draw_horizontal_sector(const double dist, const double vfov, const double hfov, const double yaw)
 {
-  std::shared_ptr<rviz::MeshShape> mesh_ptr = std::make_shared<rviz::MeshShape>( scene_manager_, frame_node_ );
+  std::shared_ptr<rviz::MeshShape> mesh_ptr = std::make_shared<rviz::MeshShape>(scene_manager_, frame_node_);
 
   Ogre::Vector3 pts[] = {
     Ogre::Vector3( 0, 0, 0 ),
@@ -335,32 +377,47 @@ void MRS_Bumper_Visual::draw_message( const msg_t::ConstPtr& msg, display_mode_t
   
   for (unsigned sector_it = 0; sector_it < n_hor_sectors+2; sector_it++)
   {
-    const double cur_len = msg->sectors.at(sector_it);
-    if (cur_len == msg_t::OBSTACLE_NO_DATA || cur_len == msg_t::OBSTACLE_NOT_DETECTED)
-      continue;
+    constexpr double max_len = 666.0;
+    double cur_len = msg->sectors.at(sector_it);
+    std::shared_ptr<rviz::Object> object_ptr = nullptr;
 
-    std::shared_ptr<rviz::Object> shape_ptr = nullptr;
-
-    switch (display_mode)
+    if (cur_len == mrs_msgs::ObstacleSectors::OBSTACLE_NOT_DETECTED)
     {
-      default:
-      case display_mode_t::WHOLE_SECTORS:
-        {
-          shape_ptr = draw_sector(cur_len, vfov, hfov, sector_it, n_hor_sectors);
-          break;
-        }
-      case display_mode_t::SENSOR_TYPES:
-        {
-          const auto cur_sensor = msg->sector_sensors.at(sector_it);
-          shape_ptr = draw_sensor(cur_len, vfov, hfov, cur_sensor, sector_it, n_hor_sectors);
-          break;
-        }
+      if (m_show_undetected)
+        cur_len = max_len;
+      else
+        continue;
     }
 
-    if (shape_ptr != nullptr)
+    if (cur_len == msg_t::OBSTACLE_NO_DATA)
     {
-      shape_ptr->setColor(m_color_r, m_color_g, m_color_b, m_color_a);
-      m_sectors.push_back(shape_ptr);
+      if (m_show_no_data)
+        object_ptr = draw_no_data(sector_it, n_hor_sectors);
+      else
+        continue;
+    } else
+    {
+      switch (display_mode)
+      {
+        default:
+        case display_mode_t::WHOLE_SECTORS:
+          {
+            object_ptr = draw_sector(cur_len, vfov, hfov, sector_it, n_hor_sectors);
+            break;
+          }
+        case display_mode_t::SENSOR_TYPES:
+          {
+            const auto cur_sensor = msg->sector_sensors.at(sector_it);
+            object_ptr = draw_sensor(cur_len, vfov, hfov, cur_sensor, sector_it, n_hor_sectors);
+            break;
+          }
+      }
+    }
+
+    if (object_ptr != nullptr)
+    {
+      object_ptr->setColor(m_color_r, m_color_g, m_color_b, m_color_a);
+      m_sectors.push_back(object_ptr);
     }
   }
 }
@@ -392,6 +449,18 @@ void MRS_Bumper_Visual::setColor( float r, float g, float b, float a )
 void MRS_Bumper_Visual::setDisplayMode( display_mode_t display_mode )
 {
   m_display_mode = display_mode;
+  draw_message( m_msg, m_display_mode );
+}
+ 
+void MRS_Bumper_Visual::setShowUndetected( bool show_undetected )
+{
+  m_show_undetected = show_undetected;
+  draw_message( m_msg, m_display_mode );
+}
+ 
+void MRS_Bumper_Visual::setShowNoData( bool show_no_data )
+{
+  m_show_no_data = show_no_data;
   draw_message( m_msg, m_display_mode );
 }
 // END_TUTORIAL

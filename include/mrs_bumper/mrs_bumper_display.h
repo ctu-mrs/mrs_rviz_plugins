@@ -48,6 +48,7 @@ class ColorProperty;
 class EnumProperty;
 class FloatProperty;
 class IntProperty;
+class BoolProperty;
 }
 
 // All the source in this plugin is in its own namespace.  This is not
@@ -99,6 +100,8 @@ private Q_SLOTS:
   void updateColorAndAlpha();
   void updateHistoryLength();
   void updateDisplayMode();
+  void updateShowUndetected();
+  void updateShowNoData();
 
   // Function to handle an incoming ROS message.
 private:
@@ -113,6 +116,8 @@ private:
   rviz::FloatProperty* alpha_property_;
   rviz::IntProperty* history_length_property_;
   rviz::EnumProperty* display_mode_property_;
+  rviz::BoolProperty* show_undetected_property_;
+  rviz::BoolProperty* show_no_data_property_;
 };
 // END_TUTORIAL
 

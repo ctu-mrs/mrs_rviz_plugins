@@ -72,6 +72,12 @@ MRS_Bumper_Display::MRS_Bumper_Display()
                                                    this, SLOT( updateDisplayMode() ));
   display_mode_property_->addOptionStd("whole sectors", MRS_Bumper_Visual::display_mode_t::WHOLE_SECTORS);
   display_mode_property_->addOptionStd("sensor types", MRS_Bumper_Visual::display_mode_t::SENSOR_TYPES);
+  show_undetected_property_ = new rviz::BoolProperty( "Show undetected obstacles", 1,
+                                                      "Whether to show sectors, corresponding to no obstacle detection (might clutter the draw space)",
+                                                      this, SLOT( updateShowUndetected() ));
+  show_no_data_property_ = new rviz::BoolProperty( "Show sectors with no data", 1,
+                                                   "Whether to show sectors, for which no sensory data is available",
+                                                   this, SLOT( updateShowUndetected() ));
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -110,6 +116,17 @@ void MRS_Bumper_Display::updateColorAndAlpha()
   for( size_t i = 0; i < visuals_.size(); i++ )
   {
     visuals_[ i ]->setColor( color.r, color.g, color.b, alpha );
+  }
+}
+
+// Set the current color and alpha values for each visual.
+void MRS_Bumper_Display::updateShowUndetected()
+{
+  bool show_undetected = show_undetected_property_->getBool();
+
+  for( size_t i = 0; i < visuals_.size(); i++ )
+  {
+    visuals_[ i ]->setShowUndetected( show_undetected );
   }
 }
 
@@ -182,6 +199,12 @@ void MRS_Bumper_Display::processMessage( const mrs_msgs::ObstacleSectors::ConstP
 
   int option = display_mode_property_->getOptionInt();
   visual->setDisplayMode( (MRS_Bumper_Visual::display_mode_t)option );
+
+  bool show_undetected = show_undetected_property_->getBool();
+  visual->setShowUndetected(show_undetected);
+
+  bool show_no_data = show_no_data_property_->getBool();
+  visual->setShowNoData(show_no_data);
 
   // Now set or update the contents of the chosen visual.
   visual->setMessage( msg );

@@ -61,8 +61,13 @@ public:
 
   void setDisplayMode( display_mode_t option );
 
+  void setShowUndetected( bool show_undetected );
+
+  void setShowNoData( bool show_no_data );
+
 private:
   void draw_message( const msg_t::ConstPtr& msg, display_mode_t display_mode );
+  std::shared_ptr<rviz::Object> draw_no_data(const unsigned sector_it, const unsigned n_horizontal_sectors);
   std::shared_ptr<rviz::Object> draw_sensor(const double dist, const double vfov, const double hfov, const int sensor_type, const unsigned sector_it, const unsigned n_horizontal_sectors);
   std::shared_ptr<rviz::Object> draw_sector(const double dist, const double vfov, const double hfov, const unsigned sector_it, const unsigned n_horizontal_sectors);
   std::shared_ptr<rviz::Object> draw_horizontal_sector(const double dist, const double vfov, const double hfov, const double yaw);
@@ -73,6 +78,8 @@ private:
   double m_arr_head_diameter;
   double m_arr_shaft_diameter;
   float m_color_r, m_color_g, m_color_b, m_color_a;
+  bool m_show_undetected;
+  bool m_show_no_data;
 
   msg_t::ConstPtr m_msg;
   display_mode_t m_display_mode;
