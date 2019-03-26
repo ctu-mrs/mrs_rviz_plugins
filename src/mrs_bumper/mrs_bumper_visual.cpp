@@ -336,7 +336,7 @@ void MRS_Bumper_Visual::draw_message( const msg_t::ConstPtr& msg, display_mode_t
   for (unsigned sector_it = 0; sector_it < n_hor_sectors+2; sector_it++)
   {
     const double cur_len = msg->sectors.at(sector_it);
-    if (cur_len == msg_t::OBSTACLE_UNKNOWN)
+    if (cur_len == msg_t::OBSTACLE_NO_DATA || cur_len == msg_t::OBSTACLE_NOT_DETECTED)
       continue;
 
     std::shared_ptr<rviz::Object> shape_ptr = nullptr;
