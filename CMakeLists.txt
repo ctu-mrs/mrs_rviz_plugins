@@ -3,10 +3,12 @@ project(mrs_rviz_plugins)
 
 find_package(catkin REQUIRED COMPONENTS
   rviz
-  mrs_bumper
+  mrs_msgs
 )
 
-catkin_package()
+catkin_package(
+  CATKIN_DEPENDS mrs_msgs
+  )
 include_directories(${catkin_INCLUDE_DIRS} include)
 link_directories(${catkin_LIBRARY_DIRS})
 

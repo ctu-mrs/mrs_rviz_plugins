@@ -131,7 +131,7 @@ void MRS_Bumper_Display::updateDisplayMode()
 }
 
 // This is our callback to handle an incoming message.
-void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg )
+void MRS_Bumper_Display::processMessage( const mrs_msgs::ObstacleSectors::ConstPtr& msg )
 {
   // Sanitize the message to prevent Rviz crashes
   if (msg->n_horizontal_sectors != msg->sectors.size()-2)
@@ -144,7 +144,7 @@ void MRS_Bumper_Display::processMessage( const mrs_bumper::ObstacleSectors::Cons
   {
     if (std::isinf(cur_len) || std::isnan(cur_len))
     {
-      ROS_DEBUG("[MRS_Bumper_Visual]: Invalid obstacle distance encountered in mrs_bumper::ObstacleSectors message: %.2f, skipping message", cur_len);
+      ROS_DEBUG("[MRS_Bumper_Visual]: Invalid obstacle distance encountered in mrs_msgs::ObstacleSectors message: %.2f, skipping message", cur_len);
       return;
     }
   }

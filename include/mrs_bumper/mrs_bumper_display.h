@@ -34,7 +34,7 @@
 #include <boost/circular_buffer.hpp>
 
 #include <rviz/message_filter_display.h>
-#include <mrs_bumper/ObstacleSectors.h>
+#include <mrs_msgs/ObstacleSectors.h>
 #endif
 
 namespace Ogre
@@ -74,7 +74,7 @@ class MRS_Bumper_Visual;
 // themselves are represented by a separate class, MRS_Bumper_Visual.  The
 // idiom for the visuals is that when the objects exist, they appear
 // in the scene, and when they are deleted, they disappear.
-class MRS_Bumper_Display: public rviz::MessageFilterDisplay<mrs_bumper::ObstacleSectors>
+class MRS_Bumper_Display: public rviz::MessageFilterDisplay<mrs_msgs::ObstacleSectors>
 {
 Q_OBJECT
 public:
@@ -102,7 +102,7 @@ private Q_SLOTS:
 
   // Function to handle an incoming ROS message.
 private:
-  void processMessage( const mrs_bumper::ObstacleSectors::ConstPtr& msg );
+  void processMessage( const mrs_msgs::ObstacleSectors::ConstPtr& msg );
 
   // Storage for the list of visuals.  It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)

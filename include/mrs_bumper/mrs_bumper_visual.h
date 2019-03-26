@@ -1,7 +1,7 @@
 #ifndef MRS_BUMPER_VISUAL_H
 #define MRS_BUMPER_VISUAL_H
 
-#include <mrs_bumper/ObstacleSectors.h>
+#include <mrs_msgs/ObstacleSectors.h>
 
 namespace Ogre
 {
@@ -35,7 +35,7 @@ class MRS_Bumper_Visual
       SENSOR_TYPES
     };
 
-    using msg_t = mrs_bumper::ObstacleSectors;
+    using msg_t = mrs_msgs::ObstacleSectors;
 public:
   // Constructor.  Creates the visual stuff and puts it into the
   // scene, but in an unconfigured state.
