@@ -416,7 +416,10 @@ void MRS_Bumper_Visual::draw_message( const msg_t::ConstPtr& msg, display_mode_t
 
     if (object_ptr != nullptr)
     {
-      object_ptr->setColor(m_color_r, m_color_g, m_color_b, m_color_a);
+      if (m_collision_colorize && cur_len >= 0.0 && cur_len <= m_collision_threshold)
+        object_ptr->setColor(m_collision_color_r, m_collision_color_g, m_collision_color_b, m_collision_color_a);
+      else
+        object_ptr->setColor(m_color_r, m_color_g, m_color_b, m_color_a);
       m_sectors.push_back(object_ptr);
     }
   }
@@ -440,8 +443,7 @@ void MRS_Bumper_Visual::setColor( float r, float g, float b, float a )
   m_color_g = g;
   m_color_b = b;
   m_color_a = a;
-  for (auto& sector_ptr : m_sectors)
-    sector_ptr->setColor( r, g, b, a );
+  draw_message( m_msg, m_display_mode );
 }
 
 // Color is passed through to the Arrow object.
@@ -463,7 +465,17 @@ void MRS_Bumper_Visual::setShowNoData( bool show_no_data )
   m_show_no_data = show_no_data;
   draw_message( m_msg, m_display_mode );
 }
-// END_TUTORIAL
+
+void MRS_Bumper_Visual::setCollisionOptions( bool colorize, float threshold, float r, float g, float b, float a )
+{
+  m_collision_color_r = r;
+  m_collision_color_g = g;
+  m_collision_color_b = b;
+  m_collision_color_a = a;
+  m_collision_colorize = colorize;
+  m_collision_threshold = threshold;
+  draw_message( m_msg, m_display_mode );
+}
 
 } // end namespace mrs_rviz_plugins
 

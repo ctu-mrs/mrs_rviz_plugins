@@ -61,6 +61,22 @@ MRS_Bumper_Display::MRS_Bumper_Display()
   alpha_property_->setMin( 0.0 );
   alpha_property_->setMax( 1.0 );
 
+  collision_colorize_property_ = new rviz::BoolProperty( "Colorize collisions", false,
+                                                   "If true, sectors with obstacles closer than Collision threshold will be colored differently.",
+                                                   this, SLOT( updateCollisions() ));
+
+  collision_threshold_property_ = new rviz::FloatProperty( "Collision threshold", 0.4,
+                                             "If an obstacle is closer than this threshold, the respective sector is colored differently.",
+                                             this, SLOT( updateCollisions() ));
+
+  collision_color_property_ = new rviz::ColorProperty( "Collision color", QColor( 255, 0, 0 ),
+                                             "Color to draw sectors with collision.",
+                                             this, SLOT( updateCollisions() ));
+
+  collision_alpha_property_ = new rviz::FloatProperty( "Collision alpha", 0.5,
+                                             "0 is fully transparent, 1.0 is fully opaque.",
+                                             this, SLOT( updateCollisions() ));
+
   history_length_property_ = new rviz::IntProperty( "History Length", 1,
                                                     "Number of prior measurements to display.",
                                                     this, SLOT( updateHistoryLength() ));
@@ -72,11 +88,11 @@ MRS_Bumper_Display::MRS_Bumper_Display()
                                                    this, SLOT( updateDisplayMode() ));
   display_mode_property_->addOptionStd("whole sectors", MRS_Bumper_Visual::display_mode_t::WHOLE_SECTORS);
   display_mode_property_->addOptionStd("sensor types", MRS_Bumper_Visual::display_mode_t::SENSOR_TYPES);
-  show_undetected_property_ = new rviz::BoolProperty( "Show undetected obstacles", 1,
-                                                      "Whether to show sectors, corresponding to no obstacle detection (might clutter the draw space)",
+  show_undetected_property_ = new rviz::BoolProperty( "Show undetected obstacles", true,
+                                                      "Whether to show sectors, corresponding to no obstacle detection (might clutter the draw space).",
                                                       this, SLOT( updateShowUndetected() ));
-  show_no_data_property_ = new rviz::BoolProperty( "Show sectors with no data", 1,
-                                                   "Whether to show sectors, for which no sensory data is available",
+  show_no_data_property_ = new rviz::BoolProperty( "Show sectors with no data", false,
+                                                   "Whether to show sectors, for which no sensory data is available.",
                                                    this, SLOT( updateShowUndetected() ));
 }
 
@@ -94,6 +110,7 @@ void MRS_Bumper_Display::onInitialize()
 {
   MFDClass::onInitialize();
   updateHistoryLength();
+  updateCollisions();
 }
 
 MRS_Bumper_Display::~MRS_Bumper_Display()
@@ -147,6 +164,31 @@ void MRS_Bumper_Display::updateDisplayMode()
   }
 }
 
+void MRS_Bumper_Display::updateCollisions()
+{
+  bool collision_colorize = collision_colorize_property_->getBool();
+  float collision_threshold = collision_threshold_property_->getFloat();
+  Ogre::ColourValue color = collision_color_property_->getOgreColor();
+  float collision_alpha = collision_alpha_property_->getFloat();
+
+  if (collision_colorize)
+  {
+    collision_threshold_property_->show();
+    collision_color_property_->show();
+    collision_alpha_property_->show();
+  } else
+  {
+    collision_threshold_property_->hide();
+    collision_color_property_->hide();
+    collision_alpha_property_->hide();
+  }
+
+  for( size_t i = 0; i < visuals_.size(); i++ )
+  {
+    visuals_[ i ]->setCollisionOptions( collision_colorize, collision_threshold, color.r, color.g, color.b, collision_alpha );
+  }
+}
+
 // This is our callback to handle an incoming message.
 void MRS_Bumper_Display::processMessage( const mrs_msgs::ObstacleSectors::ConstPtr& msg )
 {
@@ -196,6 +238,12 @@ void MRS_Bumper_Display::processMessage( const mrs_msgs::ObstacleSectors::ConstP
   float alpha = alpha_property_->getFloat();
   Ogre::ColourValue color = color_property_->getOgreColor();
   visual->setColor( color.r, color.g, color.b, alpha );
+
+  bool collision_colorize = collision_colorize_property_->getBool();
+  float collision_threshold = collision_threshold_property_->getFloat();
+  Ogre::ColourValue collision_color = collision_color_property_->getOgreColor();
+  float collision_alpha = collision_alpha_property_->getFloat();
+  visual->setCollisionOptions( collision_colorize, collision_threshold, collision_color.r, collision_color.g, collision_color.b, collision_alpha );
 
   int option = display_mode_property_->getOptionInt();
   visual->setDisplayMode( (MRS_Bumper_Visual::display_mode_t)option );

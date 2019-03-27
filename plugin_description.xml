@@ -5,6 +5,6 @@
     <description>
       Display tool for visualizing mrs_bumper/ObstacleSectors messages.
     </description>
-    <message_type>mrs_bumper/ObstacleSectors</message_type>
+    <message_type>mrs_msgs/ObstacleSectors</message_type>
   </class>
 </library>

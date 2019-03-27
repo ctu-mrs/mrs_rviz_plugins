@@ -65,6 +65,8 @@ public:
 
   void setShowNoData( bool show_no_data );
 
+  void setCollisionOptions( bool colorize, float threshold, float r, float g, float b, float a );
+
 private:
   void draw_message( const msg_t::ConstPtr& msg, display_mode_t display_mode );
   std::shared_ptr<rviz::Object> draw_no_data(const unsigned sector_it, const unsigned n_horizontal_sectors);
@@ -80,6 +82,9 @@ private:
   float m_color_r, m_color_g, m_color_b, m_color_a;
   bool m_show_undetected;
   bool m_show_no_data;
+  bool m_collision_colorize;
+  float m_collision_threshold;
+  float m_collision_color_r, m_collision_color_g, m_collision_color_b, m_collision_color_a;
 
   msg_t::ConstPtr m_msg;
   display_mode_t m_display_mode;

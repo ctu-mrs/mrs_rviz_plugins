@@ -102,6 +102,7 @@ private Q_SLOTS:
   void updateDisplayMode();
   void updateShowUndetected();
   void updateShowNoData();
+  void updateCollisions();
 
   // Function to handle an incoming ROS message.
 private:
@@ -114,6 +115,10 @@ private:
   // User-editable property variables.
   rviz::ColorProperty* color_property_;
   rviz::FloatProperty* alpha_property_;
+  rviz::BoolProperty* collision_colorize_property_;
+  rviz::FloatProperty* collision_threshold_property_;
+  rviz::FloatProperty* collision_alpha_property_;
+  rviz::ColorProperty* collision_color_property_;
   rviz::IntProperty* history_length_property_;
   rviz::EnumProperty* display_mode_property_;
   rviz::BoolProperty* show_undetected_property_;
