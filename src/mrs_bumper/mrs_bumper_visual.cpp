@@ -397,6 +397,7 @@ void MRS_Bumper_Visual::draw_message( const msg_t::ConstPtr& msg, display_mode_t
         continue;
     } else
     {
+      assert(cur_len >= 0.0);
       switch (display_mode)
       {
         default:
