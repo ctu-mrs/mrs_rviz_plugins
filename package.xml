@@ -1,25 +1,27 @@
-<package>
+<?xml version="1.0"?>
+<package format="2">
+
   <name>mrs_rviz_plugins</name>
   <version>0.1.0</version>
-  <description>
-    Pluginf for Rviz to work with the MRS system
-  </description>
+
+  <description>Plugin for rviz to work with the MRS system</description>
+
+  <author email="vrbamato@fel.cvut.cz">Matouš Vrba</author>
   <maintainer email="vrbamato@fel.cvut.cz">Matouš Vrba</maintainer>
+
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>qtbase5-dev</build_depend>
-  <build_depend>rviz</build_depend>
-  <build_depend>mrs_msgs</build_depend>
-
-  <run_depend>libqt5-core</run_depend>
-  <run_depend>libqt5-gui</run_depend>
-  <run_depend>libqt5-widgets</run_depend>
-  <run_depend>rviz</run_depend>
-  <run_depend>mrs_msgs</run_depend>
+  <depend>qtbase5-dev</depend>
+  <depend>rviz</depend>
+  <depend>mrs_msgs</depend>
+  <depend>libqt5-core</depend>
+  <depend>libqt5-gui</depend>
+  <depend>libqt5-widgets</depend>
 
   <export>
-      <rviz plugin="${prefix}/plugin_description.xml"/>
+    <rviz plugin="${prefix}/plugins.xml"/>
   </export>
+
 </package>
