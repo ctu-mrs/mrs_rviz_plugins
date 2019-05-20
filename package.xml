@@ -2,12 +2,12 @@
 <package format="2">
 
   <name>mrs_rviz_plugins</name>
-  <version>0.1.0</version>
+  <version>0.0.0</version>
 
   <description>Plugin for rviz to work with the MRS system</description>
 
-  <author email="vrbamato@fel.cvut.cz">Matouš Vrba</author>
-  <maintainer email="vrbamato@fel.cvut.cz">Matouš Vrba</maintainer>
+  <author email="vrbamato@fel.cvut.cz">Matous Vrba</author>
+  <maintainer email="vrbamato@fel.cvut.cz">Matous Vrba</maintainer>
 
   <license>BSD</license>
 
