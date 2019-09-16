@@ -7,6 +7,7 @@ from image_geometry import PinholeCameraModel
 from cv_bridge import CvBridge, CvBridgeError
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import CameraInfo
 
 def add_line(ptlist, pt1, pt2):
     pt = Point()
@@ -64,29 +65,51 @@ def generate_fov_marker(frame_id, fov_l, fov_h, fov_v, r, g, b, a, thickness):
 
     return msg
 
+def calc_fov(camera_info):
+    fx = camera_info.P[0]
+    fy = camera_info.P[5]
+    w = camera_info.width
+    h = camera_info.height
+
+    fov_h = 2*np.arctan2(w, 2*fx)
+    fov_v = 2*np.arctan2(h, 2*fy)
+    return (fov_h, fov_v)
+
+cinfo = None
+def cinfo_callback(msg):
+    global cinfo
+    cinfo = msg
+    rospy.loginfo_once("Received camera info")
+
 if __name__ == '__main__':
     rospy.init_node('camera_fov_marker_{:9d}'.format(random.randint(0, 1e9)))
 
-    frame_id = rospy.get_param("~frame_id")
-
-    fov_l = rospy.get_param("~fov/length")
-    fov_h = rospy.get_param("~fov/horizontal")
-    fov_v = rospy.get_param("~fov/vertical")
+    length = rospy.get_param("~length")
+    thickness = rospy.get_param("~line_thickness")
 
     r = rospy.get_param("~color/r")
     g = rospy.get_param("~color/g")
     b = rospy.get_param("~color/b")
     a = rospy.get_param("~color/a")
 
-    thickness = rospy.get_param("~line_thickness")
+    rospy.Subscriber("~camera_info", CameraInfo, cinfo_callback)
+    pub = rospy.Publisher("~camera_fov_marker", Marker, queue_size=10)
 
-    topic_name = "camera_fov_marker"
-    pub = rospy.Publisher(topic_name, Marker, queue_size=10)
-
-    msg = generate_fov_marker(frame_id, fov_l, fov_h, fov_v, r, g, b, a, thickness)
+    msg = None
     rate = 1
-    r = rospy.Rate(rate)
+    sleeper = rospy.Rate(rate)
     while not rospy.is_shutdown():
+        if msg is None:
+            if cinfo is None:
+                sleeper.sleep()
+                rospy.loginfo_once("Waiting for camera info at topic '{}'".format(rospy.resolve_name("~camera_info")))
+                continue
+            else:
+                frame_id = cinfo.header.frame_id
+                fov_h, fov_v = calc_fov(cinfo)
+                rospy.loginfo_once("Calculated FOV: {:.2f}x{:.2f} degrees".format(fov_v/np.pi*180, fov_h/np.pi*180))
+                msg = generate_fov_marker(frame_id, length, fov_h, fov_v, r, g, b, a, thickness)
+
         pub.publish(msg)
-        r.sleep()
+        sleeper.sleep()
 
