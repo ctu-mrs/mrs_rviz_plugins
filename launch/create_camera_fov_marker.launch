@@ -1,0 +1,24 @@
+<launch>
+
+  <arg name="uav_name" default="$(optenv UAV_NAME uav)" />
+
+  <group ns="$(arg uav_name)">
+    <node name="camera_fov_marker" pkg="mrs_rviz_plugins" type="camera_fov_marker.py" output="screen" >
+
+      <param name="frame_id" value="rs_d435_color_optical_frame" />
+
+      <param name="fov/horizontal" value="1.22" />
+      <param name="fov/vertical" value="0.75" />
+      <param name="fov/length" value="10.0" />
+
+      <param name="color/r" value="1.0" />
+      <param name="color/g" value="0.0" />
+      <param name="color/b" value="0.0" />
+      <param name="color/a" value="1.0" />
+
+      <param name="line_thickness" value="0.1" />
+
+    </node>
+  </group>
+
+</launch>
