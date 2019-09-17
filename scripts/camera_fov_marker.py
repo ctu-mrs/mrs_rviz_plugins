@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     msg = None
     rate = 1
-    sleeper = rospy.Rate(rate)
+    sleeper = rospy.Rate(rate, reset=True)
     while not rospy.is_shutdown():
         if msg is None:
             if cinfo is None:
