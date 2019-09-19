@@ -1,0 +1,127 @@
+<robot name="t650_visualization">
+  <material name="UAVSpecificColor">
+    <color rgba="[REPLACEME]uav_color[/REPLACEME]"/>
+  </material>
+  <material name="PinkTransparent">
+    <color rgba="1 8e-1 8e-1 8e-1"/>
+  </material>
+  <material name="Red">
+    <color rgba="1 0 0 1"/>
+  </material>
+  <material name="Gray">
+    <color rgba="2e-1 2e-1 2e-1 1"/>
+  </material>
+
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]">
+    <!-- TOP AND BOTTOM -->
+    <visual>
+      <origin xyz="0 0 15e-3" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/t650.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Gray" />
+    </visual>
+    <visual>
+      <origin xyz="0 0 -15e-3" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/t650.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Gray" />
+    </visual>
+  </link>
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]/uav_marker">
+    <!-- UAV specific-color marker -->
+    <visual>
+      <origin xyz="0 0 -90e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="530e-3" length="250e-3" />
+      </geometry>
+      <material name="UAVSpecificColor" />
+    </visual>
+  </link>
+
+  <joint name="joint_uav_marker" type="fixed">
+    <parent link="[REPLACEME]uav_name[/REPLACEME]" />
+    <child link="[REPLACEME]uav_name[/REPLACEME]/uav_marker" />
+  </joint>
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]/props">
+    <!-- Prop -->
+    <visual>
+      <origin xyz="234e-3 234e-3 30e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="190e-3" length="10e-3" />
+      </geometry>
+      <material name="PinkTransparent" />
+    </visual>
+    <visual>
+      <origin xyz="-234e-3 234e-3 30e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="190e-3" length="10e-3" />
+      </geometry>
+      <material name="PinkTransparent" />
+    </visual>
+    <visual>
+      <origin xyz="234e-3 -234e-3 30e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="190e-3" length="10e-3" />
+      </geometry>
+      <material name="PinkTransparent" />
+    </visual>
+    <visual>
+      <origin xyz="-234e-3 -234e-3 30e-3" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="190e-3" length="10e-3" />
+      </geometry>
+      <material name="PinkTransparent" />
+    </visual>
+  </link>
+
+  <joint name="joint_props" type="fixed">
+    <parent link="[REPLACEME]uav_name[/REPLACEME]" />
+    <child link="[REPLACEME]uav_name[/REPLACEME]/props" />
+  </joint>
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]/arms">
+    <!-- ARMS -->
+    <!-- arm1 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 78e-2" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/tarot_arm.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Gray" />
+    </visual>
+    <!-- arm2 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -78e-2" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/tarot_arm.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Gray" />
+    </visual>
+    <!-- arm3 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 -235e-2" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/tarot_arm.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Red" />
+    </visual>
+    <!-- arm4 -->
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 235e-2" />
+      <geometry>
+        <mesh filename="file://[REPLACEME]path[/REPLACEME]/data/tarot_arm.stl" scale="1e-3 1e-3 1e-3" />
+      </geometry>
+      <material name="Red" />
+    </visual>
+  </link>
+
+  <joint name="joint_arms" type="fixed">
+    <parent link="[REPLACEME]uav_name[/REPLACEME]" />
+    <child link="[REPLACEME]uav_name[/REPLACEME]/arms" />
+  </joint>
+</robot>
