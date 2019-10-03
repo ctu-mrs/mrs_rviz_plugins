@@ -59,15 +59,15 @@ namespace mrs_rviz_plugins
     alpha_property_->setMax(1.0);
 
     collision_colorize_property_ =
-        new rviz::BoolProperty("Colorize collisions", false, "If true, sectors with obstacles closer than Collision threshold will be colored differently.",
+        new rviz::BoolProperty("Colorize collisions", true, "If true, sectors with obstacles closer than Collision threshold will be colored differently.",
                                this, SLOT(updateCollisions()));
 
     horizontal_collision_threshold_property_ =
-        new rviz::FloatProperty("Horizontal collision threshold", 0.4,
+        new rviz::FloatProperty("Horizontal collision threshold", 1.0,
                                 "If an obstacle is closer than this threshold, the respective sector is colored differently.", this, SLOT(updateCollisions()));
 
     vertical_collision_threshold_property_ =
-        new rviz::FloatProperty("Vertical collision threshold", 0.4,
+        new rviz::FloatProperty("Vertical collision threshold", 1.0,
                                 "If an obstacle is closer than this threshold, the respective sector is colored differently.", this, SLOT(updateCollisions()));
 
     collision_color_property_ =
@@ -79,7 +79,7 @@ namespace mrs_rviz_plugins
     history_length_property_->setMin(1);
     history_length_property_->setMax(100000);
 
-    display_mode_property_ = new rviz::EnumProperty("Display mode", "whole sectors", "How to display the bumper message.", this, SLOT(updateDisplayMode()));
+    display_mode_property_ = new rviz::EnumProperty("Display mode", "sensor types", "How to display the bumper message.", this, SLOT(updateDisplayMode()));
     display_mode_property_->addOptionStd("whole sectors", MRS_Bumper_Visual::display_mode_t::WHOLE_SECTORS);
     display_mode_property_->addOptionStd("sensor types", MRS_Bumper_Visual::display_mode_t::SENSOR_TYPES);
     show_undetected_property_ = new rviz::BoolProperty("Show undetected obstacles", true,
