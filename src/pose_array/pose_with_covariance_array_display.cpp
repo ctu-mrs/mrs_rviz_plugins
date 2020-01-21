@@ -47,76 +47,86 @@
 #include "rviz/validate_quaternions.h"
 
 #include "pose_array/pose_with_covariance_array_display.h"
-#include "covariance_visual.h"
-#include "covariance_property.h"
+#include "pose_array/covariance_visual.h"
+#include "pose_array/covariance_property.h"
 
 #include <Eigen/Dense>
 
-namespace rviz
+namespace mrs_rviz_plugins
 {
+  struct PWCA_display_property{
+    rviz::StringProperty* frame_property_;
+    rviz::VectorProperty* position_property_;
+    rviz::QuaternionProperty* orientation_property_;
+    rviz::VectorProperty* covariance_position_property_;
+    rviz::VectorProperty* covariance_orientation_property_;
+  };
 
-class PoseWithCovarianceDisplaySelectionHandler: public SelectionHandler
+class PoseWithCovarianceArrayDisplaySelectionHandler: public rviz::SelectionHandler
 {
 public:
-  PoseWithCovarianceDisplaySelectionHandler( PoseWithCovarianceDisplay* display, DisplayContext* context )
+  PoseWithCovarianceArrayDisplaySelectionHandler( PoseWithCovarianceArrayDisplay* display, rviz::DisplayContext* context )
     : SelectionHandler( context )
     , display_( display )
   {}
 
-  void createProperties( const Picked& obj, Property* parent_property )
+  void createProperties( const rviz::Picked& obj, rviz::Property* parent_property )
   {
-    Property* cat = new Property( "Pose " + display_->getName(), QVariant(), "", parent_property );
-    properties_.push_back( cat );
+    /* stored_properties */
+    /* Property* cat = new Property( "Pose " + display_->getName(), QVariant(), "", parent_property ); */
+    /* properties_.push_back( cat ); */
 
-    frame_property_ = new StringProperty( "Frame", "", "", cat );
-    frame_property_->setReadOnly( true );
+    /* frame_property_ = new StringProperty( "Frame", "", "", cat ); */
+    /* frame_property_->setReadOnly( true ); */
 
-    position_property_ = new VectorProperty( "Position", Ogre::Vector3::ZERO, "", cat );
-    position_property_->setReadOnly( true );
+    /* position_property_ = new VectorProperty( "Position", Ogre::Vector3::ZERO, "", cat ); */
+    /* position_property_->setReadOnly( true ); */
 
-    orientation_property_ = new QuaternionProperty( "Orientation", Ogre::Quaternion::IDENTITY, "", cat );
-    orientation_property_->setReadOnly( true );
+    /* orientation_property_ = new QuaternionProperty( "Orientation", Ogre::Quaternion::IDENTITY, "", cat ); */
+    /* orientation_property_->setReadOnly( true ); */
 
-    covariance_position_property_ = new VectorProperty( "Covariance Position", Ogre::Vector3::ZERO, "", cat );
-    covariance_position_property_->setReadOnly( true );
+    /* covariance_position_property_ = new VectorProperty( "Covariance Position", Ogre::Vector3::ZERO, "", cat ); */
+    /* covariance_position_property_->setReadOnly( true ); */
 
-    covariance_orientation_property_ = new VectorProperty( "Covariance Orientation", Ogre::Vector3::ZERO, "", cat );
-    covariance_orientation_property_->setReadOnly( true );
+    /* covariance_orientation_property_ = new VectorProperty( "Covariance Orientation", Ogre::Vector3::ZERO, "", cat ); */
+    /* covariance_orientation_property_->setReadOnly( true ); */
   }
 
-  void getAABBs( const Picked& obj, V_AABB& aabbs )
+  void getAABBs( const rviz::Picked& obj, rviz::V_AABB& aabbs )
   {
-    if( display_->pose_valid_ )
-    {
-      if( display_->shape_property_->getOptionInt() == PoseWithCovarianceDisplay::Arrow )
+    for (int i=0; i<stored_properties.size(); i++){
+      if( display_->pose_valid_ )
       {
-        aabbs.push_back( display_->arrow_->getHead()->getEntity()->getWorldBoundingBox() );
-        aabbs.push_back( display_->arrow_->getShaft()->getEntity()->getWorldBoundingBox() );
-      }
-      else
-      {
-        aabbs.push_back( display_->axes_->getXShape()->getEntity()->getWorldBoundingBox() );
-        aabbs.push_back( display_->axes_->getYShape()->getEntity()->getWorldBoundingBox() );
-        aabbs.push_back( display_->axes_->getZShape()->getEntity()->getWorldBoundingBox() );
-      }
-
-      if( display_->covariance_property_->getBool() )
-      {
-        if(display_->covariance_property_->getPositionBool())
+        if( display_->shape_property_->getOptionInt() == PoseWithCovarianceArrayDisplay::Arrow )
         {
-          aabbs.push_back( display_->covariance_->getPositionShape()->getEntity()->getWorldBoundingBox() );
+          aabbs.push_back( display_->disp_data[i].arrow_->getHead()->getEntity()->getWorldBoundingBox() );
+          aabbs.push_back( display_->disp_data[i].arrow_->getShaft()->getEntity()->getWorldBoundingBox() );
         }
-        if(display_->covariance_property_->getOrientationBool())
+        else
         {
-          aabbs.push_back( display_->covariance_->getOrientationShape(CovarianceVisual::kRoll)->getEntity()->getWorldBoundingBox() );
-          aabbs.push_back( display_->covariance_->getOrientationShape(CovarianceVisual::kPitch)->getEntity()->getWorldBoundingBox() );
-          aabbs.push_back( display_->covariance_->getOrientationShape(CovarianceVisual::kYaw)->getEntity()->getWorldBoundingBox() );
+          aabbs.push_back( display_->disp_data[i].axes_->getXShape()->getEntity()->getWorldBoundingBox() );
+          aabbs.push_back( display_->disp_data[i].axes_->getYShape()->getEntity()->getWorldBoundingBox() );
+          aabbs.push_back( display_->disp_data[i].axes_->getZShape()->getEntity()->getWorldBoundingBox() );
+        }
+
+        if( display_->covariance_property_->getBool() )
+        {
+          if(display_->covariance_property_->getPositionBool())
+          {
+            aabbs.push_back( display_->disp_data[i].covariance_->getPositionShape()->getEntity()->getWorldBoundingBox() );
+          }
+          if(display_->covariance_property_->getOrientationBool())
+          {
+            aabbs.push_back( display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kRoll)->getEntity()->getWorldBoundingBox() );
+            aabbs.push_back( display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kPitch)->getEntity()->getWorldBoundingBox() );
+            aabbs.push_back( display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kYaw)->getEntity()->getWorldBoundingBox() );
+          }
         }
       }
     }
   }
 
-  void setMessage(const geometry_msgs::PoseWithCovarianceStampedConstPtr& message)
+  void setMessage(const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& message)
   {
     // properties_.size() should only be > 0 after createProperties()
     // and before destroyProperties(), during which frame_property_,
@@ -124,145 +134,157 @@ public:
     // pointers.
     if( properties_.size() > 0 )
     {
-      frame_property_->setStdString( message->header.frame_id );
-      position_property_->setVector( Ogre::Vector3( message->pose.pose.position.x,
-                                                    message->pose.pose.position.y,
-                                                    message->pose.pose.position.z ));
-      orientation_property_->setQuaternion( Ogre::Quaternion( message->pose.pose.orientation.w,
-                                                              message->pose.pose.orientation.x,
-                                                              message->pose.pose.orientation.y,
-                                                              message->pose.pose.orientation.z ));
-      covariance_position_property_->setVector( Ogre::Vector3( message->pose.covariance[0+0*6],
-                                                               message->pose.covariance[1+1*6],
-                                                               message->pose.covariance[2+2*6] ));
+      stored_properties.clear();
+      for (int i=0; i<(int)(message->poses.size()); i++){
+        stored_properties.push_back(PWCA_display_property());
+        stored_properties.back().frame_property_->setStdString( message->header.frame_id );
+        stored_properties.back().position_property_->setVector( Ogre::Vector3( message->poses[i].pose.position.x,
+              message->poses[i].pose.position.y,
+              message->poses[i].pose.position.z ));
+        stored_properties.back().orientation_property_->setQuaternion( Ogre::Quaternion( message->poses[i].pose.orientation.w,
+              message->poses[i].pose.orientation.x,
+              message->poses[i].pose.orientation.y,
+              message->poses[i].pose.orientation.z ));
+        stored_properties.back().covariance_position_property_->setVector( Ogre::Vector3( message->poses[i].covariance[0+0*6],
+              message->poses[i].covariance[1+1*6],
+              message->poses[i].covariance[2+2*6] ));
 
-      covariance_orientation_property_->setVector( Ogre::Vector3( message->pose.covariance[3+3*6],
-                                                                  message->pose.covariance[4+4*6],
-                                                                  message->pose.covariance[5+5*6] ));
+        stored_properties.back().covariance_orientation_property_->setVector( Ogre::Vector3( message->poses[i].covariance[3+3*6],
+              message->poses[i].covariance[4+4*6],
+              message->poses[i].covariance[5+5*6] ));
+      }
     }
   }
 
 private:
-  PoseWithCovarianceDisplay* display_;
-  StringProperty* frame_property_;
-  VectorProperty* position_property_;
-  QuaternionProperty* orientation_property_;
-  VectorProperty* covariance_position_property_;
-  VectorProperty* covariance_orientation_property_;
-
+  std::vector<PWCA_display_property> stored_properties;
+    PoseWithCovarianceArrayDisplay* display_;
 };
 
-PoseWithCovarianceDisplay::PoseWithCovarianceDisplay()
+PoseWithCovarianceArrayDisplay::PoseWithCovarianceArrayDisplay()
   : pose_valid_( false )
 {
-  shape_property_ = new EnumProperty( "Shape", "Arrow", "Shape to display the pose as.",
+    std::cout << "SHIT BOYZ!";
+
+  shape_property_ = new rviz::EnumProperty( "Shape", "Arrow", "Shape to display the pose as.",
                                       this, SLOT( updateShapeChoice() ));
   shape_property_->addOption( "Arrow", Arrow );
   shape_property_->addOption( "Axes", Axes );
 
-  color_property_ = new ColorProperty( "Color", QColor( 255, 25, 0 ), "Color to draw the arrow.",
+  color_property_ = new rviz::ColorProperty( "Color", QColor( 255, 25, 0 ), "Color to draw the arrow.",
                                        this, SLOT( updateColorAndAlpha() ));
 
-  alpha_property_ = new FloatProperty( "Alpha", 1, "Amount of transparency to apply to the arrow.",
+  alpha_property_ = new rviz::FloatProperty( "Alpha", 1, "Amount of transparency to apply to the arrow.",
                                        this, SLOT( updateColorAndAlpha() ));
   alpha_property_->setMin( 0 );
   alpha_property_->setMax( 1 );
 
-  shaft_length_property_ = new FloatProperty( "Shaft Length", 1, "Length of the arrow's shaft, in meters.",
+  shaft_length_property_ = new rviz::FloatProperty( "Shaft Length", 1, "Length of the arrow's shaft, in meters.",
                                               this, SLOT( updateArrowGeometry() ));
 
   // aleeper: default changed from 0.1 to match change in arrow.cpp
-  shaft_radius_property_ = new FloatProperty( "Shaft Radius", 0.05, "Radius of the arrow's shaft, in meters.",
+  shaft_radius_property_ = new rviz::FloatProperty( "Shaft Radius", 0.05, "Radius of the arrow's shaft, in meters.",
                                               this, SLOT( updateArrowGeometry() ));
 
-  head_length_property_ = new FloatProperty( "Head Length", 0.3, "Length of the arrow's head, in meters.",
+  head_length_property_ = new rviz::FloatProperty( "Head Length", 0.3, "Length of the arrow's head, in meters.",
                                              this, SLOT( updateArrowGeometry() ));
 
   // aleeper: default changed from 0.2 to match change in arrow.cpp
-  head_radius_property_ = new FloatProperty( "Head Radius", 0.1, "Radius of the arrow's head, in meters.",
+  head_radius_property_ = new rviz::FloatProperty( "Head Radius", 0.1, "Radius of the arrow's head, in meters.",
                                              this, SLOT( updateArrowGeometry() ));
 
-  axes_length_property_ = new FloatProperty( "Axes Length", 1, "Length of each axis, in meters.",
+  axes_length_property_ = new rviz::FloatProperty( "Axes Length", 1, "Length of each axis, in meters.",
                                              this, SLOT( updateAxisGeometry() ));
 
-  axes_radius_property_ = new FloatProperty( "Axes Radius", 0.1, "Radius of each axis, in meters.",
+  axes_radius_property_ = new rviz::FloatProperty( "Axes Radius", 0.1, "Radius of each axis, in meters.",
                                              this, SLOT( updateAxisGeometry() ));
 
-  covariance_property_ = new CovarianceProperty( "Covariance", true, "Whether or not the covariances of the messages should be shown.",
+  covariance_property_ = new rviz::CovarianceProperty( "Covariance", true, "Whether or not the covariances of the messages should be shown.",
                                              this, SLOT( queueRender() ));
 }
 
-void PoseWithCovarianceDisplay::onInitialize()
+void PoseWithCovarianceArrayDisplay::onInitialize()
 {
   MFDClass::onInitialize();
 
-  arrow_ = new rviz::Arrow( scene_manager_, scene_node_,
-                            shaft_length_property_->getFloat(),
-                            shaft_radius_property_->getFloat(),
-                            head_length_property_->getFloat(),
-                            head_radius_property_->getFloat() );
-  // Arrow points in -Z direction, so rotate the orientation before display.
-  // TODO: is it safe to change Arrow to point in +X direction?
-  arrow_->setOrientation( Ogre::Quaternion( Ogre::Degree( -90 ), Ogre::Vector3::UNIT_Y ));
+  coll_handler_.reset( new PoseWithCovarianceArrayDisplaySelectionHandler( this, context_ ));
+  for (auto &d : disp_data){
+    d.arrow_ = new rviz::Arrow( scene_manager_, scene_node_,
+        shaft_length_property_->getFloat(),
+        shaft_radius_property_->getFloat(),
+        head_length_property_->getFloat(),
+        head_radius_property_->getFloat() );
+    // Arrow points in -Z direction, so rotate the orientation before display.
+    // TODO: is it safe to change Arrow to point in +X direction?
+    d.arrow_->setOrientation( Ogre::Quaternion( Ogre::Degree( -90 ), Ogre::Vector3::UNIT_Y ));
 
-  axes_ = new rviz::Axes( scene_manager_, scene_node_,
-                          axes_length_property_->getFloat(),
-                          axes_radius_property_->getFloat() );
+    d.axes_ = new rviz::Axes( scene_manager_, scene_node_,
+        axes_length_property_->getFloat(),
+        axes_radius_property_->getFloat() );
 
-  covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_ );
+    d.covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_ );
 
+    coll_handler_->addTrackedObjects( d.arrow_->getSceneNode() );
+    coll_handler_->addTrackedObjects( d.axes_->getSceneNode() );
+    coll_handler_->addTrackedObjects( d.covariance_->getPositionSceneNode() );
+    coll_handler_->addTrackedObjects( d.covariance_->getOrientationSceneNode() );
+  }
   updateShapeChoice();
   updateColorAndAlpha();
 
-  coll_handler_.reset( new PoseWithCovarianceDisplaySelectionHandler( this, context_ ));
-  coll_handler_->addTrackedObjects( arrow_->getSceneNode() );
-  coll_handler_->addTrackedObjects( axes_->getSceneNode() );
-  coll_handler_->addTrackedObjects( covariance_->getPositionSceneNode() );
-  coll_handler_->addTrackedObjects( covariance_->getOrientationSceneNode() );
 }
 
-PoseWithCovarianceDisplay::~PoseWithCovarianceDisplay()
+PoseWithCovarianceArrayDisplay::~PoseWithCovarianceArrayDisplay()
 {
   if ( initialized() )
   {
-    delete arrow_;
-    delete axes_;
+    while (disp_data.size()>0){
+      delete disp_data.back().arrow_;
+      delete disp_data.back().axes_;
+      disp_data.pop_back();
+    }
   }
 }
 
-void PoseWithCovarianceDisplay::onEnable()
+void PoseWithCovarianceArrayDisplay::onEnable()
 {
   MFDClass::onEnable();
   updateShapeVisibility();
 }
 
-void PoseWithCovarianceDisplay::updateColorAndAlpha()
+void PoseWithCovarianceArrayDisplay::updateColorAndAlpha()
 {
   Ogre::ColourValue color = color_property_->getOgreColor();
   color.a = alpha_property_->getFloat();
 
-  arrow_->setColor( color );
+  for (auto &d : disp_data){
+    d.arrow_->setColor( color );
+  }
 
   context_->queueRender();
 }
 
-void PoseWithCovarianceDisplay::updateArrowGeometry()
+void PoseWithCovarianceArrayDisplay::updateArrowGeometry()
 {
-  arrow_->set( shaft_length_property_->getFloat(),
+  for (auto &d : disp_data){
+    d.arrow_->set( shaft_length_property_->getFloat(),
                shaft_radius_property_->getFloat(),
                head_length_property_->getFloat(),
                head_radius_property_->getFloat() );
+  }
   context_->queueRender();
 }
 
-void PoseWithCovarianceDisplay::updateAxisGeometry()
+void PoseWithCovarianceArrayDisplay::updateAxisGeometry()
 {
-  axes_->set( axes_length_property_->getFloat(),
-              axes_radius_property_->getFloat() );
+  for (auto &d : disp_data){
+    d.axes_->set( axes_length_property_->getFloat(),
+        axes_radius_property_->getFloat() );
+  }
   context_->queueRender();
 }
 
-void PoseWithCovarianceDisplay::updateShapeChoice()
+void PoseWithCovarianceArrayDisplay::updateShapeChoice()
 {
   bool use_arrow = ( shape_property_->getOptionInt() == Arrow );
 
@@ -281,76 +303,105 @@ void PoseWithCovarianceDisplay::updateShapeChoice()
   context_->queueRender();
 }
 
-void PoseWithCovarianceDisplay::updateShapeVisibility()
+void PoseWithCovarianceArrayDisplay::updateShapeVisibility()
 {
   if( !pose_valid_ )
   {
-    arrow_->getSceneNode()->setVisible( false );
-    axes_->getSceneNode()->setVisible( false );
-    covariance_->setVisible( false );
+    for (auto &d : disp_data){
+      d.arrow_->getSceneNode()->setVisible( false );
+      d.axes_->getSceneNode()->setVisible( false );
+      d.covariance_->setVisible( false );
+    }
   }
   else
   {
     bool use_arrow = (shape_property_->getOptionInt() == Arrow);
-    arrow_->getSceneNode()->setVisible( use_arrow );
-    axes_->getSceneNode()->setVisible( !use_arrow );
+    for (auto &d : disp_data){
+      d.arrow_->getSceneNode()->setVisible( use_arrow );
+      d.axes_->getSceneNode()->setVisible( !use_arrow );
+    }
     covariance_property_->updateVisibility();
   }
 }
 
-void PoseWithCovarianceDisplay::processMessage( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& message )
+void PoseWithCovarianceArrayDisplay::processMessage( const mrs_msgs::PoseWithCovarianceArrayStamped::ConstPtr& message )
 {
-  if( !validateFloats( message->pose.pose ) || !validateFloats( message->pose.covariance ))
-  {
-    setStatus( StatusProperty::Error, "Topic", "Message contained invalid floating point values (nans or infs)" );
-    return;
+  while (disp_data.size()>0){
+    delete disp_data.back().arrow_;
+    delete disp_data.back().axes_;
+    disp_data.pop_back();
+  }
+  while (covariance_property_->sizeVisual() > 0){
+    covariance_property_->popFrontVisual();
   }
 
-  if( !validateQuaternions( message->pose.pose ))
-  {
-    ROS_WARN_ONCE_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions. "
-                         "This warning will only be output once but may be true for others; "
-                         "enable DEBUG messages for ros.rviz.quaternions to see more details.",
-                         qPrintable( getName() ) );
-    ROS_DEBUG_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions.", 
-                     qPrintable( getName() ) );
+  for (int i=0; i<(int)(message->poses.size()); i++){
+    if( !rviz::validateFloats( message->poses[i].pose ) || !rviz::validateFloats( message->poses[i].covariance ))
+    {
+      setStatus( rviz::StatusProperty::Error, "Topic", "Message contained invalid floating point values (nans or infs)" );
+      return;
+    }
+
+    if( !rviz::validateQuaternions( message->poses[i].pose ))
+    {
+      ROS_WARN_ONCE_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions. "
+          "This warning will only be output once but may be true for others; "
+          "enable DEBUG messages for ros.rviz.quaternions to see more details.",
+          qPrintable( getName() ) );
+      ROS_DEBUG_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions.", 
+          qPrintable( getName() ) );
+    }
+
+    Ogre::Vector3 position;
+    Ogre::Quaternion orientation;
+    if( !context_->getFrameManager()->transform( message->header, message->poses[i].pose, position, orientation ))
+    {
+      ROS_ERROR( "Error transforming pose '%s' from frame '%s' to frame '%s'",
+          qPrintable( getName() ), message->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
+      return;
+    }
+
+    pose_valid_ = true;
+    updateShapeVisibility();
+
+    disp_data.push_back(PWC_display_object());
+
+    disp_data[i].arrow_ = new rviz::Arrow( scene_manager_, scene_node_,
+        shaft_length_property_->getFloat(),
+        shaft_radius_property_->getFloat(),
+        head_length_property_->getFloat(),
+        head_radius_property_->getFloat() );
+
+    disp_data[i].axes_ = new rviz::Axes( scene_manager_, scene_node_,
+        axes_length_property_->getFloat(),
+        axes_radius_property_->getFloat() );
+
+    disp_data[i].covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_ );
+
+    disp_data[i].axes_->setPosition( position );
+    disp_data[i].axes_->setOrientation( orientation );
+
+    disp_data[i].arrow_->setPosition( position );
+    disp_data[i].arrow_->setOrientation( orientation * Ogre::Quaternion( Ogre::Degree( -90 ), Ogre::Vector3::UNIT_Y ) );
+
+    disp_data[i].covariance_->setPosition( position );
+    disp_data[i].covariance_->setOrientation( orientation );
+    disp_data[i].covariance_->setCovariance( message->poses[i] );
+
+    coll_handler_->setMessage( message );
+
+    context_->queueRender();
   }
-
-  Ogre::Vector3 position;
-  Ogre::Quaternion orientation;
-  if( !context_->getFrameManager()->transform( message->header, message->pose.pose, position, orientation ))
-  {
-    ROS_ERROR( "Error transforming pose '%s' from frame '%s' to frame '%s'",
-               qPrintable( getName() ), message->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
-    return;
-  }
-
-  pose_valid_ = true;
-  updateShapeVisibility();
-
-  axes_->setPosition( position );
-  axes_->setOrientation( orientation );
-
-  arrow_->setPosition( position );
-  arrow_->setOrientation( orientation * Ogre::Quaternion( Ogre::Degree( -90 ), Ogre::Vector3::UNIT_Y ) );
-
-  covariance_->setPosition( position );
-  covariance_->setOrientation( orientation );
-  covariance_->setCovariance( message->pose );
-
-  coll_handler_->setMessage( message );
-
-  context_->queueRender();
 }
 
-void PoseWithCovarianceDisplay::reset()
+void PoseWithCovarianceArrayDisplay::reset()
 {
   MFDClass::reset();
   pose_valid_ = false;
   updateShapeVisibility();
 }
 
-} // namespace rviz
+} // namespace mrs_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS( rviz::PoseWithCovarianceDisplay, rviz::Display )
+PLUGINLIB_EXPORT_CLASS( mrs_rviz_plugins::PoseWithCovarianceArrayDisplay, rviz::Display )

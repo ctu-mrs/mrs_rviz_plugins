@@ -32,7 +32,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+/* #include <geometry_msgs/PoseWithCovarianceStamped.h> */
+#include <mrs_msgs/PoseWithCovarianceArrayStamped.h>
 
 #include "rviz/message_filter_display.h"
 #include "rviz/selection/forwards.h"
@@ -40,33 +41,42 @@
 namespace rviz
 {
 
-class Arrow;
-class Axes;
-class ColorProperty;
-class EnumProperty;
-class FloatProperty;
-class BoolProperty;
-class Shape;
+  class Arrow;
+  class Axes;
+  class ColorProperty;
+  class EnumProperty;
+  class FloatProperty;
+  class BoolProperty;
+  class Shape;
 
-class CovarianceVisual;
-class CovarianceProperty;
+  class CovarianceVisual;
+  class CovarianceProperty;
+}
 
-class PoseWithCovarianceDisplaySelectionHandler;
-typedef boost::shared_ptr<PoseWithCovarianceDisplaySelectionHandler> PoseWithCovarianceDisplaySelectionHandlerPtr;
-
-/** @brief Displays the pose from a geometry_msgs::PoseWithCovarianceStamped message. */
-class PoseWithCovarianceDisplay: public rviz::MessageFilterDisplay<geometry_msgs::PoseWithCovarianceStamped>
+namespace mrs_rviz_plugins
 {
-Q_OBJECT
-public:
-  enum Shape
-  {
-    Arrow,
-    Axes,
+  struct PWC_display_object{
+    rviz::Arrow* arrow_;
+    rviz::Axes* axes_;
+    boost::shared_ptr<rviz::CovarianceVisual> covariance_;
   };
 
-  PoseWithCovarianceDisplay();
-  virtual ~PoseWithCovarianceDisplay();
+class PoseWithCovarianceArrayDisplaySelectionHandler;
+typedef boost::shared_ptr<PoseWithCovarianceArrayDisplaySelectionHandler> PoseWithCovarianceArrayDisplaySelectionHandlerPtr;
+
+/** @brief Displays the pose from a geometry_msgs::PoseWithCovarianceStamped message. */
+class PoseWithCovarianceArrayDisplay: public rviz::MessageFilterDisplay<mrs_msgs::PoseWithCovarianceArrayStamped>
+  {
+    Q_OBJECT
+    public:
+      enum Shape
+      {
+        Arrow,
+        Axes,
+      };
+
+  PoseWithCovarianceArrayDisplay();
+  virtual ~PoseWithCovarianceArrayDisplay();
 
   virtual void onInitialize();
   virtual void reset();
@@ -85,13 +95,12 @@ private Q_SLOTS:
 private:
   void clear();
 
-  virtual void processMessage( const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& message );
+  virtual void processMessage( const mrs_msgs::PoseWithCovarianceArrayStamped::ConstPtr& message );
 
-  rviz::Arrow* arrow_;
-  rviz::Axes* axes_;
-  boost::shared_ptr<CovarianceVisual> covariance_;
+  std::vector<PWC_display_object> disp_data;
+
   bool pose_valid_;
-  PoseWithCovarianceDisplaySelectionHandlerPtr coll_handler_;
+  PoseWithCovarianceArrayDisplaySelectionHandlerPtr coll_handler_;
 
   rviz::EnumProperty* shape_property_;
 
@@ -106,11 +115,11 @@ private:
   rviz::FloatProperty* axes_length_property_;
   rviz::FloatProperty* axes_radius_property_;
 
-  CovarianceProperty* covariance_property_;
+  rviz::CovarianceProperty* covariance_property_;
 
-  friend class PoseWithCovarianceDisplaySelectionHandler;
+  friend class PoseWithCovarianceArrayDisplaySelectionHandler;
 };
 
-} // namespace rviz
+} // namespace mrs_rviz_plugins
 
 #endif // POSE_WITH_COVARIANCE_DISPLAY_H
