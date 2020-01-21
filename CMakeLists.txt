@@ -40,8 +40,10 @@ add_definitions(-DQT_NO_KEYWORDS)
 set(SRC_FILES
   src/mrs_bumper/mrs_bumper_display.cpp
   src/mrs_bumper/mrs_bumper_visual.cpp
+  src/pose_array/pose_with_covariance_array_display.cpp
   include/mrs_bumper/mrs_bumper_display.h
   include/mrs_bumper/mrs_bumper_visual.h
+  include/pose_array/pose_with_covariance_array_display.h
 )
 
 ## An rviz plugin is just a shared library, so here we declare the
