@@ -44,6 +44,7 @@ set(SRC_FILES
   include/mrs_bumper/mrs_bumper_display.h
   include/mrs_bumper/mrs_bumper_visual.h
   include/pose_array/pose_with_covariance_array_display.h
+  include/batch_visualizer/batch_visualizer.h
 )
 
 ## An rviz plugin is just a shared library, so here we declare the
