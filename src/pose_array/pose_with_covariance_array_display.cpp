@@ -386,7 +386,10 @@ void PoseWithCovarianceArrayDisplay::processMessage( const mrs_msgs::PoseWithCov
 
     disp_data[i].covariance_->setPosition( position );
     disp_data[i].covariance_->setOrientation( orientation );
-    disp_data[i].covariance_->setCovariance( message->poses[i] );
+    geometry_msgs::PoseWithCovariance pwc;
+    pwc.covariance = message->poses[i].covariance;
+    pwc.pose = message->poses[i].pose;
+    disp_data[i].covariance_->setCovariance( pwc );
 
     coll_handler_->setMessage( message );
 
