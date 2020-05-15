@@ -1,18 +1,17 @@
 <library path="lib/libmrs_rviz_plugins">
-  <class name="mrs_rviz_plugins/MRS_Bumper"
-         type="mrs_rviz_plugins::MRS_Bumper_Display"
-         base_class_type="rviz::Display">
+
+  <class name="mrs_rviz_plugins/MrsBumperDisplay" type="mrs_rviz_plugins::MrsBumperDisplayRviz" base_class_type="rviz::Display">
     <description>
       Display tool for visualizing mrs_msgs/ObstacleSectors messages.
     </description>
     <message_type>mrs_msgs/ObstacleSectors</message_type>
   </class>
-  <class name="mrs_rviz_plugins/PoseWithCovarianceArrayStamped"
-         type="mrs_rviz_plugins::PoseWithCovarianceArrayDisplay"
-         base_class_type="rviz::Display">
+
+  <class name="mrs_rviz_plugins/PoseWithCovarianceArrayStamped" type="mrs_rviz_plugins::PoseWithCovarianceArrayDisplayRviz" base_class_type="rviz::Display">
     <description>
       Display tool for visualizing mrs_msgs/PoseWithCovarianceArrayStamped messages.
     </description>
     <message_type>mrs_msgs/PoseWithCovarianceArrayStamped</message_type>
   </class>
+
 </library>
