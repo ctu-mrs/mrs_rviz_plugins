@@ -3,9 +3,13 @@ project(mrs_rviz_plugins)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  nodelet
   cmake_modules
   rviz
   mrs_msgs
+  nav_msgs
+  mrs_lib
+  geometry_msgs
   )
 
 set(CMAKE_AUTOMOC ON)
@@ -22,13 +26,16 @@ else()
   set(QT_LIBRARIES Qt5::Widgets)
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_definitions(-DQT_NO_KEYWORDS)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS mrs_msgs rviz
+  LIBRARIES MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate
+  CATKIN_DEPENDS roscpp mrs_msgs rviz mrs_lib nav_msgs geometry_msgs
   )
 
 include_directories(
@@ -36,48 +43,77 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   )
 
-add_library(MrsRvizPlugins
-  # bumper
+## BUMPER VIZUALIZATION
+
+add_library(MrsBumperRviz
   include/bumper/display.h
   include/bumper/visual.h
   src/bumper/display.cpp
   src/bumper/visual.cpp
-  # covariance
-  include/covariance/property.h
-  include/covariance/visual.h
-  src/covariance/property.cpp
-  src/covariance/visual.cpp
-  # pose with covariance array
-  include/pose_with_covariance_array/display.h
-  src/pose_with_covariance_array/display.cpp
   )
 
-add_dependencies(MrsRvizPlugins
+add_dependencies(MrsBumperRviz
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsRvizPlugins
+target_link_libraries(MrsBumperRviz
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
 
-## Install rules
+## COVARIANCE
 
-install(TARGETS
-  MrsRvizPlugins
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+add_library(MrsCovarianceRviz
+  include/covariance/property.h
+  include/covariance/visual.h
+  src/covariance/property.cpp
+  src/covariance/visual.cpp
   )
 
-install(FILES
-  plugins.xml
-  DESTINATION
-  ${CATKIN_PACKAGE_SHARE_DESTINATION})
+add_dependencies(MrsCovarianceRviz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
 
-# install(DIRECTORY media/
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/media)
+target_link_libraries(MrsCovarianceRviz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
 
-install(DIRECTORY icons/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons)
+## POSE WITH COVARIANCE ARRAY
+
+add_library(MrsPoseWithCovarianceArrayRviz
+  include/pose_with_covariance_array/display.h
+  src/pose_with_covariance_array/display.cpp
+  )
+
+add_dependencies(MrsPoseWithCovarianceArrayRviz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsPoseWithCovarianceArrayRviz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## RVIZ NAV GOAL
+
+add_library(MrsRvizNavGoal
+  src/rviz_interface/nav_goal.cpp
+  )
+
+target_link_libraries(MrsRvizNavGoal
+  ${catkin_LIBRARIES}
+  )
+
+## RVIZ POSE ESTIMATE
+
+add_library(MrsRvizPoseEstimate
+  src/rviz_interface/pose_estimate.cpp
+  )
+
+target_link_libraries(MrsRvizPoseEstimate
+  ${catkin_LIBRARIES}
+  )

@@ -1,0 +1,34 @@
+<launch>
+
+  <!-- args corresponding to environment variables -->
+  <arg name="UAV_NAME" default="$(env UAV_NAME)" />
+  <arg name="PROFILER" default="$(optenv PROFILER false)" />
+
+  <arg name="debug" default="false" />
+
+  <arg name="publish_rate" default="1" />
+
+  <arg     if="$(arg debug)" name="launch_prefix" value="debug_roslaunch" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+
+  <node pkg="nodelet" type="nodelet" name="rviz_pose_estimate" args="standalone mrs_rviz_plugins/RvizPoseEstimate" output="screen" launch-prefix="$(arg launch_prefix)">
+
+    <param name="enable_profiler" type="bool" value="$(arg PROFILER)" />
+
+      <!-- Parameters -->
+    <param name="enable_profiler" type="bool" value="$(arg PROFILER)" />
+    <param name="publish_rate" type="int" value="$(arg publish_rate)" />
+
+      <!-- Subscribers -->
+    <remap from="~rviz_pose_estimate_in" to="/initialpose" />
+
+      <!-- Publishers -->
+    <remap from="~pose_array_out" to="/pose_array" />
+    <remap from="~marker_array_out" to="/marker_array" />
+
+      <!-- Services -->
+    <remap from="~dump_in" to="~dump" />
+
+  </node>
+
+</launch>

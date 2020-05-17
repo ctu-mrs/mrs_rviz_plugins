@@ -13,18 +13,25 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>qtbase5-dev</depend>
-  <depend>rviz</depend>
+  <depend>roscpp</depend>
+  <depend>cmake_modules</depend>
+  <depend>pluginlib</depend>
+  <depend>nodelet</depend>
+
   <depend>mrs_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>mrs_lib</depend>
+
+  <depend>rviz</depend>
+  <depend>qtbase5-dev</depend>
   <depend>libqt5-core</depend>
   <depend>libqt5-gui</depend>
   <depend>libqt5-widgets</depend>
-  <depend>roscpp</depend>
-  <depend>pluginlib</depend>
-  <depend>cmake_modules</depend>
 
   <export>
     <rviz plugin="${prefix}/plugins.xml"/>
+    <nodelet plugin="${prefix}/nodelets.xml" />
   </export>
 
 </package>
