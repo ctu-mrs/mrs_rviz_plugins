@@ -1,5 +1,5 @@
-#include <pose_with_covariance_array/covariance_property.h>
-#include <pose_with_covariance_array/covariance_visual.h>
+#include <covariance/property.h>
+#include <covariance/visual.h>
 
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/float_property.h>

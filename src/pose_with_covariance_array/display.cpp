@@ -17,15 +17,19 @@
 #include <rviz/validate_floats.h>
 #include <rviz/validate_quaternions.h>
 
-#include <pose_with_covariance_array/pose_with_covariance_array_display.h>
-#include <pose_with_covariance_array/covariance_visual.h>
-#include <pose_with_covariance_array/covariance_property.h>
+#include <pose_with_covariance_array/display.h>
+#include <covariance/visual.h>
+#include <covariance/property.h>
 
 #include <Eigen/Dense>
 
 namespace mrs_rviz_plugins
 {
-struct PWCA_display_property
+
+namespace pose_with_covariance_array
+{
+
+struct display_property
 {
   rviz::StringProperty*     frame_property_;
   rviz::VectorProperty*     position_property_;
@@ -34,10 +38,10 @@ struct PWCA_display_property
   rviz::VectorProperty*     covariance_orientation_property_;
 };
 
-class PoseWithCovarianceArrayDisplaySelectionHandler : public rviz::SelectionHandler {
+class DisplaySelectionHandler : public rviz::SelectionHandler {
+
 public:
-  PoseWithCovarianceArrayDisplaySelectionHandler(PoseWithCovarianceArrayDisplay* display, rviz::DisplayContext* context)
-      : SelectionHandler(context), display_(display) {
+  DisplaySelectionHandler(Display* display, rviz::DisplayContext* context) : SelectionHandler(context), display_(display) {
   }
 
   void createProperties(const rviz::Picked& obj, rviz::Property* parent_property) {
@@ -64,7 +68,7 @@ public:
   void getAABBs(const rviz::Picked& obj, rviz::V_AABB& aabbs) {
     for (int i = 0; i < stored_properties.size(); i++) {
       if (display_->pose_valid_) {
-        if (display_->shape_property_->getOptionInt() == PoseWithCovarianceArrayDisplay::Arrow) {
+        if (display_->shape_property_->getOptionInt() == Display::Arrow) {
           aabbs.push_back(display_->disp_data[i].arrow_->getHead()->getEntity()->getWorldBoundingBox());
           aabbs.push_back(display_->disp_data[i].arrow_->getShaft()->getEntity()->getWorldBoundingBox());
         } else {
@@ -95,7 +99,7 @@ public:
     if (properties_.size() > 0) {
       stored_properties.clear();
       for (int i = 0; i < (int)(message->poses.size()); i++) {
-        stored_properties.push_back(PWCA_display_property());
+        stored_properties.push_back(display_property());
         stored_properties.back().frame_property_->setStdString(message->header.frame_id);
         stored_properties.back().position_property_->setVector(
             Ogre::Vector3(message->poses[i].pose.position.x, message->poses[i].pose.position.y, message->poses[i].pose.position.z));
@@ -112,11 +116,11 @@ public:
   }
 
 private:
-  std::vector<PWCA_display_property> stored_properties;
-  PoseWithCovarianceArrayDisplay*    display_;
+  std::vector<display_property> stored_properties;
+  Display*                      display_;
 };
 
-PoseWithCovarianceArrayDisplay::PoseWithCovarianceArrayDisplay() : pose_valid_(false) {
+Display::Display() : pose_valid_(false) {
   std::cout << "SHIT BOYZ!";
 
   shape_property_ = new rviz::EnumProperty("Shape", "Arrow", "Shape to display the pose as.", this, SLOT(updateShapeChoice()));
@@ -147,10 +151,10 @@ PoseWithCovarianceArrayDisplay::PoseWithCovarianceArrayDisplay() : pose_valid_(f
       new rviz::CovarianceProperty("Covariance", true, "Whether or not the covariances of the messages should be shown.", this, SLOT(queueRender()));
 }
 
-void PoseWithCovarianceArrayDisplay::onInitialize() {
+void Display::onInitialize() {
   MFDClass::onInitialize();
 
-  coll_handler_.reset(new PoseWithCovarianceArrayDisplaySelectionHandler(this, context_));
+  coll_handler_.reset(new DisplaySelectionHandler(this, context_));
   for (auto& d : disp_data) {
     d.arrow_ = new rviz::Arrow(scene_manager_, scene_node_, shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(),
                                head_length_property_->getFloat(), head_radius_property_->getFloat());
@@ -171,7 +175,7 @@ void PoseWithCovarianceArrayDisplay::onInitialize() {
   updateColorAndAlpha();
 }
 
-PoseWithCovarianceArrayDisplay::~PoseWithCovarianceArrayDisplay() {
+Display::~Display() {
   if (initialized()) {
     while (disp_data.size() > 0) {
       delete disp_data.back().arrow_;
@@ -181,12 +185,12 @@ PoseWithCovarianceArrayDisplay::~PoseWithCovarianceArrayDisplay() {
   }
 }
 
-void PoseWithCovarianceArrayDisplay::onEnable() {
+void Display::onEnable() {
   MFDClass::onEnable();
   updateShapeVisibility();
 }
 
-void PoseWithCovarianceArrayDisplay::updateColorAndAlpha() {
+void Display::updateColorAndAlpha() {
   Ogre::ColourValue color = color_property_->getOgreColor();
   color.a                 = alpha_property_->getFloat();
 
@@ -197,21 +201,21 @@ void PoseWithCovarianceArrayDisplay::updateColorAndAlpha() {
   context_->queueRender();
 }
 
-void PoseWithCovarianceArrayDisplay::updateArrowGeometry() {
+void Display::updateArrowGeometry() {
   for (auto& d : disp_data) {
     d.arrow_->set(shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(), head_length_property_->getFloat(), head_radius_property_->getFloat());
   }
   context_->queueRender();
 }
 
-void PoseWithCovarianceArrayDisplay::updateAxisGeometry() {
+void Display::updateAxisGeometry() {
   for (auto& d : disp_data) {
     d.axes_->set(axes_length_property_->getFloat(), axes_radius_property_->getFloat());
   }
   context_->queueRender();
 }
 
-void PoseWithCovarianceArrayDisplay::updateShapeChoice() {
+void Display::updateShapeChoice() {
   bool use_arrow = (shape_property_->getOptionInt() == Arrow);
 
   color_property_->setHidden(!use_arrow);
@@ -229,7 +233,7 @@ void PoseWithCovarianceArrayDisplay::updateShapeChoice() {
   context_->queueRender();
 }
 
-void PoseWithCovarianceArrayDisplay::updateShapeVisibility() {
+void Display::updateShapeVisibility() {
   if (!pose_valid_) {
     for (auto& d : disp_data) {
       d.arrow_->getSceneNode()->setVisible(false);
@@ -246,7 +250,7 @@ void PoseWithCovarianceArrayDisplay::updateShapeVisibility() {
   }
 }
 
-void PoseWithCovarianceArrayDisplay::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::ConstPtr& message) {
+void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::ConstPtr& message) {
   while (disp_data.size() > 0) {
     delete disp_data.back().arrow_;
     delete disp_data.back().axes_;
@@ -310,13 +314,15 @@ void PoseWithCovarianceArrayDisplay::processMessage(const mrs_msgs::PoseWithCova
   }
 }
 
-void PoseWithCovarianceArrayDisplay::reset() {
+void Display::reset() {
   MFDClass::reset();
   pose_valid_ = false;
   updateShapeVisibility();
 }
 
+}  // namespace pose_with_covariance_array
+
 }  // namespace mrs_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(mrs_rviz_plugins::PoseWithCovarianceArrayDisplay, rviz::Display)
+PLUGINLIB_EXPORT_CLASS(mrs_rviz_plugins::pose_with_covariance_array::Display, rviz::Display)

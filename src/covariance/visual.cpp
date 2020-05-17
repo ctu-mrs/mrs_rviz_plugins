@@ -1,4 +1,4 @@
-#include <pose_with_covariance_array/covariance_visual.h>
+#include <covariance/visual.h>
 
 #include <rviz/ogre_helpers/shape.h>
 #include <rviz/validate_quaternions.h>
@@ -12,9 +12,6 @@
 #include <sstream>
 
 namespace rviz
-{
-
-namespace
 {
 
 double deg2rad(double degrees) {
@@ -154,9 +151,6 @@ void radianScaleToMetricScaleBounded(Ogre::Real& radian_scale, float max_degrees
     radian_scale = deg2rad(max_degrees);
   radian_scale = 2.0 * tan(radian_scale);
 }
-
-
-}  // namespace
 
 const float CovarianceVisual::max_degrees = 89.0;
 

@@ -19,6 +19,9 @@
   <depend>libqt5-core</depend>
   <depend>libqt5-gui</depend>
   <depend>libqt5-widgets</depend>
+  <depend>roscpp</depend>
+  <depend>pluginlib</depend>
+  <depend>cmake_modules</depend>
 
   <export>
     <rviz plugin="${prefix}/plugins.xml"/>

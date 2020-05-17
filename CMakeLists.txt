@@ -2,22 +2,11 @@ cmake_minimum_required(VERSION 2.8.3)
 project(mrs_rviz_plugins)
 
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  cmake_modules
   rviz
   mrs_msgs
   )
-
-catkin_package(
-  LIBRARIES MrsBumperRviz MrsPoseWithCovarianceArrayRviz
-  CATKIN_DEPENDS mrs_msgs rviz
-  )
-
-include_directories(${catkin_INCLUDE_DIRS}
-  include
-)
-
-link_directories(${catkin_LIBRARY_DIRS})
-
-# set(CMAKE_CXX_FLAGS "-g -O0")
 
 set(CMAKE_AUTOMOC ON)
 
@@ -33,27 +22,61 @@ else()
   set(QT_LIBRARIES Qt5::Widgets)
 endif()
 
-## I prefer the Qt signals and slots to avoid defining "emit", "slots",
-## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
-# add_definitions(-DQT_NO_KEYWORDS)
+link_directories(${catkin_LIBRARY_DIRS})
 
-add_library(MrsBumperRviz
-  src/mrs_bumper/mrs_bumper_display.cpp
-  src/mrs_bumper/mrs_bumper_visual.cpp
+add_definitions(-DQT_NO_KEYWORDS)
+
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS mrs_msgs rviz
   )
 
-target_link_libraries(MrsBumperRviz
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  )
+
+add_library(MrsRvizPlugins
+  # bumper
+  include/bumper/display.h
+  include/bumper/visual.h
+  src/bumper/display.cpp
+  src/bumper/visual.cpp
+  # covariance
+  include/covariance/property.h
+  include/covariance/visual.h
+  src/covariance/property.cpp
+  src/covariance/visual.cpp
+  # pose with covariance array
+  src/pose_with_covariance_array/display.cpp
+  )
+
+add_dependencies(MrsRvizPlugins
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
 
-add_library(MrsPoseWithCovarianceArrayRviz
-   src/pose_with_covariance_array/pose_with_covariance_array_display.cpp
-   src/pose_with_covariance_array/covariance_property.cpp
-   src/pose_with_covariance_array/covariance_visual.cpp
+## Install rules
+
+install(TARGETS
+  MrsRvizPlugins
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
-target_link_libraries(MrsPoseWithCovarianceArrayRviz
-  ${QT_LIBRARIES}
-  ${catkin_LIBRARIES}
-  )
+install(FILES
+  plugins.xml
+  DESTINATION
+  ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+# install(DIRECTORY media/
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/media)
+
+install(DIRECTORY icons/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons)
