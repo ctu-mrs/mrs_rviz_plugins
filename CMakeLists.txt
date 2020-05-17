@@ -96,6 +96,7 @@ add_dependencies(MrsPoseWithCovarianceArrayRviz
 target_link_libraries(MrsPoseWithCovarianceArrayRviz
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
+  MrsCovarianceRviz
   )
 
 ## RVIZ NAV GOAL
