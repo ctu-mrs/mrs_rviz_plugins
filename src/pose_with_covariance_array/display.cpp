@@ -85,18 +85,12 @@ public:
             aabbs.push_back(display_->disp_data[i].covariance_->getPositionShape()->getEntity()->getWorldBoundingBox());
           }
           if (display_->covariance_property_->getOrientationBool()) {
-            aabbs.push_back(display_->disp_data[i]
-                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kRoll)
-                                ->getEntity()
-                                ->getWorldBoundingBox());
-            aabbs.push_back(display_->disp_data[i]
-                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kPitch)
-                                ->getEntity()
-                                ->getWorldBoundingBox());
-            aabbs.push_back(display_->disp_data[i]
-                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kYaw)
-                                ->getEntity()
-                                ->getWorldBoundingBox());
+            aabbs.push_back(
+                display_->disp_data[i].covariance_->getOrientationShape(mrs_rviz_plugins::covariance::Visual::kRoll)->getEntity()->getWorldBoundingBox());
+            aabbs.push_back(
+                display_->disp_data[i].covariance_->getOrientationShape(mrs_rviz_plugins::covariance::Visual::kPitch)->getEntity()->getWorldBoundingBox());
+            aabbs.push_back(
+                display_->disp_data[i].covariance_->getOrientationShape(mrs_rviz_plugins::covariance::Visual::kYaw)->getEntity()->getWorldBoundingBox());
           }
         }
       }
@@ -163,8 +157,8 @@ Display::Display() : pose_valid_(false) {
 
   axes_radius_property_ = new rviz::FloatProperty("Axes Radius", 0.1, "Radius of each axis, in meters.", this, SLOT(updateAxisGeometry()));
 
-  covariance_property_ = new mrs_rviz_plugins::covariance::CovarianceProperty(
-      "Covariance", true, "Whether or not the covariances of the messages should be shown.", this, SLOT(queueRender()));
+  covariance_property_ =
+      new covariance::Property("Covariance", true, "Whether or not the covariances of the messages should be shown.", this, SLOT(queueRender()));
 }
 
 void Display::onInitialize() {

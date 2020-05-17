@@ -155,10 +155,10 @@ void radianScaleToMetricScaleBounded(Ogre::Real& radian_scale, float max_degrees
   radian_scale = 2.0 * tan(radian_scale);
 }
 
-const float CovarianceVisual::max_degrees = 89.0;
+const float Visual::max_degrees = 89.0;
 
-CovarianceVisual::CovarianceVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, bool is_local_rotation, bool is_visible, float pos_scale,
-                                   float ori_scale, float ori_offset)
+Visual::Visual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, bool is_local_rotation, bool is_visible, float pos_scale, float ori_scale,
+               float ori_offset)
     : Object(scene_manager), local_rotation_(is_local_rotation), pose_2d_(false), orientation_visible_(is_visible) {
   // Main node of the visual
   root_node_ = parent_node->createChildSceneNode();
@@ -224,7 +224,7 @@ CovarianceVisual::CovarianceVisual(Ogre::SceneManager* scene_manager, Ogre::Scen
   setOrientationOffset(ori_offset);
 }
 
-CovarianceVisual::~CovarianceVisual() {
+Visual::~Visual() {
   delete position_shape_;
   scene_manager_->destroySceneNode(position_node_->getName());
 
@@ -238,7 +238,7 @@ CovarianceVisual::~CovarianceVisual() {
   scene_manager_->destroySceneNode(root_node_->getName());
 }
 
-void CovarianceVisual::setCovariance(const geometry_msgs::PoseWithCovariance& pose) {
+void Visual::setCovariance(const geometry_msgs::PoseWithCovariance& pose) {
   // check for NaN in covariance
   for (unsigned i = 0; i < 3; ++i) {
     if (std::isnan(pose.covariance[i])) {
@@ -274,7 +274,7 @@ void CovarianceVisual::setCovariance(const geometry_msgs::PoseWithCovariance& po
   }
 }
 
-void CovarianceVisual::updatePosition(const Eigen::Matrix6d& covariance) {
+void Visual::updatePosition(const Eigen::Matrix6d& covariance) {
   // Compute shape and orientation for the position part of covariance
   Ogre::Vector3    shape_scale;
   Ogre::Quaternion shape_orientation;
@@ -293,7 +293,7 @@ void CovarianceVisual::updatePosition(const Eigen::Matrix6d& covariance) {
     ROS_WARN_STREAM("position shape_scale contains NaN: " << shape_scale);
 }
 
-void CovarianceVisual::updateOrientation(const Eigen::Matrix6d& covariance, ShapeIndex index) {
+void Visual::updateOrientation(const Eigen::Matrix6d& covariance, ShapeIndex index) {
   Ogre::Vector3    shape_scale;
   Ogre::Quaternion shape_orientation;
   // Compute shape and orientation for the orientation shape
@@ -351,19 +351,19 @@ void CovarianceVisual::updateOrientation(const Eigen::Matrix6d& covariance, Shap
     ROS_WARN_STREAM("orientation shape_scale contains NaN: " << shape_scale);
 }
 
-void CovarianceVisual::setScales(float pos_scale, float ori_scale) {
+void Visual::setScales(float pos_scale, float ori_scale) {
   setPositionScale(pos_scale);
   setOrientationScale(ori_scale);
 }
 
-void CovarianceVisual::setPositionScale(float pos_scale) {
+void Visual::setPositionScale(float pos_scale) {
   if (pose_2d_)
     position_scale_node_->setScale(pos_scale, pos_scale, 1.0);
   else
     position_scale_node_->setScale(pos_scale, pos_scale, pos_scale);
 }
 
-void CovarianceVisual::setOrientationOffset(float ori_offset) {
+void Visual::setOrientationOffset(float ori_offset) {
   // Scale the orientation root node to position the shapes along the axis
   orientation_root_node_->setScale(ori_offset, ori_offset, ori_offset);
   // The scale the offset_nodes as well so the displayed shape represents a 1-sigma
@@ -381,7 +381,7 @@ void CovarianceVisual::setOrientationOffset(float ori_offset) {
   }
 }
 
-void CovarianceVisual::setOrientationScale(float ori_scale) {
+void Visual::setOrientationScale(float ori_scale) {
   // Here we update the current scale factor, apply it to the current scale _in radians_,
   // convert it to meters and apply to the shape scale. Note we have different invariant
   // scales in the 3D and in 2D.
@@ -409,61 +409,61 @@ void CovarianceVisual::setOrientationScale(float ori_scale) {
   }
 }
 
-void CovarianceVisual::setPositionColor(const Ogre::ColourValue& c) {
+void Visual::setPositionColor(const Ogre::ColourValue& c) {
   position_shape_->setColor(c);
 }
 
-void CovarianceVisual::setOrientationColor(const Ogre::ColourValue& c) {
+void Visual::setOrientationColor(const Ogre::ColourValue& c) {
   for (int i = 0; i < kNumOriShapes; i++) {
     orientation_shape_[i]->setColor(c);
   }
 }
 
-void CovarianceVisual::setOrientationColorToRGB(float a) {
+void Visual::setOrientationColorToRGB(float a) {
   orientation_shape_[kRoll]->setColor(Ogre::ColourValue(1.0, 0.0, 0.0, a));
   orientation_shape_[kPitch]->setColor(Ogre::ColourValue(0.0, 1.0, 0.0, a));
   orientation_shape_[kYaw]->setColor(Ogre::ColourValue(0.0, 0.0, 1.0, a));
   orientation_shape_[kYaw2D]->setColor(Ogre::ColourValue(0.0, 0.0, 1.0, a));
 }
 
-void CovarianceVisual::setPositionColor(float r, float g, float b, float a) {
+void Visual::setPositionColor(float r, float g, float b, float a) {
   setPositionColor(Ogre::ColourValue(r, g, b, a));
 }
 
-void CovarianceVisual::setOrientationColor(float r, float g, float b, float a) {
+void Visual::setOrientationColor(float r, float g, float b, float a) {
   setOrientationColor(Ogre::ColourValue(r, g, b, a));
 }
 
-const Ogre::Vector3& CovarianceVisual::getPositionCovarianceScale() {
+const Ogre::Vector3& Visual::getPositionCovarianceScale() {
   return position_node_->getScale();
 }
 
-const Ogre::Quaternion& CovarianceVisual::getPositionCovarianceOrientation() {
+const Ogre::Quaternion& Visual::getPositionCovarianceOrientation() {
   return position_node_->getOrientation();
 }
 
-void CovarianceVisual::setUserData(const Ogre::Any& data) {
+void Visual::setUserData(const Ogre::Any& data) {
   position_shape_->setUserData(data);
   for (int i = 0; i < kNumOriShapes; i++) {
     orientation_shape_[i]->setUserData(data);
   }
 }
 
-void CovarianceVisual::setVisible(bool visible) {
+void Visual::setVisible(bool visible) {
   setPositionVisible(visible);
   setOrientationVisible(visible);
 }
 
-void CovarianceVisual::setPositionVisible(bool visible) {
+void Visual::setPositionVisible(bool visible) {
   position_node_->setVisible(visible);
 }
 
-void CovarianceVisual::setOrientationVisible(bool visible) {
+void Visual::setOrientationVisible(bool visible) {
   orientation_visible_ = visible;
   updateOrientationVisibility();
 }
 
-void CovarianceVisual::updateOrientationVisibility() {
+void Visual::updateOrientationVisibility() {
   orientation_offset_node_[kRoll]->setVisible(orientation_visible_ && !pose_2d_);
   orientation_offset_node_[kPitch]->setVisible(orientation_visible_ && !pose_2d_);
   orientation_offset_node_[kYaw]->setVisible(orientation_visible_ && !pose_2d_);
@@ -471,23 +471,23 @@ void CovarianceVisual::updateOrientationVisibility() {
 }
 
 
-const Ogre::Vector3& CovarianceVisual::getPosition() {
+const Ogre::Vector3& Visual::getPosition() {
   return position_node_->getPosition();
 }
 
-const Ogre::Quaternion& CovarianceVisual::getOrientation() {
+const Ogre::Quaternion& Visual::getOrientation() {
   return position_node_->getOrientation();
 }
 
-void CovarianceVisual::setPosition(const Ogre::Vector3& position) {
+void Visual::setPosition(const Ogre::Vector3& position) {
   root_node_->setPosition(position);
 }
 
-void CovarianceVisual::setOrientation(const Ogre::Quaternion& orientation) {
+void Visual::setOrientation(const Ogre::Quaternion& orientation) {
   root_node_->setOrientation(orientation);
 }
 
-void CovarianceVisual::setRotatingFrame(bool is_local_rotation) {
+void Visual::setRotatingFrame(bool is_local_rotation) {
   if (local_rotation_ == is_local_rotation)
     return;
 
@@ -499,7 +499,7 @@ void CovarianceVisual::setRotatingFrame(bool is_local_rotation) {
     fixed_orientation_node_->addChild(root_node_->removeChild(orientation_root_node_->getName()));
 }
 
-rviz::Shape* CovarianceVisual::getOrientationShape(ShapeIndex index) {
+rviz::Shape* Visual::getOrientationShape(ShapeIndex index) {
   return orientation_shape_[index];
 }
 

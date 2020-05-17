@@ -30,9 +30,9 @@ namespace pose_with_covariance_array
 
 struct display_object
 {
-  rviz::Arrow*                                                      arrow_;
-  rviz::Axes*                                                       axes_;
-  boost::shared_ptr<mrs_rviz_plugins::covariance::CovarianceVisual> covariance_;
+  rviz::Arrow*                                            arrow_;
+  rviz::Axes*                                             axes_;
+  boost::shared_ptr<mrs_rviz_plugins::covariance::Visual> covariance_;
 };
 
 class DisplaySelectionHandler;
@@ -87,7 +87,7 @@ private:
   rviz::FloatProperty* axes_length_property_;
   rviz::FloatProperty* axes_radius_property_;
 
-  mrs_rviz_plugins::covariance::CovarianceProperty* covariance_property_;
+  covariance::Property* covariance_property_;
 
   friend class DisplaySelectionHandler;
 };

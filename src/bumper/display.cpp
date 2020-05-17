@@ -25,6 +25,8 @@ namespace mrs_rviz_plugins
   namespace bumper
   {
 
+    /* Display::Display() //{ */
+
     Display::Display()
     {
       color_property_ = new rviz::ColorProperty("Color", QColor(204, 51, 204), "Color to draw the shapes.", this, SLOT(updateColorAndAlpha()));
@@ -64,6 +66,8 @@ namespace mrs_rviz_plugins
       show_no_data_property_ = new rviz::BoolProperty("Show sectors with no data", false, "Whether to show sectors, for which no sensory data is available.",
                                                       this, SLOT(updateShowUndetected()));
     }
+
+    //}
 
     // After the top-level rviz::Display::initialize() does its own setup,
     // it calls the subclass's onInitialize() function.  This is where we
@@ -202,7 +206,6 @@ namespace mrs_rviz_plugins
       {
         visual = boost::make_shared<Visual>(context_->getSceneManager(), scene_node_);
       }
-
 
       float alpha = alpha_property_->getFloat();
       Ogre::ColourValue color = color_property_->getOgreColor();

@@ -16,8 +16,7 @@ namespace mrs_rviz_plugins
 namespace covariance
 {
 
-CovarianceProperty::CovarianceProperty(const QString& name, bool default_value, const QString& description, Property* parent, const char* changed_slot,
-                                       QObject* receiver)
+Property::Property(const QString& name, bool default_value, const QString& description, rviz::Property* parent, const char* changed_slot, QObject* receiver)
     // NOTE: changed_slot and receiver aren't passed to BoolProperty here, but initialized at the end of this constructor
     : BoolProperty(name, default_value, description, parent) {
 
@@ -85,23 +84,23 @@ CovarianceProperty::CovarianceProperty(const QString& name, bool default_value, 
   setDisableChildrenIfFalse(true);
 }
 
-CovarianceProperty::~CovarianceProperty() {
+Property::~Property() {
 }
 
-void CovarianceProperty::updateColorStyleChoice() {
+void Property::updateColorStyleChoice() {
   bool use_unique_color = (orientation_colorstyle_property_->getOptionInt() == Unique);
   orientation_color_property_->setHidden(!use_unique_color);
   updateColorAndAlphaAndScaleAndOffset();
 }
 
-void CovarianceProperty::updateColorAndAlphaAndScaleAndOffset() {
+void Property::updateColorAndAlphaAndScaleAndOffset() {
   D_Covariance::iterator it_cov  = covariances_.begin();
   D_Covariance::iterator end_cov = covariances_.end();
   for (; it_cov != end_cov; ++it_cov)
     updateColorAndAlphaAndScaleAndOffset(*it_cov);
 }
 
-void CovarianceProperty::updateColorAndAlphaAndScaleAndOffset(const CovarianceVisualPtr& visual) {
+void Property::updateColorAndAlphaAndScaleAndOffset(const VisualPtr& visual) {
   float  pos_alpha = position_alpha_property_->getFloat();
   float  pos_scale = position_scale_property_->getFloat();
   QColor pos_color = position_color_property_->getColor();
@@ -121,14 +120,14 @@ void CovarianceProperty::updateColorAndAlphaAndScaleAndOffset(const CovarianceVi
   visual->setOrientationScale(ori_scale);
 }
 
-void CovarianceProperty::updateVisibility() {
+void Property::updateVisibility() {
   D_Covariance::iterator it_cov  = covariances_.begin();
   D_Covariance::iterator end_cov = covariances_.end();
   for (; it_cov != end_cov; ++it_cov)
     updateVisibility(*it_cov);
 }
 
-void CovarianceProperty::updateVisibility(const CovarianceVisualPtr& visual) {
+void Property::updateVisibility(const VisualPtr& visual) {
   bool show_covariance = getBool();
   if (!show_covariance) {
     visual->setVisible(false);
@@ -141,33 +140,33 @@ void CovarianceProperty::updateVisibility(const CovarianceVisualPtr& visual) {
   }
 }
 
-void CovarianceProperty::updateOrientationFrame() {
+void Property::updateOrientationFrame() {
   D_Covariance::iterator it_cov  = covariances_.begin();
   D_Covariance::iterator end_cov = covariances_.end();
   for (; it_cov != end_cov; ++it_cov)
     updateOrientationFrame(*it_cov);
 }
 
-void CovarianceProperty::updateOrientationFrame(const CovarianceVisualPtr& visual) {
+void Property::updateOrientationFrame(const VisualPtr& visual) {
   bool use_rotating_frame = (orientation_frame_property_->getOptionInt() == Local);
   visual->setRotatingFrame(use_rotating_frame);
 }
 
-void CovarianceProperty::popFrontVisual() {
+void Property::popFrontVisual() {
   covariances_.pop_front();
 }
 
-void CovarianceProperty::clearVisual() {
+void Property::clearVisual() {
   covariances_.clear();
 }
 
-size_t CovarianceProperty::sizeVisual() {
+size_t Property::sizeVisual() {
   return covariances_.size();
 }
 
-CovarianceProperty::CovarianceVisualPtr CovarianceProperty::createAndPushBackVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node) {
-  bool                use_rotating_frame = (orientation_frame_property_->getOptionInt() == Local);
-  CovarianceVisualPtr visual(new CovarianceVisual(scene_manager, parent_node, use_rotating_frame));
+Property::VisualPtr Property::createAndPushBackVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node) {
+  bool      use_rotating_frame = (orientation_frame_property_->getOptionInt() == Local);
+  VisualPtr visual(new Visual(scene_manager, parent_node, use_rotating_frame));
   updateVisibility(visual);
   updateOrientationFrame(visual);
   updateColorAndAlphaAndScaleAndOffset(visual);
@@ -175,11 +174,11 @@ CovarianceProperty::CovarianceVisualPtr CovarianceProperty::createAndPushBackVis
   return visual;
 }
 
-bool CovarianceProperty::getPositionBool() {
+bool Property::getPositionBool() {
   return position_property_->getBool();
 }
 
-bool CovarianceProperty::getOrientationBool() {
+bool Property::getOrientationBool() {
   return orientation_property_->getBool();
 }
 

@@ -29,7 +29,7 @@ typedef Matrix<double, 6, 6> Matrix6d;
 namespace rviz
 {
 class Shape;
-class CovarianceProperty;
+/* class CovarianceProperty; */
 }  // namespace rviz
 
 namespace mrs_rviz_plugins
@@ -39,10 +39,10 @@ namespace covariance
 {
 
 /**
- * \class CovarianceVisual
- * \brief CovarianceVisual consisting in a ellipse for position and 2D ellipses along the axis for orientation.
+ * \class Visual
+ * \brief Visual consisting in a ellipse for position and 2D ellipses along the axis for orientation.
  */
-class CovarianceVisual : public rviz::Object {
+class Visual : public rviz::Object {
 public:
   enum ShapeIndex
   {
@@ -64,9 +64,9 @@ public:
    * @param pos_scale Scale of the position covariance
    * @param ori_scale Scale of the orientation covariance
    */
-  CovarianceVisual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, bool is_local_rotation, bool is_visible = true, float pos_scale = 1.0f,
-                   float ori_scale = 0.1f, float ori_offset = 0.1f);
-  virtual ~CovarianceVisual();
+  Visual(Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node, bool is_local_rotation, bool is_visible = true, float pos_scale = 1.0f,
+         float ori_scale = 0.1f, float ori_offset = 0.1f);
+  virtual ~Visual();
 
   /**
    * \brief Set the position and orientation scales for this covariance
@@ -212,8 +212,8 @@ private:
   virtual const Ogre::Vector3&    getPosition();
   virtual const Ogre::Quaternion& getOrientation();
 
-  // Make CovarianceProperty friend class so it create CovarianceVisual objects
-  friend class rviz::CovarianceProperty;
+  // Make CovarianceProperty friend class so it create Visual objects
+  friend class Property;
 };
 
 }  // namespace covariance
