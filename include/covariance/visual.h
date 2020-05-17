@@ -28,9 +28,15 @@ typedef Matrix<double, 6, 6> Matrix6d;
 
 namespace rviz
 {
-
 class Shape;
 class CovarianceProperty;
+}  // namespace rviz
+
+namespace mrs_rviz_plugins
+{
+
+namespace covariance
+{
 
 /**
  * \class CovarianceVisual
@@ -207,9 +213,11 @@ private:
   virtual const Ogre::Quaternion& getOrientation();
 
   // Make CovarianceProperty friend class so it create CovarianceVisual objects
-  friend class CovarianceProperty;
+  friend class rviz::CovarianceProperty;
 };
 
-}  // namespace rviz
+}  // namespace covariance
+
+}  // namespace mrs_rviz_plugins
 
 #endif /* COVARIANCE_VISUAL_H */

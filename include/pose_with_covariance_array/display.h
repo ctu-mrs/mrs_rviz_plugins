@@ -8,9 +8,11 @@
 #include <rviz/message_filter_display.h>
 #include <rviz/selection/forwards.h>
 
+#include <covariance/property.h>
+#include <covariance/visual.h>
+
 namespace rviz
 {
-
 class Arrow;
 class Axes;
 class ColorProperty;
@@ -18,9 +20,6 @@ class EnumProperty;
 class FloatProperty;
 class BoolProperty;
 class Shape;
-
-class CovarianceVisual;
-class CovarianceProperty;
 }  // namespace rviz
 
 namespace mrs_rviz_plugins
@@ -29,17 +28,16 @@ namespace mrs_rviz_plugins
 namespace pose_with_covariance_array
 {
 
-struct PWC_display_object
+struct display_object
 {
-  rviz::Arrow*                              arrow_;
-  rviz::Axes*                               axes_;
-  boost::shared_ptr<rviz::CovarianceVisual> covariance_;
+  rviz::Arrow*                                                      arrow_;
+  rviz::Axes*                                                       axes_;
+  boost::shared_ptr<mrs_rviz_plugins::covariance::CovarianceVisual> covariance_;
 };
 
 class DisplaySelectionHandler;
 typedef boost::shared_ptr<DisplaySelectionHandler> DisplaySelectionHandlerPtr;
 
-/** @brief Displays the pose from a geometry_msgs::PoseWithCovarianceStamped message. */
 class Display : public rviz::MessageFilterDisplay<mrs_msgs::PoseWithCovarianceArrayStamped> {
   Q_OBJECT
 public:
@@ -71,7 +69,7 @@ private:
 
   virtual void processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::ConstPtr& message);
 
-  std::vector<PWC_display_object> disp_data;
+  std::vector<display_object> disp_data;
 
   bool                       pose_valid_;
   DisplaySelectionHandlerPtr coll_handler_;
@@ -89,7 +87,7 @@ private:
   rviz::FloatProperty* axes_length_property_;
   rviz::FloatProperty* axes_radius_property_;
 
-  rviz::CovarianceProperty* covariance_property_;
+  mrs_rviz_plugins::covariance::CovarianceProperty* covariance_property_;
 
   friend class DisplaySelectionHandler;
 };

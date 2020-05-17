@@ -18,6 +18,7 @@
 #include <rviz/validate_quaternions.h>
 
 #include <pose_with_covariance_array/display.h>
+
 #include <covariance/visual.h>
 #include <covariance/property.h>
 
@@ -44,7 +45,7 @@ public:
   DisplaySelectionHandler(Display* display, rviz::DisplayContext* context) : SelectionHandler(context), display_(display) {
   }
 
-  void createProperties(const rviz::Picked& obj, rviz::Property* parent_property) {
+  void createProperties([[maybe_unused]] const rviz::Picked& obj, [[maybe_unused]] rviz::Property* parent_property) {
     /* stored_properties */
     /* Property* cat = new Property( "Pose " + display_->getName(), QVariant(), "", parent_property ); */
     /* properties_.push_back( cat ); */
@@ -65,8 +66,10 @@ public:
     /* covariance_orientation_property_->setReadOnly( true ); */
   }
 
-  void getAABBs(const rviz::Picked& obj, rviz::V_AABB& aabbs) {
-    for (int i = 0; i < stored_properties.size(); i++) {
+  void getAABBs([[maybe_unused]] const rviz::Picked& obj, rviz::V_AABB& aabbs) {
+
+    for (int i = 0; i < int(stored_properties.size()); i++) {
+
       if (display_->pose_valid_) {
         if (display_->shape_property_->getOptionInt() == Display::Arrow) {
           aabbs.push_back(display_->disp_data[i].arrow_->getHead()->getEntity()->getWorldBoundingBox());
@@ -82,9 +85,18 @@ public:
             aabbs.push_back(display_->disp_data[i].covariance_->getPositionShape()->getEntity()->getWorldBoundingBox());
           }
           if (display_->covariance_property_->getOrientationBool()) {
-            aabbs.push_back(display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kRoll)->getEntity()->getWorldBoundingBox());
-            aabbs.push_back(display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kPitch)->getEntity()->getWorldBoundingBox());
-            aabbs.push_back(display_->disp_data[i].covariance_->getOrientationShape(rviz::CovarianceVisual::kYaw)->getEntity()->getWorldBoundingBox());
+            aabbs.push_back(display_->disp_data[i]
+                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kRoll)
+                                ->getEntity()
+                                ->getWorldBoundingBox());
+            aabbs.push_back(display_->disp_data[i]
+                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kPitch)
+                                ->getEntity()
+                                ->getWorldBoundingBox());
+            aabbs.push_back(display_->disp_data[i]
+                                .covariance_->getOrientationShape(mrs_rviz_plugins::covariance::CovarianceVisual::kYaw)
+                                ->getEntity()
+                                ->getWorldBoundingBox());
           }
         }
       }
@@ -92,12 +104,16 @@ public:
   }
 
   void setMessage(const mrs_msgs::PoseWithCovarianceArrayStampedConstPtr& message) {
+
     // properties_.size() should only be > 0 after createProperties()
     // and before destroyProperties(), during which frame_property_,
     // position_property_, and orientation_property_ should be valid
     // pointers.
+
     if (properties_.size() > 0) {
+
       stored_properties.clear();
+
       for (int i = 0; i < (int)(message->poses.size()); i++) {
         stored_properties.push_back(display_property());
         stored_properties.back().frame_property_->setStdString(message->header.frame_id);
@@ -147,8 +163,8 @@ Display::Display() : pose_valid_(false) {
 
   axes_radius_property_ = new rviz::FloatProperty("Axes Radius", 0.1, "Radius of each axis, in meters.", this, SLOT(updateAxisGeometry()));
 
-  covariance_property_ =
-      new rviz::CovarianceProperty("Covariance", true, "Whether or not the covariances of the messages should be shown.", this, SLOT(queueRender()));
+  covariance_property_ = new mrs_rviz_plugins::covariance::CovarianceProperty(
+      "Covariance", true, "Whether or not the covariances of the messages should be shown.", this, SLOT(queueRender()));
 }
 
 void Display::onInitialize() {
@@ -286,7 +302,7 @@ void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::Con
     pose_valid_ = true;
     updateShapeVisibility();
 
-    disp_data.push_back(PWC_display_object());
+    disp_data.push_back(display_object());
 
     disp_data[i].arrow_ = new rviz::Arrow(scene_manager_, scene_node_, shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(),
                                           head_length_property_->getFloat(), head_radius_property_->getFloat());

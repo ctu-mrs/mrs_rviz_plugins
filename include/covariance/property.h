@@ -7,6 +7,8 @@
 
 #include <rviz/properties/bool_property.h>
 
+#include <covariance/visual.h>
+
 namespace Ogre
 {
 class SceneManager;
@@ -20,9 +22,14 @@ class Property;
 class ColorProperty;
 class FloatProperty;
 class EnumProperty;
-class CovarianceVisual;
+}  // end namespace rviz
 
-/** @brief Property specialized to provide getter for booleans. */
+namespace mrs_rviz_plugins
+{
+
+namespace covariance
+{
+
 class CovarianceProperty : public rviz::BoolProperty {
   Q_OBJECT
 public:
@@ -83,6 +90,8 @@ private:
   rviz::FloatProperty* orientation_scale_property_;
 };
 
-}  // end namespace rviz
+}  // namespace covariance
+
+}  // namespace mrs_rviz_plugins
 
 #endif  // COVARIANCE_PROPERTY_H

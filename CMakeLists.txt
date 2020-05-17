@@ -48,6 +48,7 @@ add_library(MrsRvizPlugins
   src/covariance/property.cpp
   src/covariance/visual.cpp
   # pose with covariance array
+  include/pose_with_covariance_array/display.h
   src/pose_with_covariance_array/display.cpp
   )
 

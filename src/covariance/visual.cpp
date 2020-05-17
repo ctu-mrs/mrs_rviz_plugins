@@ -11,7 +11,10 @@
 
 #include <sstream>
 
-namespace rviz
+namespace mrs_rviz_plugins
+{
+
+namespace covariance
 {
 
 double deg2rad(double degrees) {
@@ -253,7 +256,7 @@ void CovarianceVisual::setCovariance(const geometry_msgs::PoseWithCovariance& po
 
   // store orientation in Ogre structure
   Ogre::Quaternion ori;
-  normalizeQuaternion(pose.pose.orientation, ori);
+  rviz::normalizeQuaternion(pose.pose.orientation, ori);
 
   // Set the orientation of the fixed node. Since this node is attached to the root node, it's orientation will be the
   // inverse of pose's orientation.
@@ -500,4 +503,6 @@ rviz::Shape* CovarianceVisual::getOrientationShape(ShapeIndex index) {
   return orientation_shape_[index];
 }
 
-}  // namespace rviz
+}  // namespace covariance
+
+}  // namespace mrs_rviz_plugins
