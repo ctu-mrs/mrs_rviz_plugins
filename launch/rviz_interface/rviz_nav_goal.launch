@@ -1,0 +1,24 @@
+<launch>
+
+  <!-- will it run using GNU debugger? -->
+  <arg name="PROFILER" default="false" />
+  <arg name="DEBUG" default="false" />
+  <arg name="USERNAME" default="$(env USER)" />
+
+  <arg unless="$(arg DEBUG)" name="launch_prefix_debug" value=""/>
+  <arg     if="$(arg DEBUG)" name="launch_prefix_debug" value="debug_roslaunch"/>
+
+    <!-- RvizNavGoal nodelet -->
+  <node pkg="nodelet" type="nodelet" name="rviz_nav_goal_$(arg USERNAME)" args="standalone mrs_rviz_plugins/RvizNavGoal" launch-prefix="$(arg launch_prefix_debug)" output="screen">
+
+    <!-- Parameters -->
+    <param name="enable_profiler" type="bool" value="$(arg PROFILER)" />
+
+      <!-- Subscribers -->
+    <remap from="~rviz_nav_goal_in" to="/move_base_simple/goal" />
+
+      <!-- Publishers -->
+
+  </node>
+
+</launch>

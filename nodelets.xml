@@ -1,0 +1,11 @@
+<library path="lib/libMrsRvizPoseEstimate">
+  <class name="mrs_rviz_plugins/RvizPoseEstimate" type="mrs_rviz_plugins::rviz_interface::PoseEstimate" base_class_type="nodelet::Nodelet">
+    <description>RvizPoseEstimate nodelet</description>
+  </class>
+</library>
+
+<library path="lib/libMrsRvizNavGoal">
+  <class name="mrs_rviz_plugins/RvizNavGoal" type="mrs_rviz_plugins::rviz_interface::NavGoal" base_class_type="nodelet::Nodelet">
+    <description>RvizNavGoal nodelet</description>
+  </class>
+</library>

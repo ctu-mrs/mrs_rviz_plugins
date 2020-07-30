@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- args corresponding to environment variables -->
+  <arg name="PROFILER" default="$(optenv PROFILER false)" />
+
+  <include file="$(find mrs_rviz_plugins)/launch/rviz_interface/rviz_pose_estimate.launch">
+
+    <arg name="PROFILER" value="$(arg PROFILER)" />
+
+  </include>
+
+  <include file="$(find mrs_rviz_plugins)/launch/rviz_interface/rviz_nav_goal.launch">
+
+    <arg name="PROFILER" value="$(arg PROFILER)" />
+
+  </include>
+
+</launch>
