@@ -294,7 +294,6 @@ void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::Con
     }
 
     pose_valid_ = true;
-    updateShapeVisibility();
 
     disp_data.push_back(display_object());
 
@@ -322,6 +321,7 @@ void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::Con
 
     context_->queueRender();
   }
+  updateShapeVisibility();
 }
 
 void Display::reset() {
