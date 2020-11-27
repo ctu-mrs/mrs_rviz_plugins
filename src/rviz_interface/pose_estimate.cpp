@@ -15,10 +15,21 @@
 #include <mrs_lib/profiler.h>
 #include <mrs_lib/transformer.h>
 #include <mrs_lib/mutex.h>
+#include <mrs_lib/timer.h>
 
 #include <mrs_msgs/TransformPoseSrv.h>
 
 #include <std_srvs/Trigger.h>
+
+//}
+
+/* using //{ */
+
+#if ROS_VERSION_MINIMUM(1, 15, 8)
+using Timer = mrs_lib::ThreadTimer;
+#else
+using Timer = mrs_lib::ROSTimer;
+#endif
 
 //}
 
@@ -45,7 +56,7 @@ private:
   ros::Publisher  pub_pose_array_;
   ros::Publisher  pub_marker_array_;
 
-  ros::Timer timer_pub_;
+  Timer timer_pub_;
 
   // publisher rate
   int _pub_rate_;
@@ -110,7 +121,7 @@ void PoseEstimate::onInit() {
   // |                           timers                           |
   // --------------------------------------------------------------
 
-  timer_pub_ = nh_.createTimer(ros::Rate(_pub_rate_), &PoseEstimate::timerPub, this);
+  timer_pub_ = Timer(nh_, ros::Rate(_pub_rate_), &PoseEstimate::timerPub, this);
 
   // --------------------------------------------------------------
   // |                          services                          |
