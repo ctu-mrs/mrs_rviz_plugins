@@ -1,4 +1,4 @@
-# MRS Rviz Plugins [![Build Status](https://travis-ci.com/ctu-mrs/mrs_rviz_plugins.svg?branch=master)](https://travis-ci.com/ctu-mrs/mrs_rviz_plugins)
+# MRS Rviz Plugins [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/CI/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions)
 
 ![](.fig/thumbnail.jpg)
 

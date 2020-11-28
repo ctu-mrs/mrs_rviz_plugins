@@ -1,15 +1,24 @@
 #!/bin/bash
-# author: Robert Penicka
 set -e
 
 distro=`lsb_release -r | awk '{ print $2 }'`
 [ "$distro" = "18.04" ] && ROS_DISTRO="melodic"
 [ "$distro" = "20.04" ] && ROS_DISTRO="noetic"
 
-echo "Starting install preparation" 
+echo "Starting install" 
+
+# get the current commit SHA
+SHA=`git rev-parse HEAD`
+
+# get the current package name
+PACKAGE_NAME=${PWD##*/}
 
 sudo apt-get -y update -qq
 sudo apt-mark hold openssh-server
+
+# 20.04 problem fix
+sudo apt-get -y install grub-efi
+sudo update-grub
 
 # the "gce-compute-image-packages" package often freezes the installation at some point
 # the installation freezes when it tries to manage some systemd services
@@ -30,13 +39,6 @@ echo "running the main install.sh"
 
 gitman update
 
-# get the current commit SHA
-cd "$TRAVIS_BUILD_DIR"
-SHA=`git rev-parse HEAD`
-
-# get the current package name
-PACKAGE_NAME=${PWD##*/}
-
 # checkout the SHA
 cd ~/uav_core/.gitman/$PACKAGE_NAME
 git checkout "$SHA"
@@ -47,4 +49,4 @@ ln -s ~/uav_core
 source /opt/ros/$ROS_DISTRO/setup.bash
 cd ~/catkin_ws
 
-echo "install part ended"
+echo "install ended"
