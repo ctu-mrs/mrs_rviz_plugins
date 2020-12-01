@@ -75,8 +75,9 @@ namespace mrs_rviz_plugins
                                                 const unsigned n_horizontal_sectors);
       std::shared_ptr<rviz::Object> draw_horizontal_sector(const double dist, const double vfov, const double hfov, const double yaw);
       std::shared_ptr<rviz::Object> draw_topdown_sector(const double dist, const double vfov, const unsigned n_horizontal_sectors);
-      std::shared_ptr<rviz::Object> draw_lidar_1d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
-      std::shared_ptr<rviz::Object> draw_lidar_2d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
+      std::shared_ptr<rviz::Object> draw_lidar1d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
+      std::shared_ptr<rviz::Object> draw_lidar2d(const double dist, const unsigned sector_it, const unsigned n_horizontal_sectors);
+      std::shared_ptr<rviz::Object> draw_lidar3d(const double dist, const double vfov, const unsigned sector_it, const unsigned n_horizontal_sectors);
 
       double m_arr_head_diameter;
       double m_arr_shaft_diameter;
