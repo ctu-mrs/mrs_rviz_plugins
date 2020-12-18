@@ -1,8 +1,8 @@
-# MRS Rviz Plugins [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/CI/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions)
+# MRS Rviz Plugins
 
 ![](.fig/thumbnail.jpg)
 
-| Build status | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/mrs_simulation/actions) |
+| Build status | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) |
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Plugins
