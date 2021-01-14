@@ -64,12 +64,13 @@ Q_OBJECT
         /* std::cout << "changed current camera to " << camera_->getName() << std::endl; */
       }
 
-      void fillCircle(Ogre::ManualObject* circle, float x, float y, float cx, float cy, int n_pts = 32)
+      void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32)
       {
         unsigned point_index = 0;
         for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
         {
-          circle->position(x + cx * cos(theta), y + cy * sin(theta), -1);
+          const Ogre::Vector3 pos = q*Ogre::Vector3(r * cos(theta), r * sin(theta), 0) + Ogre::Vector3(x, y, z);
+          circle->position(pos);
           circle->index(point_index++);
         }
         circle->index(0); // Rejoins the last point to the first.
@@ -112,46 +113,12 @@ Q_OBJECT
         float last_x, last_y, last_cx, last_cy;
         void cameraPreRenderScene(Ogre::Camera *cam)
         {
-          const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_;
-          const auto projMat = cam->getProjectionMatrix();
-          float x, y, cx, cy;
-          // z < 0 means in front of cam
-          if (eyeSpacePos.z < 0.0f)
-          {
-            // calculate projected pos
-            const Ogre::Vector3 screenSpacePos = projMat * eyeSpacePos;
-            x = screenSpacePos.x;
-            y = screenSpacePos.y;
-            // calculate projected size
-            const Ogre::Vector3 sphere(vis_->radius_, vis_->radius_, eyeSpacePos.z);
-            const Ogre::Vector3 spheresize = cam->getProjectionMatrix() * sphere;
-            cx = spheresize.x/2.0f;
-            cy = spheresize.y/2.0f;
-          }
-          else
-          {
-            x = y = cx = cy = 0.0f;
-          }
-
-          if (
-              x == last_x
-           && y == last_y
-           && cx == last_cx
-           && cy == last_cy)
-            return;
-
-          last_x = x;
-          last_y = y;
-          last_cx = cx;
-          last_cy = cy;
-
+          /* const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_; */
+          /* const auto projMat = cam->getProjectionMatrix(); */
+          const Ogre::Quaternion q = cam->getOrientation();
           circle_->beginUpdate(0);
-          vis_->fillCircle(circle_, x, y, cx, cy);
+          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, q);
           circle_->end();
-
-          std::cout << "\tx\ty\tcx\tcy" << std::endl;
-          std::cout << "\t" << x << "\t" << y << "\t" << cx << "\t" << cy << std::endl;
-          std::cout << "visible: " << circle_->isVisible() << std::endl;
         }
       };
     };

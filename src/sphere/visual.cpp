@@ -82,10 +82,8 @@ namespace mrs_rviz_plugins
         static size_t circ_n = 0;
         circle_ = scene_manager_->createManualObject("circle_name" + std::to_string(circ_n++));
         circle_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
-        fillCircle(circle_, 0, 0, 0, 0);
+        fillCircle(circle_, position_.x, position_.y, position_.z, radius_);
         circle_->end();
-        circle_->setUseIdentityProjection(true);
-        circle_->setUseIdentityView(true);
         frame_node_->attachObject(circle_);
       }
 
