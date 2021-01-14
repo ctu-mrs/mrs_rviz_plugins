@@ -64,6 +64,17 @@ Q_OBJECT
         /* std::cout << "changed current camera to " << camera_->getName() << std::endl; */
       }
 
+      void fillCircle(Ogre::ManualObject* circle, float x, float y, float cx, float cy, int n_pts = 32)
+      {
+        unsigned point_index = 0;
+        for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
+        {
+          circle->position(x + cx * cos(theta), y + cy * sin(theta), -1);
+          circle->index(point_index++);
+        }
+        circle->index(0); // Rejoins the last point to the first.
+      }
+
     private:
       bool draw_xy_;
       bool draw_yz_;
@@ -101,8 +112,6 @@ Q_OBJECT
         float last_x, last_y, last_cx, last_cy;
         void cameraPreRenderScene(Ogre::Camera *cam)
         {
-          const float n_pts = 35;
-
           const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_;
           const auto projMat = cam->getProjectionMatrix();
           float x, y, cx, cy;
@@ -116,8 +125,8 @@ Q_OBJECT
             // calculate projected size
             const Ogre::Vector3 sphere(vis_->radius_, vis_->radius_, eyeSpacePos.z);
             const Ogre::Vector3 spheresize = cam->getProjectionMatrix() * sphere;
-            cx = spheresize.x;
-            cy = spheresize.y;
+            cx = spheresize.x/2.0f;
+            cy = spheresize.y/2.0f;
           }
           else
           {
@@ -136,19 +145,13 @@ Q_OBJECT
           last_cx = cx;
           last_cy = cy;
 
+          circle_->beginUpdate(0);
+          vis_->fillCircle(circle_, x, y, cx, cy);
+          circle_->end();
+
           std::cout << "\tx\ty\tcx\tcy" << std::endl;
           std::cout << "\t" << x << "\t" << y << "\t" << cx << "\t" << cy << std::endl;
-
-          circle_->clear();
-          circle_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
-          unsigned point_index = 0;
-          for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
-          {
-            circle_->position(x + cx * cos(theta), y + cy * sin(theta), -1);
-            circle_->index(point_index++);
-          }
-          circle_->index(0); // Rejoins the last point to the first.
-          circle_->end();
+          std::cout << "visible: " << circle_->isVisible() << std::endl;
         }
       };
     };
