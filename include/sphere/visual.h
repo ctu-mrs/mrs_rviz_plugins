@@ -61,7 +61,7 @@ Q_OBJECT
 
         camera_ = context_->getViewManager()->getCurrent()->getCamera();
         camera_->addListener(mylistener_);
-        std::cout << "changed current camera to " << camera_->getName() << std::endl;
+        /* std::cout << "changed current camera to " << camera_->getName() << std::endl; */
       }
 
     private:
@@ -98,39 +98,53 @@ Q_OBJECT
           : vis_(vis), circle_(vis_->circle_)
         {}
 
-        float last_width, last_height, last_x, last_y;
+        float last_x, last_y, last_cx, last_cy;
         void cameraPreRenderScene(Ogre::Camera *cam)
         {
           const float n_pts = 35;
 
-          float l, t, r, b;
-          cam->projectSphere(Ogre::Sphere(vis_->position_, vis_->radius_), &l, &t, &r, &b);
-          const float width = r-l;
-          const float height = t-b;
-          /* const float radius = std::max(width, height); */
-          const float x = l + (width)/2.0f;
-          const float y = b + (height)/2.0f;
+          const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_;
+          const auto projMat = cam->getProjectionMatrix();
+          float x, y, cx, cy;
+          // z < 0 means in front of cam
+          if (eyeSpacePos.z < 0.0f)
+          {
+            // calculate projected pos
+            const Ogre::Vector3 screenSpacePos = projMat * eyeSpacePos;
+            x = screenSpacePos.x;
+            y = screenSpacePos.y;
+            // calculate projected size
+            const Ogre::Vector3 sphere(vis_->radius_, vis_->radius_, eyeSpacePos.z);
+            const Ogre::Vector3 spheresize = cam->getProjectionMatrix() * sphere;
+            cx = spheresize.x;
+            cy = spheresize.y;
+          }
+          else
+          {
+            x = y = cx = cy = 0.0f;
+          }
 
-          if (width == last_width
-           && height == last_height
-           && x == last_x
-           && y == last_y)
+          if (
+              x == last_x
+           && y == last_y
+           && cx == last_cx
+           && cy == last_cy)
             return;
 
-          last_width = width;
-          last_height = height;
           last_x = x;
           last_y = y;
+          last_cx = cx;
+          last_cy = cy;
+
+          std::cout << "\tx\ty\tcx\tcy" << std::endl;
+          std::cout << "\t" << x << "\t" << y << "\t" << cx << "\t" << cy << std::endl;
 
           circle_->clear();
-          circle_->setUseIdentityProjection(true);
-          circle_->setUseIdentityView(true);
-          circle_->setQueryFlags(0);
           circle_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
           unsigned point_index = 0;
           for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
           {
-            circle_->position(x + width * cos(theta), y + height * sin(theta), -1);
+            circle_->position(x + cx * cos(theta), y + cy * sin(theta), -1);
             circle_->index(point_index++);
           }
           circle_->index(0); // Rejoins the last point to the first.

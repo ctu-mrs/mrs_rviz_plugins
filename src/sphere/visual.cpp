@@ -81,6 +81,8 @@ namespace mrs_rviz_plugins
       {
         static size_t circ_n = 0;
         circle_ = scene_manager_->createManualObject("circle_name" + std::to_string(circ_n++));
+        circle_->setUseIdentityProjection(true);
+        circle_->setUseIdentityView(true);
         frame_node_->attachObject(circle_);
       }
 
