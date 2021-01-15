@@ -1,6 +1,9 @@
-# MRS Rviz Plugins [![Build Status](https://travis-ci.com/ctu-mrs/mrs_rviz_plugins.svg?branch=master)](https://travis-ci.com/ctu-mrs/mrs_rviz_plugins)
+# MRS Rviz Plugins
 
 ![](.fig/thumbnail.jpg)
+
+| Build status | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Melodic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ## Plugins
 
