@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 from numpy import random
@@ -23,11 +23,11 @@ def get_uav_color(uav_name):
 
         uav=(0.6, 0.6, 0.6, transp)
     )
-    if colors.has_key(uav_name):
+    if uav_name in colors:
         return color_to_text(colors[uav_name])
     else:
         idx = random.randint(0, len(colors.keys()))
-        key = colors.keys()[idx]
+        key = list(colors.keys())[idx]
         return color_to_text(colors[key])
 
 def main():
