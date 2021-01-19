@@ -70,6 +70,22 @@ namespace mrs_rviz_plugins
       }
     }
 
+    void Visual::setColor(const float red, const float green, const float blue, const float alpha)
+    {
+      red_ = red;
+      green_ = green;
+      blue_ = blue;
+      alpha_ = alpha;
+      if (circle_)
+      {
+        std::lock_guard<std::mutex> lck(circle_quat_mtx_);
+        circle_->beginUpdate(0);
+        circle_->colour(Ogre::ColourValue(red_, green_, blue_, alpha_));
+        fillCircle(circle_, position_.x, position_.y, position_.z, radius_, last_quat_);
+        circle_->end();
+      }
+    }
+
     void Visual::setMessage(const mrs_msgs::Sphere::ConstPtr& msg)
     {
       radius_ = msg->radius;
@@ -79,9 +95,10 @@ namespace mrs_rviz_plugins
 
       if (!circle_)
       {
-        static size_t circ_n = 0;
-        circle_ = scene_manager_->createManualObject("circle_name" + std::to_string(circ_n++));
+        circle_ = scene_manager_->createManualObject("circle_dynamic");
+        circle_->setDynamic(true); // the geometry will be updated regularly - reflect that pls
         circle_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
+        circle_->colour(Ogre::ColourValue(red_, green_, blue_, alpha_));
         fillCircle(circle_, position_.x, position_.y, position_.z, radius_);
         circle_->end();
         frame_node_->attachObject(circle_);
@@ -93,25 +110,22 @@ namespace mrs_rviz_plugins
         camera_->addListener(mylistener_);
       }
 
-      /* // Assuming scene_mgr is your SceneManager. */
-
-      /* // Assuming scene_mgr is your SceneManager. */
-      /* Ogre::ManualObject* circle_xy = scene_manager_->createManualObject("circle_name"); */
-      /* const float radius = m_radius; */
-      /* const float n_pts = 35; */
-
-      /* if (draw_xy_) */
-      /* { */
-      /*   circle_xy->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP); */
-      /*   unsigned point_index = 0; */
-      /*   for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts) */
-      /*   { */
-      /*     circle_xy->position(radius * cos(theta), radius * sin(theta), 0); */
-      /*     circle_xy->index(point_index++); */
-      /*   } */
-      /*   circle_xy->index(0); // Rejoins the last point to the first. */
-      /*   circle_xy->end(); */
-      /* } */
+      if (draw_xy_)
+      {
+        if (!circle_xy_)
+        {
+          circle_ = scene_manager_->createManualObject("circle_name" + std::to_string(circ_n++));
+          circle_xy->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
+          unsigned point_index = 0;
+          for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
+          {
+            circle_xy->position(radius * cos(theta), radius * sin(theta), 0);
+            circle_xy->index(point_index++);
+          }
+          circle_xy->index(0); // Rejoins the last point to the first.
+          circle_xy->end();
+        }
+      }
 
       /* if (draw_yz_) */
       /* { */

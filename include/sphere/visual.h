@@ -14,6 +14,8 @@
 #include <rviz/view_manager.h>
 #include <rviz/view_controller.h>
 
+#include <mutex>
+
 namespace Ogre
 {
   class Vector3;
@@ -53,6 +55,9 @@ Q_OBJECT
       // responsible for visualization.
       void setFramePosition(const Ogre::Vector3& position);
       void setFrameOrientation(const Ogre::Quaternion& orientation);
+
+      void setColor(const float red, const float green, const float blue, const float alpha);
+
  private Q_SLOTS:
       void onViewControllerChanged()
       {
@@ -76,14 +81,32 @@ Q_OBJECT
         circle->index(0); // Rejoins the last point to the first.
       }
 
+      Ogre::ManualObject* initCircle(float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32)
+      {
+        unsigned point_index = 0;
+        for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
+        {
+          const Ogre::Vector3 pos = q*Ogre::Vector3(r * cos(theta), r * sin(theta), 0) + Ogre::Vector3(x, y, z);
+          circle->position(pos);
+          circle->index(point_index++);
+        }
+        circle->index(0); // Rejoins the last point to the first.
+      }
+
     private:
+      // values set in Rviz
       bool draw_xy_;
       bool draw_yz_;
       bool draw_xz_;
+      float red_, green_, blue_, alpha_;
+
+      // values received from the message
       double radius_;
       Ogre::Vector3 position_;
 
+      std::mutex circle_quat_mtx_;
       Ogre::ManualObject* circle_;
+      Ogre::Quaternion last_quat_;
 
       Ogre::Camera* camera_;
 
@@ -115,9 +138,10 @@ Q_OBJECT
         {
           /* const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_; */
           /* const auto projMat = cam->getProjectionMatrix(); */
-          const Ogre::Quaternion q = cam->getOrientation();
+          std::lock_guard<std::mutex> lck(vis_->circle_quat_mtx_);
+          vis_->last_quat_ = cam->getOrientation();
           circle_->beginUpdate(0);
-          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, q);
+          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, vis_->last_quat_);
           circle_->end();
         }
       };

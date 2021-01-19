@@ -56,11 +56,6 @@ namespace mrs_rviz_plugins
       // These Qt slots get connected to signals indicating changes in the user-editable properties.
     private Q_SLOTS:
       void updateColorAndAlpha();
-      void updateHistoryLength();
-      void updateDisplayMode();
-      void updateShowUndetected();
-      void updateShowNoData();
-      void updateCollisions();
 
       // Function to handle an incoming ROS message.
     private:
@@ -69,6 +64,10 @@ namespace mrs_rviz_plugins
       // Storage for the list of visuals.  It is a circular buffer where
       // data gets popped from the front (oldest) and pushed to the back (newest)
       boost::shared_ptr<Visual> visual_;
+
+      // User-editable property variables.
+      rviz::ColorProperty* color_property_;
+      rviz::FloatProperty* alpha_property_;
     };
 
   }  // namespace sphere

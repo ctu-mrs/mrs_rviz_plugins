@@ -45,6 +45,12 @@ namespace mrs_rviz_plugins
     // superclass.
     void Display::onInitialize()
     {
+      color_property_ = new rviz::ColorProperty("Color", QColor(204, 51, 204), "Color to draw the shapes.", this, SLOT(updateColorAndAlpha()));
+
+      alpha_property_ = new rviz::FloatProperty("Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this, SLOT(updateColorAndAlpha()));
+      alpha_property_->setMin(0.0);
+      alpha_property_->setMax(1.0);
+
       MFDClass::onInitialize();
     }
 
@@ -57,6 +63,14 @@ namespace mrs_rviz_plugins
     {
       MFDClass::reset();
       visual_ = nullptr;
+    }
+
+    // Set the current color and alpha values the each visual.
+    void Display::updateColorAndAlpha()
+    {
+      const float alpha = alpha_property_->getFloat();
+      const Ogre::ColourValue color = color_property_->getOgreColor();
+      visual_->setColor(color.r, color.g, color.b, alpha);
     }
 
     // This is our callback to handle an incoming message.
