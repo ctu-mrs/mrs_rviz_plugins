@@ -264,11 +264,17 @@ void Visual::setCovariance(const geometry_msgs::PoseWithCovariance& pose) {
   // Map covariance to a Eigen::Matrix
   Eigen::Map<const Eigen::Matrix<double, 6, 6>> covariance(pose.covariance.data());
 
+
+  Eigen::Quaterniond qori(ori.w,ori.x,ori.y,ori.z);
+  Eigen::Matrix3d rotmat = qori.toRotationMatrix();
+  Eigen::Matrix6d covarianceRotated = covariance;
+  covarianceRotated.bottomRightCorner(3,3) = rotmat.transpose()*covariance.bottomRightCorner(3,3)*rotmat;
+
   updatePosition(covariance);
   if (!pose_2d_) {
-    updateOrientation(covariance, kRoll);
-    updateOrientation(covariance, kPitch);
-    updateOrientation(covariance, kYaw);
+    updateOrientation(covarianceRotated, kRoll);
+    updateOrientation(covarianceRotated, kPitch);
+    updateOrientation(covarianceRotated, kYaw);
   } else {
     updateOrientation(covariance, kYaw2D);
   }

@@ -9,6 +9,7 @@
     <node name="tf_published_uav_marker_link" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 $(arg base_link) $(arg base_link)/uav_marker" />
     <node name="tf_published_props_link" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 $(arg base_link) $(arg base_link)/props" />
     <node name="tf_published_arms_link" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 $(arg base_link) $(arg base_link)/arms" />
+    <node name="tf_published_arms_red_link" pkg="tf2_ros" type="static_transform_publisher" args="0 0 0 0 0 0 $(arg base_link) $(arg base_link)/arms_red" />
   </group>
 
 </launch>
