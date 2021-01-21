@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from numpy import random
+import random
 
 def color_to_text(color):
     return "{:.0e} {:.0e} {:.0e} {:.0e}".format(color[0], color[1], color[2], color[3])
@@ -26,9 +26,7 @@ def get_uav_color(uav_name):
     if uav_name in colors:
         return color_to_text(colors[uav_name])
     else:
-        idx = random.randint(0, len(colors.keys()))
-        key = list(colors.keys())[idx]
-        return color_to_text(colors[key])
+        return color_to_text(random.choice(list(colors.values())))
 
 def main():
     fname = sys.argv[1]
@@ -36,7 +34,7 @@ def main():
     path = sys.argv[3]
 
     uav_color = get_uav_color(uav_name)
-    
+
     with open(fname, 'r') as fhandle:
         for line in fhandle.readlines():
             line = line.replace("[REPLACEME]uav_color[/REPLACEME]", uav_color)
