@@ -65,9 +65,9 @@ Q_OBJECT
  private Q_SLOTS:
       void onViewControllerChanged();
 
-      void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32);
+      void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q, int n_pts = 32);
 
-      Ogre::ManualObject* initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32);
+      Ogre::ManualObject* initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q, int n_pts = 32);
 
       void freeCircle(Ogre::ManualObject*& circle_ptr);
 
@@ -117,9 +117,10 @@ Q_OBJECT
           /* const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_; */
           /* const auto projMat = cam->getProjectionMatrix(); */
           std::lock_guard<std::mutex> lck(vis_->circles_quat_mtx_);
-          vis_->circle_quats_.at(0) = cam->getOrientation();
+          Ogre::Quaternion& q = vis_->circle_quats_.at(0);
+          q = vis_->frame_node_->convertWorldToLocalOrientation(cam->getOrientation());
           circle_->beginUpdate(0);
-          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, vis_->circle_quats_.at(0));
+          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, q);
           circle_->end();
         }
       };
