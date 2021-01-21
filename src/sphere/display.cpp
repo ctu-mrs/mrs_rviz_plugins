@@ -45,11 +45,14 @@ namespace mrs_rviz_plugins
     // superclass.
     void Display::onInitialize()
     {
-      color_property_ = new rviz::ColorProperty("Color", QColor(204, 51, 204), "Color to draw the shapes.", this, SLOT(updateColorAndAlpha()));
+      color_property_ = std::make_unique<rviz::ColorProperty>("Color", QColor(255, 0, 255), "Color to draw the shapes.", this, SLOT(updateColorAndAlpha()));
 
-      alpha_property_ = new rviz::FloatProperty("Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this, SLOT(updateColorAndAlpha()));
+      alpha_property_ = std::make_unique<rviz::FloatProperty>("Alpha", 1.0, "0 is fully transparent, 1.0 is fully opaque.", this, SLOT(updateColorAndAlpha()));
       alpha_property_->setMin(0.0);
       alpha_property_->setMax(1.0);
+
+      draw_dynamic_property_ = std::make_unique<rviz::BoolProperty>("Draw dynamic circle", true, "Whether the circle always facing the user should be drawn or not.", this, SLOT(updateDrawDynamic()));
+      draw_static_property_ = std::make_unique<rviz::BoolProperty>("Draw static circles", true, "Whether the circles always oriented with the message's coordinate frame axes should be drawn or not.", this, SLOT(updateDrawStatic()));
 
       MFDClass::onInitialize();
     }
@@ -58,20 +61,34 @@ namespace mrs_rviz_plugins
     {
     }
 
-    // Clear the visuals by deleting their objects.
+    // Clear the visual by deleting its object.
     void Display::reset()
     {
       MFDClass::reset();
       visual_ = nullptr;
     }
 
-    // Set the current color and alpha values the each visual.
+    // Set the current color and alpha values the visual.
     void Display::updateColorAndAlpha()
     {
       const float alpha = alpha_property_->getFloat();
       const Ogre::ColourValue color = color_property_->getOgreColor();
       if (visual_)
         visual_->setColor(color.r, color.g, color.b, alpha);
+    }
+
+    void Display::updateDrawDynamic()
+    {
+      const bool draw = draw_dynamic_property_->getBool();
+      if (visual_)
+        visual_->setDrawDynamic(draw);
+    }
+
+    void Display::updateDrawStatic()
+    {
+      const bool draw = draw_static_property_->getBool();
+      if (visual_)
+        visual_->setDrawStatic(draw);
     }
 
     // This is our callback to handle an incoming message.
@@ -89,7 +106,13 @@ namespace mrs_rviz_plugins
       }
 
       if (!visual_)
-        visual_ = boost::make_shared<Visual>(context_, scene_node_);
+      {
+        visual_ = std::make_unique<Visual>(context_, scene_node_);
+        // initialize the set values
+        updateColorAndAlpha();
+        updateDrawDynamic();
+        updateDrawStatic();
+      }
 
       // Now set or update the contents of the chosen visual.
       visual_->setFramePosition(position);

@@ -82,10 +82,22 @@ namespace mrs_rviz_plugins
       draw_dynamic_ = draw;
       // if shouldn't be drawn and is drawn, delete it
       if (!draw && circle_dyn_)
+      {
         freeCircle(circle_dyn_);
+        camera_->removeListener(cam_listener_);
+        camera_ = nullptr;
+      }
       // if should be drawn and isn't drawn, create it
       else if (draw && !circle_dyn_ && got_msg_)
+      {
         circle_dyn_ = initCircle("circle_dyn", position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
+        // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
+        if (!camera_)
+        {
+          camera_ = context_->getViewManager()->getCurrent()->getCamera();
+          camera_->addListener(cam_listener_);
+        }
+      }
     }
 
     void Visual::setDrawStatic(const bool draw)
@@ -100,7 +112,7 @@ namespace mrs_rviz_plugins
           freeCircle(circ);
         // if should be drawn and isn't drawn, create it
         else if (draw && !circ && got_msg_)
-          circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_);
+          circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it));
       }
     }
 
@@ -165,7 +177,6 @@ namespace mrs_rviz_plugins
       if (draw_dynamic_ && !circle_dyn_)
       {
         circle_dyn_ = initCircle("circle_dyn", position_.x, position_.y, position_.z, radius_);
-
         // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
         if (!camera_)
         {

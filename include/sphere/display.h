@@ -4,11 +4,11 @@
 #define MRS_BUMPER_DISPLAY_H
 
 #ifndef Q_MOC_RUN
-#include <boost/circular_buffer.hpp>
-
 #include <rviz/message_filter_display.h>
 #include <mrs_msgs/Sphere.h>
 #endif
+
+#include <memory>
 
 namespace Ogre
 {
@@ -56,6 +56,8 @@ namespace mrs_rviz_plugins
       // These Qt slots get connected to signals indicating changes in the user-editable properties.
     private Q_SLOTS:
       void updateColorAndAlpha();
+      void updateDrawDynamic();
+      void updateDrawStatic();
 
       // Function to handle an incoming ROS message.
     private:
@@ -63,11 +65,13 @@ namespace mrs_rviz_plugins
 
       // Storage for the list of visuals.  It is a circular buffer where
       // data gets popped from the front (oldest) and pushed to the back (newest)
-      boost::shared_ptr<Visual> visual_;
+      std::unique_ptr<Visual> visual_;
 
       // User-editable property variables.
-      rviz::ColorProperty* color_property_;
-      rviz::FloatProperty* alpha_property_;
+      std::unique_ptr<rviz::ColorProperty> color_property_;
+      std::unique_ptr<rviz::FloatProperty> alpha_property_;
+      std::unique_ptr<rviz::BoolProperty> draw_dynamic_property_;
+      std::unique_ptr<rviz::BoolProperty> draw_static_property_;
     };
 
   }  // namespace sphere
