@@ -26,8 +26,11 @@ else()
   set(QT_LIBRARIES Qt5::Widgets)
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 link_directories(${catkin_LIBRARY_DIRS})
 
@@ -59,6 +62,25 @@ add_dependencies(MrsBumperRviz
   )
 
 target_link_libraries(MrsBumperRviz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## SPHERE VIZUALIZATION
+
+add_library(MrsSphereRviz
+  include/sphere/display.h
+  include/sphere/visual.h
+  src/sphere/display.cpp
+  src/sphere/visual.cpp
+  )
+
+add_dependencies(MrsSphereRviz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsSphereRviz
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )

@@ -1,3 +1,10 @@
+<library path="lib/libMrsSphereRviz">
+  <class name="mrs_rviz_plugins/Sphere" type="mrs_rviz_plugins::sphere::Display" base_class_type="rviz::Display">
+    <description>Display tool for visualizing mrs_msgs/Sphere messages.</description>
+    <message_type>mrs_msgs/Sphere</message_type>
+  </class>
+</library>
+
 <library path="lib/libMrsBumperRviz">
   <class name="mrs_rviz_plugins/Bumper" type="mrs_rviz_plugins::bumper::Display" base_class_type="rviz::Display">
     <description>Display tool for visualizing mrs_msgs/ObstacleSectors messages.</description>
