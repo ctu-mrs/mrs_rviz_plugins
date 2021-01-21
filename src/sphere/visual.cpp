@@ -67,12 +67,12 @@ namespace mrs_rviz_plugins
       // Destroy the frame node since we don't need it anymore.
       scene_manager_->destroySceneNode(frame_node_);
 
-      if (cam_listener_)
+      if (camera_)
       {
         camera_->removeListener(cam_listener_);
-        delete cam_listener_;
-        cam_listener_ = nullptr;
       }
+      delete cam_listener_;
+      cam_listener_ = nullptr;
 
       for (auto& circ : circles_)
         freeCircle(circ);
