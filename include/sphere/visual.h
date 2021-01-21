@@ -59,6 +59,8 @@ Q_OBJECT
       void setColor(const float red, const float green, const float blue, const float alpha);
       void setDrawDynamic(const bool draw);
       void setDrawStatic(const bool draw);
+      void setDashedDynamic(const bool dashed);
+      void setDashedStatic(const bool dashed);
 
       static int sphere_idx;
 
@@ -67,7 +69,7 @@ Q_OBJECT
 
       void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q, int n_pts = 32);
 
-      Ogre::ManualObject* initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q, int n_pts = 32);
+      Ogre::ManualObject* initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q, bool dashed, int n_pts = 32);
 
       void freeCircle(Ogre::ManualObject*& circle_ptr);
 
@@ -77,6 +79,8 @@ Q_OBJECT
       // values set in Rviz
       bool draw_dynamic_ = true;
       bool draw_static_ = true;
+      bool dashed_dynamic_ = false;
+      bool dashed_static_ = false;
       float red_, green_, blue_, alpha_;
 
       // values received from the message

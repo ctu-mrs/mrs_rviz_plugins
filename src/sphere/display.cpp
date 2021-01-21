@@ -54,6 +54,9 @@ namespace mrs_rviz_plugins
       draw_dynamic_property_ = std::make_unique<rviz::BoolProperty>("Draw dynamic circle", true, "Whether the circle always facing the user should be drawn or not.", this, SLOT(updateDrawDynamic()));
       draw_static_property_ = std::make_unique<rviz::BoolProperty>("Draw static circles", true, "Whether the circles always oriented with the message's coordinate frame axes should be drawn or not.", this, SLOT(updateDrawStatic()));
 
+      dashed_dynamic_property_ = std::make_unique<rviz::BoolProperty>("Dash dynamic circle", true, "Whether the circle always facing the user should be dashed or not.", this, SLOT(updateDashedDynamic()));
+      dashed_static_property_ = std::make_unique<rviz::BoolProperty>("Dash static circles", true, "Whether the circles always oriented with the message's coordinate frame axes should be dashed or not.", this, SLOT(updateDashedStatic()));
+
       MFDClass::onInitialize();
     }
 
@@ -91,6 +94,20 @@ namespace mrs_rviz_plugins
         visual_->setDrawStatic(draw);
     }
 
+    void Display::updateDashedDynamic()
+    {
+      const bool draw = dashed_dynamic_property_->getBool();
+      if (visual_)
+        visual_->setDashedDynamic(draw);
+    }
+
+    void Display::updateDashedStatic()
+    {
+      const bool draw = dashed_static_property_->getBool();
+      if (visual_)
+        visual_->setDashedStatic(draw);
+    }
+
     // This is our callback to handle an incoming message.
     void Display::processMessage(const mrs_msgs::Sphere::ConstPtr& msg)
     {
@@ -112,6 +129,8 @@ namespace mrs_rviz_plugins
         updateColorAndAlpha();
         updateDrawDynamic();
         updateDrawStatic();
+        updateDashedDynamic();
+        updateDashedStatic();
       }
 
       // Now set or update the contents of the chosen visual.

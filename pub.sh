@@ -9,7 +9,7 @@ rostopic pub /sphere mrs_msgs/Sphere "header:
 position:
   x: 1.0
   y: 1.0
-  z: 1.0
+  z: 10.0
 radius: 10.0" 
 
 # rostopic pub /pt geometry_msgs/PointStamped "header:

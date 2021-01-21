@@ -92,7 +92,7 @@ namespace mrs_rviz_plugins
       // if should be drawn and isn't drawn, create it
       else if (draw && !circle_dyn_ && got_msg_)
       {
-        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
+        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0), dashed_dynamic_);
         // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
         if (!camera_)
         {
@@ -114,7 +114,35 @@ namespace mrs_rviz_plugins
           freeCircle(circ);
         // if should be drawn and isn't drawn, create it
         else if (draw && !circ && got_msg_)
-          circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it));
+          circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it), dashed_static_);
+      }
+    }
+
+    void Visual::setDashedDynamic(const bool dashed)
+    {
+      std::lock_guard<std::mutex> lck(circles_quat_mtx_);
+      dashed_dynamic_ = dashed;
+      // if shouldn't be drawn and is drawn, delete it
+      if (circle_dyn_)
+      {
+        freeCircle(circle_dyn_);
+        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0), dashed_dynamic_);
+      }
+    }
+
+    void Visual::setDashedStatic(const bool dashed)
+    {
+      std::lock_guard<std::mutex> lck(circles_quat_mtx_);
+      dashed_static_ = dashed;
+      // if shouldn't be drawn and is drawn, delete it
+      for (int it = 1; it < circles_.size(); it++)
+      {
+        auto& circ = circles_.at(it);
+        if (circ)
+        {
+          freeCircle(circ);
+          circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it), dashed_static_);
+        }
       }
     }
 
@@ -157,10 +185,11 @@ namespace mrs_rviz_plugins
       circle->index(0); // Rejoins the last point to the first.
     }
 
-    Ogre::ManualObject* Visual::initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q, int n_pts)
+    Ogre::ManualObject* Visual::initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q, bool dashed, int n_pts)
     {
       Ogre::ManualObject* circle = scene_manager_->createManualObject(name);
-      circle->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP);
+      const Ogre::RenderOperation::OperationType op = dashed ? Ogre::RenderOperation::OT_LINE_LIST : Ogre::RenderOperation::OT_LINE_STRIP;
+      circle->begin("BaseWhiteNoLighting", op);
       fillCircle(circle, x, y, z, r, q, n_pts);
       circle->end();
       frame_node_->attachObject(circle);
@@ -178,7 +207,7 @@ namespace mrs_rviz_plugins
       // dynamic circle is the one which is always oriented towards the viewer in Rviz
       if (draw_dynamic_ && !circle_dyn_)
       {
-        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
+        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0), dashed_dynamic_);
         // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
         if (!camera_)
         {
@@ -196,7 +225,7 @@ namespace mrs_rviz_plugins
           if (!circ)
           {
             // if the circle is not initialized yet, do it
-            circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it));
+            circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it), dashed_static_);
           }
           else
           {

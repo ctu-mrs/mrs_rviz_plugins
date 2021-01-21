@@ -58,6 +58,8 @@ namespace mrs_rviz_plugins
       void updateColorAndAlpha();
       void updateDrawDynamic();
       void updateDrawStatic();
+      void updateDashedDynamic();
+      void updateDashedStatic();
 
       // Function to handle an incoming ROS message.
     private:
@@ -72,6 +74,8 @@ namespace mrs_rviz_plugins
       std::unique_ptr<rviz::FloatProperty> alpha_property_;
       std::unique_ptr<rviz::BoolProperty> draw_dynamic_property_;
       std::unique_ptr<rviz::BoolProperty> draw_static_property_;
+      std::unique_ptr<rviz::BoolProperty> dashed_dynamic_property_;
+      std::unique_ptr<rviz::BoolProperty> dashed_static_property_;
     };
 
   }  // namespace sphere
