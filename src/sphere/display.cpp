@@ -70,7 +70,8 @@ namespace mrs_rviz_plugins
     {
       const float alpha = alpha_property_->getFloat();
       const Ogre::ColourValue color = color_property_->getOgreColor();
-      visual_->setColor(color.r, color.g, color.b, alpha);
+      if (visual_)
+        visual_->setColor(color.r, color.g, color.b, alpha);
     }
 
     // This is our callback to handle an incoming message.

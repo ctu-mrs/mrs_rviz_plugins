@@ -57,80 +57,56 @@ Q_OBJECT
       void setFrameOrientation(const Ogre::Quaternion& orientation);
 
       void setColor(const float red, const float green, const float blue, const float alpha);
+      void setDrawDynamic(const bool draw);
+      void setDrawStatic(const bool draw);
 
  private Q_SLOTS:
-      void onViewControllerChanged()
-      {
-        if (!camera_)
-          return;
+      void onViewControllerChanged();
 
-        camera_ = context_->getViewManager()->getCurrent()->getCamera();
-        camera_->addListener(mylistener_);
-        /* std::cout << "changed current camera to " << camera_->getName() << std::endl; */
-      }
+      void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32);
 
-      void fillCircle(Ogre::ManualObject* circle, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32)
-      {
-        unsigned point_index = 0;
-        for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
-        {
-          const Ogre::Vector3 pos = q*Ogre::Vector3(r * cos(theta), r * sin(theta), 0) + Ogre::Vector3(x, y, z);
-          circle->position(pos);
-          circle->index(point_index++);
-        }
-        circle->index(0); // Rejoins the last point to the first.
-      }
+      Ogre::ManualObject* initCircle(const std::string& name, float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32);
 
-      Ogre::ManualObject* initCircle(float x, float y, float z, float r, const Ogre::Quaternion& q = {}, int n_pts = 32)
-      {
-        unsigned point_index = 0;
-        for (float theta = 0; theta <= 2 * Ogre::Math::PI; theta += Ogre::Math::PI / n_pts)
-        {
-          const Ogre::Vector3 pos = q*Ogre::Vector3(r * cos(theta), r * sin(theta), 0) + Ogre::Vector3(x, y, z);
-          circle->position(pos);
-          circle->index(point_index++);
-        }
-        circle->index(0); // Rejoins the last point to the first.
-      }
+      void freeCircle(Ogre::ManualObject*& circle_ptr);
 
     private:
+      bool got_msg_ = false;
+
       // values set in Rviz
-      bool draw_xy_;
-      bool draw_yz_;
-      bool draw_xz_;
+      bool draw_dynamic_ = true;
+      bool draw_static_ = true;
       float red_, green_, blue_, alpha_;
 
       // values received from the message
       double radius_;
       Ogre::Vector3 position_;
 
-      std::mutex circle_quat_mtx_;
-      Ogre::ManualObject* circle_;
-      Ogre::Quaternion last_quat_;
+      std::mutex circles_quat_mtx_;
+      std::array<Ogre::ManualObject*, 4> circles_ = {nullptr};
+      std::array<std::string, 4> circle_names_ = {"circle_dyn", "circle_xy", "circle_yz", "circle_xz"};
+      std::array<Ogre::Quaternion, 4> circle_quats_ = {};
+      Ogre::ManualObject*& circle_dyn_ = circles_[0];
 
-      Ogre::Camera* camera_;
+      Ogre::Camera* camera_ = nullptr;
 
-      rviz::DisplayContext* context_;
+      rviz::DisplayContext* context_; // initialized in constructor
 
       // A SceneNode whose pose is set to match the coordinate frame of
       // the sphere message header.
-      Ogre::SceneNode* frame_node_;
+      Ogre::SceneNode* frame_node_; // initialized in constructor
 
       // The SceneManager, kept here only so the destructor can ask it to
       // destroy the ``frame_node_``.
-      Ogre::SceneManager* scene_manager_;
+      Ogre::SceneManager* scene_manager_; // initialized in constructor
 
-      class MyListener;
-      MyListener* mylistener_;
-
-      class MyListener : public Ogre::Camera::Listener
+      class CameraListener : public Ogre::Camera::Listener
       {
         Visual* vis_;
         Ogre::ManualObject*& circle_;
 
         public:
-        MyListener(Visual* vis)
-          : vis_(vis), circle_(vis_->circle_)
+        CameraListener(Visual* vis)
+          : vis_(vis), circle_(vis_->circle_dyn_)
         {}
 
         float last_x, last_y, last_cx, last_cy;
@@ -138,13 +114,15 @@ Q_OBJECT
         {
           /* const Ogre::Vector3 eyeSpacePos = cam->getViewMatrix(true) * vis_->position_; */
           /* const auto projMat = cam->getProjectionMatrix(); */
-          std::lock_guard<std::mutex> lck(vis_->circle_quat_mtx_);
-          vis_->last_quat_ = cam->getOrientation();
+          std::lock_guard<std::mutex> lck(vis_->circles_quat_mtx_);
+          vis_->circle_quats_.at(0) = cam->getOrientation();
           circle_->beginUpdate(0);
-          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, vis_->last_quat_);
+          vis_->fillCircle(circle_, vis_->position_.x, vis_->position_.y, vis_->position_.z, vis_->radius_, vis_->circle_quats_.at(0));
           circle_->end();
         }
       };
+
+      CameraListener* cam_listener_ = new CameraListener(this);
     };
 
   }  // namespace sphere
