@@ -7,10 +7,10 @@ rostopic pub /sphere mrs_msgs/Sphere "header:
     nsecs: 0
   frame_id: 'uav91/aloam_origin'
 position:
-  x: 5.0
-  y: 2.0
-  z: 2.0
-radius: 1.0" 
+  x: 1.0
+  y: 1.0
+  z: 1.0
+radius: 10.0" 
 
 # rostopic pub /pt geometry_msgs/PointStamped "header:
 #   seq: 0

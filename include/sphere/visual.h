@@ -60,6 +60,8 @@ Q_OBJECT
       void setDrawDynamic(const bool draw);
       void setDrawStatic(const bool draw);
 
+      static int sphere_idx;
+
  private Q_SLOTS:
       void onViewControllerChanged();
 
@@ -83,7 +85,7 @@ Q_OBJECT
 
       std::mutex circles_quat_mtx_;
       std::array<Ogre::ManualObject*, 4> circles_ = {nullptr};
-      std::array<std::string, 4> circle_names_ = {"circle_dyn", "circle_xy", "circle_yz", "circle_xz"};
+      std::array<std::string, 4> circle_names_ = {"circle_dyn" + std::to_string(sphere_idx), "circle_xy" + std::to_string(sphere_idx), "circle_yz" + std::to_string(sphere_idx), "circle_xz" + std::to_string(sphere_idx)};
       std::array<Ogre::Quaternion, 4> circle_quats_ = {};
       Ogre::ManualObject*& circle_dyn_ = circles_[0];
 

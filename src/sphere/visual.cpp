@@ -23,9 +23,11 @@ namespace mrs_rviz_plugins
   namespace sphere
   {
 
-    // BEGIN_TUTORIAL
+    int Visual::sphere_idx = 0;
+
     Visual::Visual(rviz::DisplayContext* context, Ogre::SceneNode* parent_node)
     {
+      Visual::sphere_idx++;
       context_ = context;
       scene_manager_ = context_->getSceneManager();
 
@@ -90,7 +92,7 @@ namespace mrs_rviz_plugins
       // if should be drawn and isn't drawn, create it
       else if (draw && !circle_dyn_ && got_msg_)
       {
-        circle_dyn_ = initCircle("circle_dyn", position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
+        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
         // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
         if (!camera_)
         {
@@ -176,7 +178,7 @@ namespace mrs_rviz_plugins
       // dynamic circle is the one which is always oriented towards the viewer in Rviz
       if (draw_dynamic_ && !circle_dyn_)
       {
-        circle_dyn_ = initCircle("circle_dyn", position_.x, position_.y, position_.z, radius_);
+        circle_dyn_ = initCircle(circle_names_.at(0), position_.x, position_.y, position_.z, radius_, circle_quats_.at(0));
         // the cam_listener_ gets callbacks before the camera is rendered to redraw the dynamic circle
         if (!camera_)
         {
@@ -185,14 +187,24 @@ namespace mrs_rviz_plugins
         }
       }
 
-      // dynamic circles are the ones which are always oriented according to the message's coordinate frame axes
+      // static circles are the ones which are always oriented according to the message's coordinate frame axes
       if (draw_static_)
       {
         for (int it = 1; it < circles_.size(); it++)
         {
           auto& circ = circles_.at(it);
           if (!circ)
+          {
+            // if the circle is not initialized yet, do it
             circ = initCircle(circle_names_.at(it), position_.x, position_.y, position_.z, radius_, circle_quats_.at(it));
+          }
+          else
+          {
+            // otherwise just update it
+            circ->beginUpdate(0);
+            fillCircle(circ, position_.x, position_.y, position_.z, radius_, circle_quats_.at(it));
+            circ->end();
+          }
         }
       }
 
