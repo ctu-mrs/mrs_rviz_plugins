@@ -30,13 +30,12 @@ namespace pose_with_covariance_array
 
 struct display_object
 {
-  rviz::Arrow*                                            arrow_;
-  rviz::Axes*                                             axes_;
+  boost::shared_ptr<rviz::Arrow> arrow_;
+  boost::shared_ptr<rviz::Axes> axes_;
   boost::shared_ptr<mrs_rviz_plugins::covariance::Visual> covariance_;
 };
 
 class DisplaySelectionHandler;
-typedef boost::shared_ptr<DisplaySelectionHandler> DisplaySelectionHandlerPtr;
 
 class Display : public rviz::MessageFilterDisplay<mrs_msgs::PoseWithCovarianceArrayStamped> {
   Q_OBJECT
@@ -72,22 +71,22 @@ private:
   std::vector<display_object> disp_data;
 
   bool                       pose_valid_;
-  DisplaySelectionHandlerPtr coll_handler_;
+  std::unique_ptr<DisplaySelectionHandler> coll_handler_;
 
-  rviz::EnumProperty* shape_property_;
+  std::unique_ptr<rviz::EnumProperty> shape_property_;
 
-  rviz::ColorProperty* color_property_;
-  rviz::FloatProperty* alpha_property_;
+  std::unique_ptr<rviz::ColorProperty> color_property_;
+  std::unique_ptr<rviz::FloatProperty> alpha_property_;
 
-  rviz::FloatProperty* head_radius_property_;
-  rviz::FloatProperty* head_length_property_;
-  rviz::FloatProperty* shaft_radius_property_;
-  rviz::FloatProperty* shaft_length_property_;
+  std::unique_ptr<rviz::FloatProperty> head_radius_property_;
+  std::unique_ptr<rviz::FloatProperty> head_length_property_;
+  std::unique_ptr<rviz::FloatProperty> shaft_radius_property_;
+  std::unique_ptr<rviz::FloatProperty> shaft_length_property_;
 
-  rviz::FloatProperty* axes_length_property_;
-  rviz::FloatProperty* axes_radius_property_;
+  std::unique_ptr<rviz::FloatProperty> axes_length_property_;
+  std::unique_ptr<rviz::FloatProperty> axes_radius_property_;
 
-  covariance::Property* covariance_property_;
+  std::unique_ptr<covariance::Property> covariance_property_;
 
   friend class DisplaySelectionHandler;
 };
