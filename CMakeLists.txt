@@ -35,6 +35,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_definitions(-DQT_NO_KEYWORDS)
+# ignore c++17 deprecation warnings for the register storage class specifier because of OGRE
+add_definitions("-Wno-register")
 
 catkin_package(
   INCLUDE_DIRS include
