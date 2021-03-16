@@ -2,8 +2,8 @@
 Changelog for package mrs_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.2 (2021-03-16)
+------------------
 * Noetic-compatible
 * added ignore flag for the  storage class deprecation warnings due to OGRE
 * fixes in PoseWithCovarianceArrayStamped display
