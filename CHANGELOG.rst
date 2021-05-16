@@ -2,8 +2,8 @@
 Changelog for package mrs_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2021-05-16)
+------------------
 * updated CI
 * Contributors: Tomas Baca
 
