@@ -143,3 +143,20 @@ add_library(MrsRvizPoseEstimate
 target_link_libraries(MrsRvizPoseEstimate
   ${catkin_LIBRARIES}
   )
+
+## RVIZ TRACK ARRAY
+
+add_library(MrsTrackArrayRviz
+  include/track_array/display.h
+  src/track_array/display.cpp
+  )
+
+add_dependencies(MrsTrackArrayRviz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsTrackArrayRviz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
