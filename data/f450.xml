@@ -34,9 +34,9 @@
   <link name="[REPLACEME]uav_name[/REPLACEME]/uav_marker">
     <!-- UAV specific-color marker -->
     <visual>
-      <origin xyz="0 0 -70e-3" rpy="0 0 0" />
+      <origin xyz="0 0 -10e-3" rpy="0 0 0" />
       <geometry>
-        <cylinder radius="370e-3" length="220e-3" />
+        <cylinder radius="370e-3" length="120e-3" />
       </geometry>
       <material name="UAVSpecificColor" />
     </visual>
