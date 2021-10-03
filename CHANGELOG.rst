@@ -2,6 +2,12 @@
 Changelog for package mrs_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* minor tweak of UAV model color cylinders
+* added track_array plugin
+* Contributors: Matouš Vrba
+
 1.0.1 (2021-05-16)
 ------------------
 * updated CI
