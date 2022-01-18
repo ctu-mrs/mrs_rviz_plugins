@@ -3,7 +3,7 @@
   <!-- will it run using GNU debugger? -->
   <arg name="PROFILER" default="false" />
   <arg name="DEBUG" default="false" />
-  <arg name="USERNAME" default="$(env USER)" />
+  <arg name="USERNAME" default="$(optenv USER anonymous)" />
 
   <arg unless="$(arg DEBUG)" name="launch_prefix_debug" value=""/>
   <arg     if="$(arg DEBUG)" name="launch_prefix_debug" value="debug_roslaunch"/>
