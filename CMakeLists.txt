@@ -38,9 +38,13 @@ add_definitions(-DQT_NO_KEYWORDS)
 # ignore c++17 deprecation warnings for the register storage class specifier because of OGRE
 add_definitions("-Wno-register")
 
+set(LIBRARIES
+  MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate
+  )
+
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate
+  LIBRARIES ${LIBRARIES}
   CATKIN_DEPENDS roscpp mrs_msgs rviz mrs_lib nav_msgs geometry_msgs
   )
 
@@ -159,4 +163,37 @@ add_dependencies(MrsTrackArrayRviz
 target_link_libraries(MrsTrackArrayRviz
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
+  )
+
+## --------------------------------------------------------------
+## |                           Install                          |
+## --------------------------------------------------------------
+
+install(TARGETS ${LIBRARIES}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+  )
+
+install(DIRECTORY launch data icons
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+install(DIRECTORY scripts
+  USE_SOURCE_PERMISSIONS
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
+install(DIRECTORY scripts/
+  USE_SOURCE_PERMISSIONS
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+install(DIRECTORY include/
+  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+  )
+
+install(DIRECTORY ./
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  FILES_MATCHING PATTERN "*.xml"
   )
