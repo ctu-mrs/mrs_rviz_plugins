@@ -15,8 +15,8 @@
 
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/profiler.h>
-#include <mrs_lib/transformer.h>
 #include <mrs_lib/mutex.h>
+#include <mrs_lib/attitude_converter.h>
 
 //}
 
@@ -153,7 +153,13 @@ void NavGoal::callbackRvizNavGoal(const geometry_msgs::PoseStampedConstPtr& msg)
   new_waypoint.request.reference.position.x = rviz_nav_goal_tmp.pose.position.x;
   new_waypoint.request.reference.position.y = rviz_nav_goal_tmp.pose.position.y;
   new_waypoint.request.reference.position.z = setpoint_z;
-  new_waypoint.request.reference.heading    = mrs_lib::AttitudeConverter(rviz_nav_goal_tmp.pose.orientation).getYaw();
+
+  try {
+    new_waypoint.request.reference.heading = mrs_lib::AttitudeConverter(rviz_nav_goal_tmp.pose.orientation).getHeading();
+  }
+  catch (mrs_lib::AttitudeConverter::GetHeadingException& e) {
+    new_waypoint.request.reference.heading = 0;
+  }
 
   ros::ServiceClient srv_client_reference = nh_.serviceClient<mrs_msgs::ReferenceStampedSrv>("/" + uav_name + "/control_manager/reference");
 
@@ -197,9 +203,18 @@ void NavGoal::callbackRvizNavGoal(const geometry_msgs::PoseStampedConstPtr& msg)
     tf2::fromMsg(tracker_pose_tmp.orientation, q1);
     tf2::fromMsg(rviz_nav_goal_tmp.pose.orientation, q2);
     tf2::Quaternion rot_diff = q2 * q1.inverse();
-    double          diff_yaw = std::abs(mrs_lib::AttitudeConverter(rot_diff).getYaw());
+
+    double diff_hdg = 0;
+
+    try {
+      diff_hdg = std::abs(mrs_lib::AttitudeConverter(rot_diff).getHeading());
+    }
+    catch (mrs_lib::AttitudeConverter::GetHeadingException& e) {
+      diff_hdg = std::numeric_limits<double>::max();
+    }
+
     /* ROS_INFO("diff: x: %2.4f y: %2.4f yaw: %2.4f\n", diff_x, diff_y, diff_yaw); */
-    if (diff_x < 0.1 && diff_y < 0.1 && diff_yaw < 0.1) {
+    if (diff_x < 0.1 && diff_y < 0.1 && diff_hdg < 0.1) {
       break;
     }
 

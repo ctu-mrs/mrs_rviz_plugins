@@ -13,8 +13,8 @@
 
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/profiler.h>
-#include <mrs_lib/transformer.h>
 #include <mrs_lib/mutex.h>
+#include <mrs_lib/attitude_converter.h>
 
 #include <mrs_msgs/TransformPoseSrv.h>
 
@@ -124,8 +124,6 @@ void PoseEstimate::onInit() {
 
   profiler_ = mrs_lib::Profiler(nh_, "PoseEstimate", _profiler_enabled_);
 
-  // | --------------------- tf transformer --------------------- |
-
   // | ----------------------- finish init ---------------------- |
 
   if (!param_loader.loadedSuccessfully()) {
@@ -228,14 +226,21 @@ void PoseEstimate::callbackRvizPoseEstimate(const geometry_msgs::PoseWithCovaria
   marker_array_.markers.push_back(text_marker);
 
   geometry_msgs::Quaternion orientation_tmp;
-  double                    yaw_tmp;
+  double                    heading_tmp;
 
   // Current rviz frame
   orientation_tmp = msg->pose.pose.orientation;
-  yaw_tmp         = mrs_lib::AttitudeConverter(orientation_tmp).getYaw();
+
+  try {
+    heading_tmp = mrs_lib::AttitudeConverter(orientation_tmp).getHeading();
+  }
+  catch (mrs_lib::AttitudeConverter::GetHeadingException &e) {
+    heading_tmp = 0;
+  }
 
   ROS_INFO("[PoseEstimate]: New rviz 2D pose estimate:");
-  ROS_INFO("[PoseEstimate]: frame_id: %s\nx: %f y: %f yaw: %f", msg->header.frame_id.c_str(), msg->pose.pose.position.x, msg->pose.pose.position.y, yaw_tmp);
+  ROS_INFO("[PoseEstimate]: frame_id: %s\nx: %f y: %f yaw: %f", msg->header.frame_id.c_str(), msg->pose.pose.position.x, msg->pose.pose.position.y,
+           heading_tmp);
 
   // GPS frame
   if (msg->header.frame_id != uav_name + "/gps_origin") {
@@ -262,10 +267,15 @@ void PoseEstimate::callbackRvizPoseEstimate(const geometry_msgs::PoseWithCovaria
     }
 
     orientation_tmp = gps_pose.pose.orientation;
-    yaw_tmp         = mrs_lib::AttitudeConverter(orientation_tmp).getYaw();
+    try {
+      heading_tmp = mrs_lib::AttitudeConverter(orientation_tmp).getHeading();
+    }
+    catch (mrs_lib::AttitudeConverter::GetHeadingException &e) {
+      heading_tmp = 0;
+    }
 
     ROS_INFO("[PoseEstimate]: frame_id: %s\nx: %f y: %f yaw: %f", gps_pose.header.frame_id.c_str(), gps_pose.pose.position.x, gps_pose.pose.position.y,
-             yaw_tmp);
+             heading_tmp);
   }
 
   // UTM frame
@@ -290,9 +300,16 @@ void PoseEstimate::callbackRvizPoseEstimate(const geometry_msgs::PoseWithCovaria
     return;
   }
   orientation_tmp = utm_pose.pose.orientation;
-  yaw_tmp         = mrs_lib::AttitudeConverter(orientation_tmp).getYaw();
 
-  ROS_INFO("[PoseEstimate]: frame_id: %s\nx: %f y: %f yaw: %f", utm_pose.header.frame_id.c_str(), utm_pose.pose.position.x, utm_pose.pose.position.y, yaw_tmp);
+  try {
+    heading_tmp = mrs_lib::AttitudeConverter(orientation_tmp).getHeading();
+  }
+  catch (mrs_lib::AttitudeConverter::GetHeadingException &e) {
+    heading_tmp = 0;
+  }
+
+  ROS_INFO("[PoseEstimate]: frame_id: %s\nx: %f y: %f yaw: %f", utm_pose.header.frame_id.c_str(), utm_pose.pose.position.x, utm_pose.pose.position.y,
+           heading_tmp);
 
   {
     std::scoped_lock lock(mutex_utm_pose_array_);
@@ -321,10 +338,16 @@ void PoseEstimate::callbackRvizPoseEstimate(const geometry_msgs::PoseWithCovaria
   }
 
   orientation_tmp = latlon_pose.pose.orientation;
-  yaw_tmp         = mrs_lib::AttitudeConverter(orientation_tmp).getYaw();
+
+  try {
+    heading_tmp = mrs_lib::AttitudeConverter(orientation_tmp).getHeading();
+  }
+  catch (mrs_lib::AttitudeConverter::GetHeadingException &e) {
+    heading_tmp = 0;
+  }
 
   ROS_INFO("[PoseEstimate]: frame_id: %s\nlatitude: %f longitude: %f yaw: %f", latlon_pose.header.frame_id.c_str(), latlon_pose.pose.position.x,
-           latlon_pose.pose.position.y, yaw_tmp);
+           latlon_pose.pose.position.y, heading_tmp);
   {
     std::scoped_lock lock(mutex_latlon_pose_array_);
 
