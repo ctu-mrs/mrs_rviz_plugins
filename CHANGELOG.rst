@@ -2,6 +2,13 @@
 Changelog for package mrs_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* yaw -> heading
+* + install in cmakelists
+* updated interface launch
+* Contributors: Tomas Baca
+
 1.0.2 (2021-10-03)
 ------------------
 * minor tweak of UAV model color cylinders
