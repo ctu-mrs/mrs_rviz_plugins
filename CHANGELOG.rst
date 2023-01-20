@@ -2,6 +2,11 @@
 Changelog for package mrs_rviz_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixed launch, env->optenv
+* Contributors: Tomas Baca
+
 1.0.3 (2022-05-09)
 ------------------
 * yaw -> heading
