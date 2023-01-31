@@ -1,0 +1,193 @@
+<robot name="x500_visualization">
+  <material name="UAVSpecificColor">
+    <color rgba="[REPLACEME]uav_color[/REPLACEME]"/>
+  </material>
+  <material name="PinkTransparent">
+    <color rgba="1 8e-1 8e-1 8e-1"/>
+  </material>
+  <material name="Red">
+    <color rgba="1 0 0 1"/>
+  </material>
+  <material name="Gray">
+    <color rgba="5e-1 5e-1 5e-1 1"/>
+  </material>
+
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]">
+		<!-- ARMS -->
+		<visual name='base_link_fixed_joint_lump__front_left_arm_link_visual_8'>
+			<origin xyz="0 0 0" rpy="0 -0 0.785398" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_arm.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__front_right_arm_link_visual_11'>
+			<origin xyz="0 0 0" rpy="0 0 -0.785398" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_arm.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+
+		<!-- LEGS -->
+		<visual name='base_link_fixed_joint_lump__front_left_leg_clip_link_visual_9'>
+			<origin xyz="0.162635 0.162635 -0.157" rpy="0 -0 0.785398" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_leg.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__front_right_leg_clip_link_visual_12'>
+			<origin xyz="0.162635 -0.162635 -0.157" rpy="0 0 -0.785398" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_leg.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+
+		<!-- MOTORS -->
+		<visual name='base_link_fixed_joint_lump__front_left_rotor_link_visual_10'>
+			<origin xyz="0.177484 0.177484 0.021" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_motor.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__front_right_rotor_link_visual_13'>
+			<origin xyz="0.177484 -0.177484 0.021" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_motor.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__back_right_rotor_link_visual_3'>
+			<origin xyz="-0.177484 -0.177484 0.021" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_motor.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__back_left_rotor_link_visual_1'>
+			<origin xyz="-0.177484 0.177484 0.021" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_motor.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+
+		<!-- PROPELLERS -->
+		<visual name='base_link_fixed_joint_lump__front_left_prop_link_visual'>
+			<origin xyz="0.177484 0.177484 0.06" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_prop.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__front_right_prop_link_visual'>
+			<origin xyz="0.177484 -0.177484 0.06" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_prop.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__back_right_prop_link_visual'>
+			<origin xyz="-0.177484 -0.177484 0.06" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_prop.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__back_left_prop_link_visual'>
+			<origin xyz="-0.177484 0.177484 0.06" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_prop.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+
+		<!-- BODY -->	
+		<visual name='base_link_fixed_joint_lump__battery_mount_link_visual_4'>
+			<origin xyz="0 0 0" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_battery.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__bottom_board_link_visual_5'>
+			<origin xyz="0 0 0" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_bottom_board.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__top_board_link_visual_18'>
+			<origin xyz="0 0 0" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_top_board.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__pc_mount_link_visual_14'>
+			<origin xyz="0 0 0" rpy="0 -0 0" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_pc_mount.stl" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+
+		<visual name='base_link_fixed_joint_lump__computer_board_link_visual_6'>
+			<origin xyz="0 0 0.058" rpy="0 -0 0" />
+			<geometry>
+				<box size="0.125 0.125 0.002" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__computer_heatsink_link_visual_7'>
+			<origin xyz="0.009 0.012 0.074" rpy="0 -0 0" />
+			<geometry>
+				<box size="0.071 0.071 0.027" />
+			</geometry>
+			<material name="Gray" />
+		</visual>
+  </link>
+
+  <link name="[REPLACEME]uav_name[/REPLACEME]/arms_red">
+		<!-- ARMS -->
+		<visual name='base_link_fixed_joint_lump__back_left_arm_link_visual'>
+			<origin xyz="0 0 0" rpy="0 -0 2.35619" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_arm.stl" />
+			</geometry>
+			<material name="Red" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__back_right_arm_link_visual_2'>
+			<origin xyz="0 0 0" rpy="0 0 -2.35619" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_arm.stl" />
+			</geometry>
+			<material name="Red" />
+		</visual>
+
+		<!-- LEGS -->
+		<visual name='base_link_fixed_joint_lump__rear_left_leg_clip_link_visual_16'>
+			<origin xyz="-0.162635 0.162635 -0.157" rpy="0 -0 2.35619" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_leg.stl" />
+			</geometry>
+			<material name="Red" />
+		</visual>
+		<visual name='base_link_fixed_joint_lump__rear_right_leg_clip_link_visual_17'>
+			<origin xyz="-0.162635 -0.162635 -0.157" rpy="0 0 -2.35619" />
+			<geometry>
+				<mesh filename="file://[REPLACEME]path[/REPLACEME]/data/holybro/holybro_x500_leg.stl" />
+			</geometry>
+			<material name="Red" />
+		</visual>
+  </link>
+
+  <joint name="joint_arms_red" type="fixed">
+    <parent link="[REPLACEME]uav_name[/REPLACEME]" />
+    <child link="[REPLACEME]uav_name[/REPLACEME]/arms_red" />
+  </joint>
+</robot>
