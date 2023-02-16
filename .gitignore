@@ -1,1 +1,12 @@
 .gdb_history
+
+# ignore temp files
+*~
+
+# ignore vim temp files
+*.swp
+*.swo
+*.swn
+
+# Runtime-python
+*.pyc

@@ -113,7 +113,7 @@ void NavGoal::callbackRvizNavGoal(const geometry_msgs::PoseStampedConstPtr& msg)
   ROS_INFO("[NavGoal]: Resolved UAV name to: %s", uav_name.c_str());
 
   ros::Subscriber sub_odom_uav =
-      nh_.subscribe("/" + uav_name + "/control_manager/cmd_odom", 1, &NavGoal::callbackOdomUav, this, ros::TransportHints().tcpNoDelay());
+      nh_.subscribe("/" + uav_name + "/control_manager/control_reference", 1, &NavGoal::callbackOdomUav, this, ros::TransportHints().tcpNoDelay());
 
   // Wait 1s for UAV odometry
   ros::Duration timeout(1.0);
