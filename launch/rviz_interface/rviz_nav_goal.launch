@@ -1,24 +1,35 @@
 <launch>
 
   <!-- will it run using GNU debugger? -->
+  <arg name="UAV_NAME" default="$(optenv UAV_NAME uav1)"/>
   <arg name="PROFILER" default="false" />
   <arg name="DEBUG" default="false" />
   <arg name="USERNAME" default="$(optenv USER anonymous)" />
+
+  <arg name="reference_service_name" default="control_manager/reference" />
+  <arg name="rviz_topic_name" default="/move_base_simple/goal" />
 
   <arg unless="$(arg DEBUG)" name="launch_prefix_debug" value=""/>
   <arg     if="$(arg DEBUG)" name="launch_prefix_debug" value="debug_roslaunch"/>
 
     <!-- RvizNavGoal nodelet -->
+
+  <group ns="$(arg UAV_NAME)">
   <node pkg="nodelet" type="nodelet" name="rviz_nav_goal_$(arg USERNAME)" args="standalone mrs_rviz_plugins/RvizNavGoal" launch-prefix="$(arg launch_prefix_debug)" output="screen">
 
     <!-- Parameters -->
     <param name="enable_profiler" type="bool" value="$(arg PROFILER)" />
 
-      <!-- Subscribers -->
-    <remap from="~rviz_nav_goal_in" to="/move_base_simple/goal" />
+    <!-- Subscribers -->
+    <remap from="~rviz_nav_goal_in" to="$(arg rviz_topic_name)" />
+    <remap from="~cmd_odom_in" to="control_manager/cmd_odom" />
 
-      <!-- Publishers -->
+    <!-- Services -->
+    <remap from="~reference_service_out" to="$(arg reference_service_name)" />
+
+    <!-- Publishers -->
 
   </node>
+</group>
 
 </launch>
