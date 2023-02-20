@@ -2,7 +2,7 @@
 <package format="2">
 
   <name>mrs_rviz_plugins</name>
-  <version>1.0.3</version>
+  <version>1.0.4</version>
 
   <description>Plugin for rviz to work with the MRS system</description>
 
