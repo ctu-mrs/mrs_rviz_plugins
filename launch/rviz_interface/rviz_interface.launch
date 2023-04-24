@@ -3,6 +3,9 @@
   <!-- args corresponding to environment variables -->
   <arg name="PROFILER" default="$(optenv PROFILER false)" />
 
+  <arg name="rviz_topic_name" default="/move_base_simple/goal" />
+  <arg name="reference_service_name" default="control_manager/reference" />
+
   <include file="$(find mrs_rviz_plugins)/launch/rviz_interface/rviz_pose_estimate.launch">
 
     <arg name="PROFILER" value="$(arg PROFILER)" />
@@ -12,6 +15,8 @@
   <include file="$(find mrs_rviz_plugins)/launch/rviz_interface/rviz_nav_goal.launch">
 
     <arg name="PROFILER" value="$(arg PROFILER)" />
+    <arg name="rviz_topic_name" value="$(arg rviz_topic_name)" />
+    <arg name="reference_service_name" value="$(arg reference_service_name)" />
 
   </include>
 
