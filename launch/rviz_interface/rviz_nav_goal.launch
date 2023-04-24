@@ -19,10 +19,11 @@
 
     <!-- Parameters -->
     <param name="enable_profiler" type="bool" value="$(arg PROFILER)" />
+    <param name="uav_name" type="string" value="$(arg UAV_NAME)" />
 
     <!-- Subscribers -->
     <remap from="~rviz_nav_goal_in" to="$(arg rviz_topic_name)" />
-    <remap from="~cmd_odom_in" to="control_manager/cmd_odom" />
+    <remap from="~tracker_cmd_in" to="control_manager/tracker_cmd" />
 
     <!-- Services -->
     <remap from="~reference_service_out" to="$(arg reference_service_name)" />
