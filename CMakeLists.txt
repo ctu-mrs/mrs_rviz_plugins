@@ -39,7 +39,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool
   )
 
 catkin_package(
@@ -161,6 +161,23 @@ add_dependencies(MrsTrackArrayRviz
   )
 
 target_link_libraries(MrsTrackArrayRviz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## NAMED GOAL TOOL
+
+add_library(MrsNamedGoalTool
+  include/named_goal_tool/named_goal_tool.h
+  src/named_goal_tool/named_goal_tool.cpp
+  )
+
+add_dependencies(MrsNamedGoalTool
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsNamedGoalTool
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
