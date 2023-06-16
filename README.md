@@ -19,6 +19,10 @@ Integrates seamlessly.
 
 Integrates seamlessly.
 
+#### NamedSetGoal
+
+RViz goal tool with modifiable label.
+
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal
