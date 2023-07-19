@@ -15,6 +15,10 @@
 #include <rviz/properties/string_property.h>
 #include <rviz/properties/vector_property.h>
 #include <rviz/properties/float_property.h>
+#include <rviz/render_panel.h>
+
+#include <qevent.h>
+#include <qkeysequence.h>
 
 #include <vector>
 
@@ -32,6 +36,7 @@ public:
   void onInitialize() override;
   void activate() override;
   int processMouseEvent(rviz::ViewportMouseEvent& event) override;
+  int processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected:
   void onPoseSet(double x, double y, double theta) override;

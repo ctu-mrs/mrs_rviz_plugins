@@ -13,6 +13,8 @@
 
 #include <ros/console.h>
 
+#define READ_ONLY true
+
 namespace mrs_rviz_plugins
 {
 WaypointPlanner::WaypointPlanner() {
@@ -34,14 +36,14 @@ void WaypointPlanner::onInitialize(){
 void WaypointPlanner::activate()
 {
   current_point_property = new rviz::VectorProperty("Point: ");
-  current_point_property->setReadOnly(true);
+  current_point_property->setReadOnly(READ_ONLY);
 
   current_theta_property = new rviz::FloatProperty("Angle:");
-  current_theta_property->setReadOnly(true);
+  current_theta_property->setReadOnly(READ_ONLY);
 
   current_property = new rviz::Property();
   current_property->setName("Position");
-  current_property->setReadOnly( true );
+  current_property->setReadOnly(READ_ONLY);
   current_property->addChild(current_point_property);
   current_property->addChild(current_theta_property);
   getPropertyContainer()->addChild(current_property);
@@ -49,8 +51,6 @@ void WaypointPlanner::activate()
 
 // TODO: do not close after one click
 void WaypointPlanner::onPoseSet(double x, double y, double theta){
-
-
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
   Ogre::Entity* entity = scene_manager_->createEntity(flag_resource_);
   Ogre::Vector3 position = Ogre::Vector3(x, y, 0);
@@ -68,6 +68,16 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
   int res = PoseTool::processMouseEvent(event);
   return res & (~Finished);
+}
+
+int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
+  PoseTool::processKeyEvent(event, panel);
+  if(event->key() == 16777220){
+    ROS_INFO("enter press has been received");
+    // TODO: the tool does not exit. Good thing that it doesn't have to XD
+    return Finished;
+  }
+  return Render;
 }
 
 WaypointPlanner::~WaypointPlanner(){
