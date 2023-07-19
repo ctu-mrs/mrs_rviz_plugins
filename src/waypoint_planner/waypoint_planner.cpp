@@ -65,6 +65,11 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   positions.push_back(WaypointPlanner::Position(x, y, 0, theta));
 }
 
+int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
+  int res = PoseTool::processMouseEvent(event);
+  return res & (~Finished);
+}
+
 WaypointPlanner::~WaypointPlanner(){
   for( unsigned i = 0; i < pose_nodes.size(); i++ ){
     scene_manager_->destroySceneNode(pose_nodes[i]);

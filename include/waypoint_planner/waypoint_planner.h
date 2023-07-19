@@ -31,6 +31,7 @@ public:
   ~WaypointPlanner() override ;
   void onInitialize() override;
   void activate() override;
+  int processMouseEvent(rviz::ViewportMouseEvent& event) override;
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
