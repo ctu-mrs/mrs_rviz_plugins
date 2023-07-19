@@ -11,7 +11,10 @@
 #include <OGRE/OgreSceneNode.h>
 
 #include <rviz/default_plugin/tools/pose_tool.h>
+#include <rviz/properties/property.h>
 #include <rviz/properties/string_property.h>
+#include <rviz/properties/vector_property.h>
+#include <rviz/properties/float_property.h>
 
 #include <vector>
 
@@ -27,6 +30,7 @@ public:
   WaypointPlanner();
   ~WaypointPlanner() override ;
   void onInitialize() override;
+  void activate() override;
 
 protected:
   void onPoseSet(double x, double y, double theta) override;
@@ -36,8 +40,22 @@ protected:
 //   void updateName();
 
 private:
+  class Position{
+    public:
+    float x;
+    float y;
+    float z;
+    float theta;
+    Position(float x_, float y_, float z_, float theta_):x(x_), y(y_), z(z_), theta(theta_){}
+  };
   std::string flag_resource_;
   std::vector<Ogre::SceneNode*> pose_nodes;
+  rviz::Property* current_property;
+  rviz::VectorProperty* current_point_property;
+  rviz::FloatProperty* current_theta_property;
+
+  std::vector<WaypointPlanner::Position> positions;
+
 };
 
 
