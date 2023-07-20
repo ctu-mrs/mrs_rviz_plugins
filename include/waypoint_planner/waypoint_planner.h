@@ -17,6 +17,9 @@
 #include <rviz/properties/float_property.h>
 #include <rviz/render_panel.h>
 
+#include <mrs_msgs/TrajectoryReferenceSrv.h>
+#include <mrs_msgs/Reference.h> 
+
 #include <qevent.h>
 #include <qkeysequence.h>
 
@@ -41,6 +44,7 @@ public:
 protected:
   void add_property();
   void onPoseSet(double x, double y, double theta) override;
+  std::vector<mrs_msgs::Reference> generate_references();
 
 Q_OBJECT
 protected Q_SLOTS:
@@ -71,8 +75,10 @@ private:
   rviz::FloatProperty* current_theta_property;
   rviz::StringProperty* topic_property;
 
+
   ros::NodeHandle node_handler;
-  ros::Publisher pub;
+  ros::ServiceClient client;
+
 
   std::vector<WaypointPlanner::Position> positions;
 
