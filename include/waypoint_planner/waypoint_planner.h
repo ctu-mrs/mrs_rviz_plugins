@@ -29,21 +29,23 @@ namespace mrs_rviz_plugins
 /* class StringProperty; */
 
 class WaypointPlanner : public rviz::PoseTool {
-  Q_OBJECT
 public:
   WaypointPlanner();
   ~WaypointPlanner() override ;
   void onInitialize() override;
   void activate() override;
+  void deactivate() override;
   int processMouseEvent(rviz::ViewportMouseEvent& event) override;
   int processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected:
+  void add_property();
   void onPoseSet(double x, double y, double theta) override;
 
-// private Q_SLOTS:
-//   void updateTopic();
-//   void updateName();
+Q_OBJECT
+protected Q_SLOTS:
+  void update_topic();
+  void update_position();
 
 private:
   class Position{
@@ -53,12 +55,24 @@ private:
     float z;
     float theta;
     Position(float x_, float y_, float z_, float theta_):x(x_), y(y_), z(z_), theta(theta_){}
+    void set_values(Ogre::Vector3 pos, double theta_){
+      x = pos.x;
+      y = pos.y;
+      z = pos.z;
+      theta = theta_;
+    }
   };
   std::string flag_resource_;
   std::vector<Ogre::SceneNode*> pose_nodes;
+  std::vector<rviz::VectorProperty*> point_properties;
+  std::vector<rviz::FloatProperty*> angle_properties;
   rviz::Property* current_property;
   rviz::VectorProperty* current_point_property;
   rviz::FloatProperty* current_theta_property;
+  rviz::StringProperty* topic_property;
+
+  ros::NodeHandle node_handler;
+  ros::Publisher pub;
 
   std::vector<WaypointPlanner::Position> positions;
 
