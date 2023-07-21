@@ -5,8 +5,10 @@
 #include <QObject>
 
 #include <ros/ros.h>
-
 #endif
+
+#include <ros/topic.h>
+#include <ros/duration.h>
 
 #include <OGRE/OgreSceneNode.h>
 
@@ -21,6 +23,7 @@
 #include <mrs_msgs/PathSrv.h>
 #include <mrs_msgs/Path.h>
 #include <mrs_msgs/Reference.h> 
+#include <nav_msgs/Odometry.h>
 
 #include <qevent.h>
 #include <qkeysequence.h>

@@ -31,7 +31,7 @@ WaypointPlanner::WaypointPlanner() {
   // TODO: update description
   use_heading_property = new rviz::BoolProperty("Use heading", false, "Honestly, no clue.",
       getPropertyContainer());
-  fly_now_property = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediatelt after enter.",
+  fly_now_property = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.",
       getPropertyContainer());
   stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, "If true, the drone will stop at added points.",
       getPropertyContainer());
@@ -49,7 +49,6 @@ WaypointPlanner::WaypointPlanner() {
 }
 
 void WaypointPlanner::update_topic(){
-  ROS_INFO("update_topic called!");
   client = node_handler.serviceClient<mrs_msgs::PathSrv>(drone_name_property->getStdString() + topic_property->getStdString());
   // pub = node_handler.advertise<geometry_msgs::PoseStamped>(topic_property->getStdString(), 2);
 }
@@ -134,14 +133,11 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   node->setPosition(position);
   pose_nodes.push_back(node);
   
-  ROS_INFO("%p", current_point_property);
   current_point_property->setVector(position);
-  ROS_INFO("onPoseSet here2");
   current_theta_property->setFloat(theta);
-  ROS_INFO("onPoseSet here3");
   add_property();
 
-// TODO: rerad from /uav_name/odometry/main_odom topic
+// TODO: rerad from /uav_name/odometry/main_odom topic      (or odom_main?)
   positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
 }
 
@@ -153,8 +149,6 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   PoseTool::processKeyEvent(event, panel);
   if(event->key() == 16777220){
-    ROS_INFO("enter press has been received");
-    ROS_INFO(" : %s", client.getService().c_str());
     mrs_msgs::PathSrv srv;
     srv.request.path.use_heading = use_heading_property->getBool();
     srv.request.path.fly_now = fly_now_property->getBool();
@@ -162,9 +156,8 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
     srv.request.path.loop = loop_property->getBool();
 
     srv.request.path.points = generate_references();
-    // todo: change to /uav18/trajectory_generation/path
     if(client.call(srv)){
-      ROS_INFO("Call has been successfull");
+      ROS_INFO("Call went successfully");
     }else{
       ROS_INFO("Call failed: %s", srv.response.message.c_str());
     }
@@ -184,17 +177,26 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
 }
 
 std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(){
+  // Note: ref.position is reset to 0 for some reason. Although it does not matter now, it is weird
+  std::string drone_name = drone_name_property->getStdString();
+  std::string topic = drone_name + std::string("/odometry/odom_main");
+  
+  auto odom_ptr = ros::topic::waitForMessage<nav_msgs::Odometry>(topic, node_handler, ros::Duration(1.0));
+  if(odom_ptr.get() == nullptr){
+    ROS_INFO("z coordinate has not been received. No data sent");
+    return (std::vector<mrs_msgs::Reference> {});
+  }
+  
+  double z = odom_ptr->pose.pose.position.z;
   std::vector<mrs_msgs::Reference> res(positions.size());
   for(int i=0; i<positions.size(); i++){
     mrs_msgs::Reference ref;
     ref.position.x = positions[i].x;
     ref.position.y = positions[i].y;
-    // TODO: is reset to 0 for some reason
-    //ref.position.z = positions[i].z;
-    ref.position.z = 1;
+    ref.position.z = z;
     ref.heading = positions[i].theta;
     res[i] = ref;
-    ROS_INFO(" - %.2f, %.2f, %.2f", ref.position.x, ref.position.y, ref.position.z);
+    ROS_INFO(" - %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
   }
   return res;
 }
