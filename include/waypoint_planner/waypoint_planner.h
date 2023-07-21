@@ -15,9 +15,11 @@
 #include <rviz/properties/string_property.h>
 #include <rviz/properties/vector_property.h>
 #include <rviz/properties/float_property.h>
+#include <rviz/properties/bool_property.h>
 #include <rviz/render_panel.h>
 
-#include <mrs_msgs/TrajectoryReferenceSrv.h>
+#include <mrs_msgs/PathSrv.h>
+#include <mrs_msgs/Path.h>
 #include <mrs_msgs/Reference.h> 
 
 #include <qevent.h>
@@ -66,21 +68,31 @@ private:
       theta = theta_;
     }
   };
-  std::string flag_resource_;
+
+  // Added items
   std::vector<Ogre::SceneNode*> pose_nodes;
   std::vector<rviz::VectorProperty*> point_properties;
   std::vector<rviz::FloatProperty*> angle_properties;
+
+  // Current properties
   rviz::Property* current_property;
   rviz::VectorProperty* current_point_property;
   rviz::FloatProperty* current_theta_property;
+
+  // Initial properties
+  rviz::StringProperty* drone_name_property;
   rviz::StringProperty* topic_property;
+  rviz::BoolProperty* use_heading_property;
+  rviz::BoolProperty* fly_now_property;
+  rviz::BoolProperty* stop_at_waypoints_property;
+  rviz::BoolProperty* loop_property;
 
-
+  // Communicating through ros
   ros::NodeHandle node_handler;
   ros::ServiceClient client;
 
-
   std::vector<WaypointPlanner::Position> positions;
+  std::string flag_resource_;
 
 };
 
