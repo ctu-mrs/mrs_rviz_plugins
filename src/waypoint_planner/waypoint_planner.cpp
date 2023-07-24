@@ -50,6 +50,9 @@ WaypointPlanner::WaypointPlanner() {
 
 void WaypointPlanner::update_topic(){
   client = node_handler.serviceClient<mrs_msgs::PathSrv>(drone_name_property->getStdString() + topic_property->getStdString());
+  status = std::string("Drone name is set to ") + drone_name_property->getStdString();
+  setStatus(QString(status.c_str()));
+  
   // pub = node_handler.advertise<geometry_msgs::PoseStamped>(topic_property->getStdString(), 2);
 }
 
@@ -95,7 +98,47 @@ void WaypointPlanner::onInitialize(){
     ROS_ERROR( "PlantFlagTool: failed to load model resource '%s'.", flag_resource_.c_str() );
   }
 
-  update_topic();
+  XmlRpc::XmlRpcValue req = "/node";
+  XmlRpc::XmlRpcValue res;
+  XmlRpc::XmlRpcValue pay;
+  std::vector<std::string> drone_names;
+  ros::master::execute("getSystemState",req ,res ,pay ,true);
+
+  std::string state[res[2][2].size()];
+  for(int x=0 ; x<res[2][2].size() ; x++){
+    std::string name = res[2][2][x][0].toXml().c_str();
+    if(name.find("trajectory_generation/path") == std::string::npos){
+      continue;
+    }
+    ROS_INFO("%s found", name.c_str());
+
+    std::size_t index = name.find("/", 0, 1);
+    if(index != std::string::npos){
+      name = name.erase(0, index);
+    }
+
+    index = name.find("/", 1, 1);
+    if(index != std::string::npos){
+      name = name.erase(index);
+    }
+
+    drone_names.push_back(name);
+    ROS_INFO("%s was added to drone names", name.c_str());
+    state[x] = name;
+  }
+
+  if(drone_names.size() == 0){
+    status = std::string("Warning: No drone was found. Drone name set to ") 
+        + std::string(DEFAULT_DRONE);
+  } else if(drone_names.size() > 1){
+    drone_name_property->setStdString(drone_names[0]);
+    status = "Warning: Several drones found. Please, set Drone name property";
+  } else{
+    drone_name_property->setStdString(drone_names[0]);
+    status = std::string("Drone name is set to ") + drone_name_property->getStdString();
+  }
+  client = node_handler.serviceClient<mrs_msgs::PathSrv>(drone_name_property->getStdString() + topic_property->getStdString());
+  // update_topic();
 }
 
 // Choosing the tool
@@ -104,6 +147,10 @@ void WaypointPlanner::activate()
   for(int i=0; i<pose_nodes.size(); i++){
     pose_nodes[i]->setVisible(true);
   }
+
+  // TODO: change to status message.
+
+  setStatus(QString(status.c_str()));
 
   add_property();
 }
@@ -137,7 +184,6 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   current_theta_property->setFloat(theta);
   add_property();
 
-// TODO: rerad from /uav_name/odometry/main_odom topic      (or odom_main?)
   positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
 }
 

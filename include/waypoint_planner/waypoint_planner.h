@@ -9,7 +9,8 @@
 
 #include <ros/topic.h>
 #include <ros/duration.h>
-
+#include <ros/master.h>
+#include <XmlRpcValue.h>
 #include <OGRE/OgreSceneNode.h>
 
 #include <rviz/default_plugin/tools/pose_tool.h>
@@ -96,6 +97,7 @@ private:
 
   std::vector<WaypointPlanner::Position> positions;
   std::string flag_resource_;
+  std::string status;
 
 };
 
