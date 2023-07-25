@@ -14,6 +14,7 @@
 #include <ros/console.h>
 
 #define KEY_ENTER 16777220
+#define KEY_DELETE 16777223
 #define READ_ONLY false
 #define DEFAULT_PROPERTIES_NUM 7
 #define DEFAULT_TOPIC "trajectory_generation/path"
@@ -207,11 +208,16 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   node->setPosition(position);
   pose_nodes.push_back(node);
   
+  ROS_INFO("Before current props %p", current_point_property);
   current_point_property->setVector(position);
+  ROS_INFO("Before current theta props %p", current_theta_property);
   current_theta_property->setFloat(theta);
+  ROS_INFO("After current props");
 
   positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
+  ROS_INFO("After pushback");
   add_property();
+  ROS_INFO("Returning...");
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
@@ -222,6 +228,7 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
 // Sends added waypoints to service
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   PoseTool::processKeyEvent(event, panel);
+  ROS_INFO("Received key %d", (int) event->key());
   if(event->key() == KEY_ENTER){
     // Set general attributes
     mrs_msgs::PathSrv srv;
@@ -258,6 +265,19 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
     add_property();
     // Note: the tool does not exit. Good thing that it doesn't have to XD
     return Render;
+  }
+  if(event->key() == KEY_DELETE && !positions.empty()){
+    positions.pop_back();
+    std::size_t index = point_properties.size() - 2;
+    point_properties.erase(point_properties.begin() + index);
+    angle_properties.erase(angle_properties.begin() + index);
+    // point_properties.pop_back();
+    // angle_properties.pop_back();
+    delete pose_nodes.back();
+    pose_nodes.pop_back();
+    ROS_INFO("Removing index = %d", DEFAULT_PROPERTIES_NUM + positions.size());
+    getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM + positions.size(), 1);
+    current_property->setName("Position " + QString::number(positions.size() + 1));
   }
   return Render;
 }
