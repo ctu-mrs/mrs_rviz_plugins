@@ -10,6 +10,7 @@
 #include <ros/topic.h>
 #include <ros/duration.h>
 #include <ros/master.h>
+
 #include <XmlRpcValue.h>
 #include <OGRE/OgreSceneNode.h>
 
@@ -21,6 +22,8 @@
 #include <rviz/properties/bool_property.h>
 #include <rviz/render_panel.h>
 
+#include <mrs_lib/transformer.h>
+#include <mrs_lib/attitude_converter.h>
 #include <mrs_msgs/PathSrv.h>
 #include <mrs_msgs/Path.h>
 #include <mrs_msgs/Reference.h> 
@@ -50,7 +53,7 @@ public:
 protected:
   void add_property();
   void onPoseSet(double x, double y, double theta) override;
-  std::vector<mrs_msgs::Reference> generate_references();
+  std::vector<mrs_msgs::Reference> generate_references(std::string frame_id);
 
 Q_OBJECT
 protected Q_SLOTS:
@@ -99,7 +102,7 @@ private:
   std::vector<WaypointPlanner::Position> positions;
   std::string flag_resource_;
   std::string status;
-
+  mrs_lib::Transformer transformer;
 };
 
 

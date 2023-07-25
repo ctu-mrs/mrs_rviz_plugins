@@ -13,15 +13,19 @@
 
 #include <ros/console.h>
 
-#define DEFAULT_PROPERTIES_NUM 7
+#define KEY_ENTER 16777220
 #define READ_ONLY false
+#define DEFAULT_PROPERTIES_NUM 7
 #define DEFAULT_TOPIC "trajectory_generation/path"
 #define DEFAULT_DRONE "uav15"
 
 // TODO: 
-// read frame_id and set it to the message
-// add to the readme
-// add license description ????
+// add rotate the flags
+// 
+// add license description - nope
+// X Add transformation to rotation // attitude_converter
+// X add to the readme
+// X read frame_id and set it to the message
 // X make the arrow disappear
 // X drone name and topic name without "/"
 // X add message that service has not been successful
@@ -32,14 +36,14 @@ namespace mrs_rviz_plugins
 WaypointPlanner::WaypointPlanner() {
   shortcut_key_ = 'w';
 
-  
+  transformer = mrs_lib::Transformer(node_handler);
 
   drone_name_property = new rviz::StringProperty("Drone name", DEFAULT_DRONE, "Drone name + topic = service to send path.",
                                             getPropertyContainer(), SLOT(update_topic()), this);
   topic_property = new rviz::StringProperty("Topic", DEFAULT_TOPIC, "Drone name + topic = service to send path.", 
                                             getPropertyContainer(), SLOT(update_topic()), this);
   
-  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value will be added to the actual \"z\" coordinate.",
+  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.",
                                             getPropertyContainer());
 
   use_heading_property = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading",
@@ -48,7 +52,7 @@ WaypointPlanner::WaypointPlanner() {
       getPropertyContainer());
   stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, "If true, the drone will stop at added points.",
       getPropertyContainer());
-  loop_property = new rviz::BoolProperty("Loop", false, "If true, drone will fly continuesly untill new path is sent",
+  loop_property = new rviz::BoolProperty("Loop", false, "If true, drone will fly continuously until new path is sent",
       getPropertyContainer());
   
   drone_name_property->setReadOnly(false);
@@ -77,7 +81,7 @@ void WaypointPlanner::add_property(){
       current_property, SLOT(update_position()), this);
   current_theta_property->setReadOnly(READ_ONLY);
 
-  current_property->setName("Postion " + QString::number(positions.size() + 1));
+  current_property->setName("Position " + QString::number(positions.size() + 1));
   current_property->setReadOnly(READ_ONLY);
   getPropertyContainer()->addChild(current_property);
   point_properties.push_back(current_point_property);
@@ -203,19 +207,21 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
 
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   PoseTool::processKeyEvent(event, panel);
-  if(event->key() == 16777220){
-    std::string frame_id = context_->getFrameManager()->getFixedFrame();
+  if(event->key() == KEY_ENTER){
     mrs_msgs::PathSrv srv;
+    std::string frame_id =
+    //  "/" + drone_name_property->getStdString() + 
+    "fcu";
+    srv.request.path.header.frame_id = frame_id;
     srv.request.path.use_heading = use_heading_property->getBool();
     srv.request.path.fly_now = fly_now_property->getBool();
     srv.request.path.stop_at_waypoints = stop_at_waypoints_property->getBool();
     srv.request.path.loop = loop_property->getBool();
-    srv.request.path.header.frame_id = frame_id;
 
-    srv.request.path.points = generate_references();
+    srv.request.path.points = generate_references(context_->getFrameManager()->getFixedFrame());
     if(client.call(srv)){
-      ROS_INFO("Call pocessed successfully");
-      status = "Call pocessed successfully";
+      ROS_INFO("Call processed successfully");
+      status = "Call processed successfully";
       setStatus(QString(status.c_str()));
     }else{
       ROS_INFO("Call failed: %s", srv.response.message.c_str());
@@ -237,25 +243,50 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
   return Render;
 }
 
-std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(){
+std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::string current_frame){
   // Note: ref.position is reset to 0 for some reason. Although it does not matter now, it is weird
   std::string drone_name = drone_name_property->getStdString();
   std::string topic = drone_name + std::string("/odometry/odom_main");
   
-  auto odom_ptr = ros::topic::waitForMessage<nav_msgs::Odometry>(topic, node_handler, ros::Duration(1.0));
-  if(odom_ptr.get() == nullptr){
-    ROS_INFO("z coordinate has not been received. No data sent");
-    return (std::vector<mrs_msgs::Reference> {});
+  std::string goal_frame = /*"/" +*/ drone_name + "/fcu";
+  auto tf = transformer.getTransform(current_frame, goal_frame);
+  if(!tf){
+    ROS_INFO("No transformation found. No data sent");
+    return(std::vector<mrs_msgs::Reference>{});
   }
   
-  double z = odom_ptr->pose.pose.position.z;
   std::vector<mrs_msgs::Reference> res(positions.size());
   for(int i=0; i<positions.size(); i++){
+    geometry_msgs::Pose pose; 
+    pose.position.x = positions[i].x;
+    pose.position.y = positions[i].y;
+    pose.position.z = 0;
+
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, 0, positions[i].theta);
+    pose.orientation.w = quaternion.getW();
+    pose.orientation.x = quaternion.getX();
+    pose.orientation.y = quaternion.getY();
+    pose.orientation.z = quaternion.getZ(); 
+    
+    ROS_INFO("Before transformation");
+    auto point_transformed = transformer.transform(pose, tf.value());
+    ROS_INFO("After transformation");
+    if(point_transformed){
+      ROS_INFO("Transformation went successfully");
+    }else{
+      ROS_INFO("Unable to transform cmd reference from %s to %s at time %.6f. No data sent",
+          current_frame.c_str(), goal_frame.c_str(), ros::Time::now().toSec());
+      return(std::vector<mrs_msgs::Reference>{});
+    }
+    ROS_INFO("Adding the offset...");
+    pose = point_transformed.value();
+    double rotation = mrs_lib::AttitudeConverter(pose.orientation).getHeading();
     mrs_msgs::Reference ref;
-    ref.position.x = positions[i].x;
-    ref.position.y = positions[i].y;
-    ref.position.z = z + height_offset_property->getFloat();
-    ref.heading = positions[i].theta;
+    ref.position.x = pose.position.x;
+    ref.position.y = pose.position.y;
+    ref.position.z += height_offset_property->getFloat();
+    ref.heading = rotation;
     res[i] = ref;
     ROS_INFO(" - %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
   }
