@@ -76,6 +76,9 @@ void WaypointPlanner::update_position(){
   for(int i=0; i<pose_nodes.size(); i++){
     Ogre::Vector3 pos = point_properties[i]->getVector();
     pose_nodes[i]->setPosition(pos);
+    tf2::Quaternion tmp;
+    tmp.setRPY(0,0,angle_properties[i]->getFloat());
+    pose_nodes[i]->setOrientation(tmp.getW(), tmp.getX(), tmp.getY(), tmp.getZ());
     // Update is called on creating new position, and seems to be called before onPoseSet.
     // So no need to change it here on initing. If user changes values manually, position will be present and updated.
     if(i<positions.size()){
@@ -208,16 +211,11 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   node->setPosition(position);
   pose_nodes.push_back(node);
   
-  ROS_INFO("Before current props %p", current_point_property);
   current_point_property->setVector(position);
-  ROS_INFO("Before current theta props %p", current_theta_property);
   current_theta_property->setFloat(theta);
-  ROS_INFO("After current props");
 
   positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
-  ROS_INFO("After pushback");
   add_property();
-  ROS_INFO("Returning...");
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
