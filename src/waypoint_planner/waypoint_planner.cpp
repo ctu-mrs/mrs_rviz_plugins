@@ -13,10 +13,19 @@
 
 #include <ros/console.h>
 
-#define DEFAULT_PROPERTIES_NUM 6
+#define DEFAULT_PROPERTIES_NUM 7
 #define READ_ONLY false
-#define DEFAULT_TOPIC "/trajectory_generation/path"
-#define DEFAULT_DRONE "/uav15"
+#define DEFAULT_TOPIC "trajectory_generation/path"
+#define DEFAULT_DRONE "uav15"
+
+// TODO: 
+// read frame_id and set it to the message
+// add to the readme
+// add license description ????
+// X make the arrow disappear
+// X drone name and topic name without "/"
+// X add message that service has not been successful
+// X height offset
 
 namespace mrs_rviz_plugins
 {
@@ -28,8 +37,10 @@ WaypointPlanner::WaypointPlanner() {
   topic_property = new rviz::StringProperty("Topic", DEFAULT_TOPIC, "Drone name + topic = service to send path.", 
                                             getPropertyContainer(), SLOT(update_topic()), this);
   
-  // TODO: update description
-  use_heading_property = new rviz::BoolProperty("Use heading", false, "Honestly, no clue.",
+  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value will be added to the actual \"z\" coordinate.",
+                                            getPropertyContainer());
+
+  use_heading_property = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading",
       getPropertyContainer());
   fly_now_property = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.",
       getPropertyContainer());
@@ -45,15 +56,12 @@ WaypointPlanner::WaypointPlanner() {
   stop_at_waypoints_property->setReadOnly(false);
   loop_property->setReadOnly(false);
 
-  // TODO: initialize client by uav_name from `rosservice list` or given by user in tool properties
 }
 
 void WaypointPlanner::update_topic(){
-  client = node_handler.serviceClient<mrs_msgs::PathSrv>(drone_name_property->getStdString() + topic_property->getStdString());
+  client = node_handler.serviceClient<mrs_msgs::PathSrv>(std::string("/") + drone_name_property->getStdString() + std::string("/") + topic_property->getStdString());
   status = std::string("Drone name is set to ") + drone_name_property->getStdString();
   setStatus(QString(status.c_str()));
-  
-  // pub = node_handler.advertise<geometry_msgs::PoseStamped>(topic_property->getStdString(), 2);
 }
 
 void WaypointPlanner::add_property(){
@@ -67,7 +75,7 @@ void WaypointPlanner::add_property(){
       current_property, SLOT(update_position()), this);
   current_theta_property->setReadOnly(READ_ONLY);
 
-  current_property->setName("Position");
+  current_property->setName("Postion " + QString::number(positions.size() + 1));
   current_property->setReadOnly(READ_ONLY);
   getPropertyContainer()->addChild(current_property);
   point_properties.push_back(current_point_property);
@@ -114,7 +122,7 @@ void WaypointPlanner::onInitialize(){
 
     std::size_t index = name.find("/", 0, 1);
     if(index != std::string::npos){
-      name = name.erase(0, index);
+      name = name.erase(0, index+1);
     }
 
     index = name.find("/", 1, 1);
@@ -137,8 +145,9 @@ void WaypointPlanner::onInitialize(){
     drone_name_property->setStdString(drone_names[0]);
     status = std::string("Drone name is set to ") + drone_name_property->getStdString();
   }
-  client = node_handler.serviceClient<mrs_msgs::PathSrv>(drone_name_property->getStdString() + topic_property->getStdString());
-  // update_topic();
+
+  client = node_handler.serviceClient<mrs_msgs::PathSrv>(std::string("/") + 
+  drone_name_property->getStdString() + std::string("/") + topic_property->getStdString());
 }
 
 // Choosing the tool
@@ -147,8 +156,6 @@ void WaypointPlanner::activate()
   for(int i=0; i<pose_nodes.size(); i++){
     pose_nodes[i]->setVisible(true);
   }
-
-  // TODO: change to status message.
 
   setStatus(QString(status.c_str()));
 
@@ -171,10 +178,10 @@ void WaypointPlanner::deactivate(){
 }
 
 void WaypointPlanner::onPoseSet(double x, double y, double theta){
+  arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
   Ogre::Entity* entity = scene_manager_->createEntity(flag_resource_);
   Ogre::Vector3 position = Ogre::Vector3(x, y, 0);
-  // rviz::Arrow* arrow = new rviz::Arrow();
   node->attachObject(entity);
   node->setVisible(true);
   node->setPosition(position);
@@ -182,9 +189,9 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta){
   
   current_point_property->setVector(position);
   current_theta_property->setFloat(theta);
-  add_property();
 
   positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
+  add_property();
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
@@ -203,9 +210,13 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
 
     srv.request.path.points = generate_references();
     if(client.call(srv)){
-      ROS_INFO("Call went successfully");
+      ROS_INFO("Call pocessed successfully");
+      status = "Call pocessed successfully";
+      setStatus(QString(status.c_str()));
     }else{
       ROS_INFO("Call failed: %s", srv.response.message.c_str());
+      status = "Call failed: " + srv.response.message + " Try checking, if drone name is correct.";
+      setStatus(QString(status.c_str()));
     }
     positions.clear();
     point_properties.clear();
@@ -239,7 +250,7 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(){
     mrs_msgs::Reference ref;
     ref.position.x = positions[i].x;
     ref.position.y = positions[i].y;
-    ref.position.z = z;
+    ref.position.z = z + height_offset_property->getFloat();
     ref.heading = positions[i].theta;
     res[i] = ref;
     ROS_INFO(" - %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);

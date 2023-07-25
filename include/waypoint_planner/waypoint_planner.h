@@ -90,6 +90,7 @@ private:
   rviz::BoolProperty* fly_now_property;
   rviz::BoolProperty* stop_at_waypoints_property;
   rviz::BoolProperty* loop_property;
+  rviz::FloatProperty* height_offset_property;
 
   // Communicating through ros
   ros::NodeHandle node_handler;
