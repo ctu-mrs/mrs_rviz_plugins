@@ -20,9 +20,9 @@
 #define DEFAULT_DRONE "uav15"
 
 // TODO: 
-// add rotate the flags
 // 
 // add license description - nope
+// X add rotate the flags
 // X Add transformation to rotation // attitude_converter
 // X add to the readme
 // X read frame_id and set it to the message
@@ -113,7 +113,7 @@ void WaypointPlanner::onInitialize(){
   // Load the flag model
   flag_resource_ = "package://rviz_plugin_tutorials/media/flag.dae";
   if(rviz::loadMeshFromResource( flag_resource_ ).isNull()){
-    ROS_ERROR( "PlantFlagTool: failed to load model resource '%s'.", flag_resource_.c_str() );
+    ROS_ERROR( "[Waypoint planner]: failed to load model resource '%s'.", flag_resource_.c_str() );
   }
 
   // Preparing for searching the drone's name
@@ -130,7 +130,7 @@ void WaypointPlanner::onInitialize(){
     if(name.find("trajectory_generation/path") == std::string::npos){
       continue;
     }
-    ROS_INFO("%s found", name.c_str());
+    ROS_INFO("[Waypoint planner]: %s found", name.c_str());
 
     std::size_t index = name.find("/", 0, 1);
     if(index != std::string::npos){
@@ -143,7 +143,7 @@ void WaypointPlanner::onInitialize(){
     }
 
     drone_names.push_back(name);
-    ROS_INFO("%s was added to drone names", name.c_str());
+    ROS_INFO("[Waypoint planner]: %s was added to drone names", name.c_str());
     state[x] = name;
   }
 
@@ -237,11 +237,11 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
     
     // Make the call
     if(client.call(srv)){
-      ROS_INFO("Call processed successfully");
+      ROS_INFO("[Waypoint planner]: Call processed successfully");
       status = "Call processed successfully";
       setStatus(QString(status.c_str()));
     }else{
-      ROS_INFO("Call failed: %s", srv.response.message.c_str());
+      ROS_INFO("[Waypoint planner]: Call failed: %s", srv.response.message.c_str());
       status = "Call failed: " + srv.response.message + " Try checking, if drone name is correct.";
       setStatus(QString(status.c_str()));
     }
@@ -273,7 +273,7 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
   std::string goal_frame = /*"/" +*/ drone_name + "/fcu";
   auto tf = transformer.getTransform(current_frame, goal_frame);
   if(!tf){
-    ROS_INFO("No transformation found. No data sent");
+    ROS_INFO("[Waypoint planner]: No transformation found. No data sent");
     return(std::vector<mrs_msgs::Reference>{});
   }
   
@@ -293,10 +293,8 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
     
     // Transform
     auto point_transformed = transformer.transform(pose, tf.value());
-    if(point_transformed){
-      ROS_INFO("Transformation went successfully");
-    }else{
-      ROS_INFO("Unable to transform cmd reference from %s to %s at time %.6f. No data sent",
+    if(!point_transformed){
+      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f. No data sent",
           current_frame.c_str(), goal_frame.c_str(), ros::Time::now().toSec());
       return(std::vector<mrs_msgs::Reference>{});
     }
@@ -312,8 +310,9 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
     ref.position.z += height_offset_property->getFloat();
     ref.heading = rotation;
     res[i] = ref;
-    ROS_INFO(" - %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
+    ROS_INFO("[Waypoint planner]: %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
   }
+  ROS_INFO("[Waypoint planner]: All transformation went successfully");
   return res;
 }
 
