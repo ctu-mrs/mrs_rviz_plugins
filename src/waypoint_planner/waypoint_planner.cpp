@@ -190,13 +190,19 @@ void WaypointPlanner::deactivate(){
   angle_properties.pop_back();
 }
 
-// Saves inputted position
+// Saves inputted position. Leaves flag model on inputted position.
 void WaypointPlanner::onPoseSet(double x, double y, double theta){
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
+  // Note: after reset the file cannot be found. Even try-catch and loading it 
+  // again does not help.
   Ogre::Entity* entity = scene_manager_->createEntity(flag_resource_);
+  
   Ogre::Vector3 position = Ogre::Vector3(x, y, 0);
   node->attachObject(entity);
+  tf2::Quaternion tmp;
+  tmp.setRPY(0,0,theta);
+  node->rotate(Ogre::Quaternion(tmp.getW(), tmp.getX(), tmp.getY(), tmp.getZ()));
   node->setVisible(true);
   node->setPosition(position);
   pose_nodes.push_back(node);

@@ -103,6 +103,7 @@ private:
   std::string flag_resource_;
   std::string status;
   mrs_lib::Transformer transformer;
+  Ogre::Entity* model;
 };
 
 
