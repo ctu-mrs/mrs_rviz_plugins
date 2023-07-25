@@ -32,6 +32,8 @@ namespace mrs_rviz_plugins
 WaypointPlanner::WaypointPlanner() {
   shortcut_key_ = 'w';
 
+  
+
   drone_name_property = new rviz::StringProperty("Drone name", DEFAULT_DRONE, "Drone name + topic = service to send path.",
                                             getPropertyContainer(), SLOT(update_topic()), this);
   topic_property = new rviz::StringProperty("Topic", DEFAULT_TOPIC, "Drone name + topic = service to send path.", 
@@ -202,11 +204,13 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   PoseTool::processKeyEvent(event, panel);
   if(event->key() == 16777220){
+    std::string frame_id = context_->getFrameManager()->getFixedFrame();
     mrs_msgs::PathSrv srv;
     srv.request.path.use_heading = use_heading_property->getBool();
     srv.request.path.fly_now = fly_now_property->getBool();
     srv.request.path.stop_at_waypoints = stop_at_waypoints_property->getBool();
     srv.request.path.loop = loop_property->getBool();
+    srv.request.path.header.frame_id = frame_id;
 
     srv.request.path.points = generate_references();
     if(client.call(srv)){
