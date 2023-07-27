@@ -182,6 +182,25 @@ target_link_libraries(MrsNamedGoalTool
   ${catkin_LIBRARIES}
   )
 
+## ODOM ViZ
+
+add_library(MrsOdomViz
+  include/odom_viz/odom_viz.h
+  include/odom_viz/visual_entity.h
+  src/odom_viz/odom_viz.cpp
+  src/odom_viz/visual_entity.cpp
+)
+
+add_dependencies(MrsOdomViz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsOdomViz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
 ## --------------------------------------------------------------
 ## |                           Install                          |
 ## --------------------------------------------------------------

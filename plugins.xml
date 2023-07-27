@@ -33,3 +33,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsOdomViz">
+  <class name="mrs_rviz_plugins/OdomViz" type="mrs_rviz_plugins::OdomViz" base_class_type="rviz::Display">
+    <description>
+      Advanced nav_msgs/Odometry visualizer.
+    </description>
+  </class>
+</library>
