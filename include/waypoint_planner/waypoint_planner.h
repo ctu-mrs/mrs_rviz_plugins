@@ -14,12 +14,15 @@
 #include <XmlRpcValue.h>
 #include <OGRE/OgreSceneNode.h>
 
+#include <rviz/ogre_helpers/arrow.h>
+#include <rviz/ogre_helpers/axes.h>
 #include <rviz/default_plugin/tools/pose_tool.h>
 #include <rviz/properties/property.h>
 #include <rviz/properties/string_property.h>
 #include <rviz/properties/vector_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/bool_property.h>
+#include <rviz/properties/enum_property.h>
 #include <rviz/render_panel.h>
 
 #include <mrs_lib/transformer.h>
@@ -68,6 +71,7 @@ Q_OBJECT
 protected Q_SLOTS:
   void update_topic();
   void update_position();
+  void update_shape();
 
 private:
   class Position{
@@ -89,6 +93,8 @@ private:
   std::vector<Ogre::SceneNode*> pose_nodes;
   std::vector<rviz::VectorProperty*> point_properties;
   std::vector<rviz::FloatProperty*> angle_properties;
+  std::vector<rviz::Arrow*> arrows;
+  std::vector<rviz::Axes*> axess;
 
   // Current properties
   rviz::Property* current_property;
@@ -103,13 +109,13 @@ private:
   rviz::BoolProperty* stop_at_waypoints_property;
   rviz::BoolProperty* loop_property;
   rviz::FloatProperty* height_offset_property;
+  rviz::EnumProperty* shape_property;
 
   // Communicating through ros
   ros::NodeHandle node_handler;
   ros::ServiceClient client;
 
   std::vector<WaypointPlanner::Position> positions;
-  std::string flag_resource_;
   std::string status;
   mrs_lib::Transformer transformer;
   Ogre::Entity* model;
