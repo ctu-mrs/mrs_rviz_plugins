@@ -24,15 +24,19 @@
 
 #include <mrs_lib/transformer.h>
 #include <mrs_lib/attitude_converter.h>
+#include <mrs_msgs/ControlManagerDiagnostics.h>
+#include <mrs_msgs/Reference.h> 
 #include <mrs_msgs/PathSrv.h>
 #include <mrs_msgs/Path.h>
-#include <mrs_msgs/Reference.h> 
+#include <mrs_msgs/Vec4.h>
 #include <nav_msgs/Odometry.h>
 
 #include <qevent.h>
 #include <qkeysequence.h>
 
 #include <vector>
+#include <atomic>
+#include <thread>
 
 namespace mrs_rviz_plugins
 {
@@ -53,7 +57,12 @@ public:
 protected:
   void add_property();
   void onPoseSet(double x, double y, double theta) override;
-  std::vector<mrs_msgs::Reference> generate_references(std::string frame_id);
+  // Transforms positions from current frame to the fcu frame and saves results to vector.
+  // frame_id: frame, that points are set in
+  // num: number of required points to transform. -1 will process all available points.
+  std::vector<mrs_msgs::Reference> generate_references(std::string frame_id, int num);
+  void process_loop();
+  void send_waypoints();
 
 Q_OBJECT
 protected Q_SLOTS:
@@ -104,6 +113,7 @@ private:
   std::string status;
   mrs_lib::Transformer transformer;
   Ogre::Entity* model;
+  std::atomic_bool is_on_loop;
 };
 
 

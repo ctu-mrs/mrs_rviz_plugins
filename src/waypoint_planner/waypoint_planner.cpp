@@ -13,24 +13,14 @@
 
 #include <ros/console.h>
 
+#include <stdlib.h>
+
 #define KEY_ENTER 16777220
 #define KEY_DELETE 16777223
 #define READ_ONLY false
 #define DEFAULT_PROPERTIES_NUM 7
 #define DEFAULT_TOPIC "trajectory_generation/path"
 #define DEFAULT_DRONE "uav15"
-
-// TODO: 
-// 
-// add license description - nope
-// X add rotate the flags
-// X Add transformation to rotation // attitude_converter
-// X add to the readme
-// X read frame_id and set it to the message
-// X make the arrow disappear
-// X drone name and topic name without "/"
-// X add message that service has not been successful
-// X height offset
 
 namespace mrs_rviz_plugins
 {
@@ -196,6 +186,11 @@ void WaypointPlanner::deactivate(){
 
 // Saves inputted position. Leaves flag model on inputted position.
 void WaypointPlanner::onPoseSet(double x, double y, double theta){
+  if(is_on_loop){
+    status = "Request denied, the program waits for drone to get to the first waypoint";
+    setStatus(QString(status.c_str()));
+    return;
+  }
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
   // Note: after reset the file cannot be found. Even try-catch and loading it 
@@ -223,44 +218,128 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
   return res & (~Finished);
 }
 
-// Sends added waypoints to service
+void WaypointPlanner::process_loop(){
+  is_on_loop = true;
+  // Set general attributes
+  mrs_msgs::Vec4 srv;
+  auto point = generate_references(context_->getFrameManager()->getFixedFrame(), 1);
+  srv.request.goal[0] = point[0].position.x;
+  srv.request.goal[1] = point[0].position.y;
+  srv.request.goal[2] = point[0].position.z;
+  srv.request.goal[3] = 0;
+
+  // srv.request.goal[0] = positions[0].x;
+  // srv.request.goal[1] = positions[0].y;
+  // srv.request.goal[2] = positions[0].z;
+  // srv.request.goal[3] = positions[0].theta;
+  
+  // Temporaly set client to send requests to different service
+  client = node_handler.serviceClient<mrs_msgs::Vec4>(std::string("/") + 
+  drone_name_property->getStdString() + std::string("/control_manager/goto_fcu"));
+
+
+
+  // Make the call
+  client.call(srv);
+  client = node_handler.serviceClient<mrs_msgs::PathSrv>(std::string("/") + 
+  drone_name_property->getStdString() + std::string("/") + topic_property->getStdString());
+  if(srv.response.success){
+    ROS_INFO("[Waypoint planner]: Looping: initial call processed successfully");
+    status = "Looping: initial call processed successfully";
+    setStatus(QString(status.c_str()));
+  }else{
+    ROS_INFO("[Waypoint planner]: Loop: initial call failed: %s", srv.response.message.c_str());
+    status = "Looping: initial call failed: " + srv.response.message + " Try checking, if drone name is correct.";
+    setStatus(QString(status.c_str()));
+
+    is_on_loop = false;
+    return;
+  }
+
+  // Wait until drone is on the goal
+  std::string drone_name = drone_name_property->getStdString();
+  std::string topic = drone_name + std::string("/control_manager/diagnostics");
+  bool is_ok = true;;
+  while(true){
+    auto info_msg = ros::topic::waitForMessage<mrs_msgs::ControlManagerDiagnostics>(topic, node_handler, ros::Duration(1.0));
+    if(info_msg.get() == nullptr){
+      ROS_INFO("Diagnostics data are not received");
+      continue;
+    }
+    if(!info_msg->flying_normally){
+      is_ok = false;
+      break;
+    }
+    if(!info_msg->tracker_status.have_goal){
+      break;
+    }
+  }
+
+  is_on_loop = false;
+  if(!is_ok){
+    return;
+  }
+
+  Position final_pos = Position(positions[0].x, positions[0].y, positions[0].z, positions[0].theta);
+  positions.push_back(final_pos);
+
+  send_waypoints();
+}
+
+void WaypointPlanner::send_waypoints(){
+  // Set general attributes
+  mrs_msgs::PathSrv srv;
+  // std::string frame_id = "fcu";
+  srv.request.path.header.frame_id = "fcu";
+  srv.request.path.use_heading = use_heading_property->getBool();
+  srv.request.path.fly_now = fly_now_property->getBool();
+  srv.request.path.stop_at_waypoints = stop_at_waypoints_property->getBool();
+  srv.request.path.loop = loop_property->getBool();
+
+  // Transform positions
+  srv.request.path.points = generate_references(context_->getFrameManager()->getFixedFrame(), -1);
+  
+  // Make the call
+  client.call(srv);
+  if(srv.response.success){
+    ROS_INFO("[Waypoint planner]: Call processed successfully");
+    status = "Call processed successfully";
+    setStatus(QString(status.c_str()));
+  }else{
+    ROS_INFO("[Waypoint planner]: Call failed: %s", srv.response.message.c_str());
+    status = "Call failed: " + srv.response.message + " Try checking, if drone name is correct.";
+    setStatus(QString(status.c_str()));
+  }
+
+  // Clean-up
+  positions.clear();
+  point_properties.clear();
+  angle_properties.clear();
+  for(int i=0; i<pose_nodes.size(); i++){
+    delete pose_nodes[i];
+  }
+  pose_nodes.clear();
+  getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM, -1);
+  add_property();
+}
+
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
+  if(is_on_loop){
+    status = "Request denied, the program waits for drone to get to the first waypoint";
+    setStatus(QString(status.c_str()));
+    return Render;
+  }
   PoseTool::processKeyEvent(event, panel);
   ROS_INFO("Received key %d", (int) event->key());
+  // Sends added waypoints to service
   if(event->key() == KEY_ENTER){
-    // Set general attributes
-    mrs_msgs::PathSrv srv;
-    std::string frame_id = "fcu";
-    srv.request.path.header.frame_id = frame_id;
-    srv.request.path.use_heading = use_heading_property->getBool();
-    srv.request.path.fly_now = fly_now_property->getBool();
-    srv.request.path.stop_at_waypoints = stop_at_waypoints_property->getBool();
-    srv.request.path.loop = loop_property->getBool();
-
-    // Transform positions
-    srv.request.path.points = generate_references(context_->getFrameManager()->getFixedFrame());
-    
-    // Make the call
-    if(client.call(srv)){
-      ROS_INFO("[Waypoint planner]: Call processed successfully");
-      status = "Call processed successfully";
-      setStatus(QString(status.c_str()));
+    if(loop_property->getBool()){
+      std::thread t = std::thread([this]{process_loop();});
+      t.detach();
     }else{
-      ROS_INFO("[Waypoint planner]: Call failed: %s", srv.response.message.c_str());
-      status = "Call failed: " + srv.response.message + " Try checking, if drone name is correct.";
-      setStatus(QString(status.c_str()));
+      send_waypoints();
     }
-
-    // Clean-up
-    positions.clear();
-    point_properties.clear();
-    angle_properties.clear();
-    for(int i=0; i<pose_nodes.size(); i++){
-      delete pose_nodes[i];
-    }
-    pose_nodes.clear();
-    getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM, -1);
-    add_property();
+    
     // Note: the tool does not exit. Good thing that it doesn't have to XD
     return Render;
   }
@@ -269,8 +348,6 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
     std::size_t index = point_properties.size() - 2;
     point_properties.erase(point_properties.begin() + index);
     angle_properties.erase(angle_properties.begin() + index);
-    // point_properties.pop_back();
-    // angle_properties.pop_back();
     delete pose_nodes.back();
     pose_nodes.pop_back();
     ROS_INFO("Removing index = %d", DEFAULT_PROPERTIES_NUM + positions.size());
@@ -280,12 +357,13 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
   return Render;
 }
 
-// Transforms positions from current frame to the fcu frame and saves results to vector.
-std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::string current_frame){
+
+std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::string current_frame, int num){
+  num = num != -1 ? num : positions.size(); 
   // Note: ref.position is reset to 0 for some reason. Although it does not matter now, it is weird
   std::string drone_name = drone_name_property->getStdString();
   std::string topic = drone_name + std::string("/odometry/odom_main");
-  std::vector<mrs_msgs::Reference> res(positions.size());
+  std::vector<mrs_msgs::Reference> res(num);
   
   // Make transformer
   std::string goal_frame = /*"/" +*/ drone_name + "/fcu";
@@ -296,7 +374,7 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
   }
   
   // Transforming
-  for(int i=0; i<positions.size(); i++){
+  for(int i=0; i<positions.size() && i < num; i++){
     // Setting position in current frame.
     geometry_msgs::Pose pose; 
     pose.position.x = positions[i].x;
@@ -330,6 +408,7 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
     res[i] = ref;
     ROS_INFO("[Waypoint planner]: %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
   }
+
   ROS_INFO("[Waypoint planner]: All transformation went successfully");
   return res;
 }
