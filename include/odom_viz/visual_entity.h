@@ -22,11 +22,13 @@ public:
 
     ~VisualEntity();
 
-    void set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_, float vel_abs_);
+    void set(Ogre::Vector3 point_, Ogre::Vector3 velocity_, 
+                Ogre::Quaternion orientation_, float vel_abs_);
 
     // Position
     void set_pose_arrow_color(QColor color);
-    void set_pose_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter);
+    void set_pose_arrow_params(float shaft_length, float shaft_diameter, 
+                                float head_length, float head_diameter);
     void set_pose_type(PoseType type);
     void set_axes_params(float len, float rad);
 
@@ -55,8 +57,6 @@ protected:
     rviz::Arrow* pose_arrow;
     rviz::Arrow* vel_arrow;
     rviz::Axes* pose_axes;
-    // pose_elipsoid
-    // pose_elipsoid
 };
 }
 

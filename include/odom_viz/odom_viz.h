@@ -40,6 +40,9 @@ public:
     void reset() override;
 
 protected Q_SLOTS:
+    // General
+    void on_keep_changed();
+
     // Position
     void on_position_changed();
     void on_shape_changed();

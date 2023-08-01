@@ -13,7 +13,6 @@ VisualEntity::VisualEntity(Ogre::SceneManager* scene_manager_){
     pose_arrow = new rviz::Arrow(scene_manager, pose_arrow_scene_node);
     pose_arrow->setDirection(Ogre::Vector3(1, 0, 0));
     vel_arrow = new rviz::Arrow(scene_manager, vel_arrow_scene_node);
-    // vel_arrow->setDirection(Ogre::Vector3(1, 0, 0));
     pose_axes = new rviz::Axes(scene_manager, axes_scene_node);
 
     pose_type = PoseType::arrow;
@@ -25,7 +24,8 @@ VisualEntity::~VisualEntity(){
    scene_manager->destroySceneNode(vel_arrow_scene_node);
 }
 
-void VisualEntity::set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_, float vel_abs_){
+void VisualEntity::set(Ogre::Vector3 point_, Ogre::Vector3 velocity_, 
+                       Ogre::Quaternion orientation_, float vel_abs_){
     point = point_;
     orientation = orientation_;
     vel_abs = vel_abs_;
@@ -72,7 +72,8 @@ void VisualEntity::set_pose_arrow_color(QColor qcolor){
     pose_arrow->setColor(color);
 }
 
-void VisualEntity::set_pose_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter){
+void VisualEntity::set_pose_arrow_params(float shaft_length, float shaft_diameter, 
+                                         float head_length, float head_diameter){
     pose_arrow->set(shaft_length, shaft_diameter, head_length, head_diameter);
 }
 
@@ -91,7 +92,8 @@ void VisualEntity::set_vel_arrow_color(QColor qcolor){
     vel_arrow->setColor(color);
 }
 
-void VisualEntity::set_vel_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter, float scale_){
+void VisualEntity::set_vel_arrow_params(float shaft_length, float shaft_diameter, 
+                                float head_length, float head_diameter, float scale_){
     scale = scale_;
     vel_arrow->set(shaft_length, shaft_diameter, head_length, head_diameter);
     vel_arrow->setScale(Ogre::Vector3(scale*vel_abs, scale*vel_abs, scale*vel_abs));

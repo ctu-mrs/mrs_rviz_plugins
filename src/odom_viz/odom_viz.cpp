@@ -6,13 +6,13 @@ namespace mrs_rviz_plugins
 OdomViz::OdomViz(){
     // General
     pose_tolerance_property = new rviz::FloatProperty("Position tolerance", 0.1, 
-                                "Distance, in meters from the last arrow dropped, that will cause a new arrow to drop.",
-                                this);
+                "Distance, in meters from the last arrow dropped, that will cause a new arrow to drop.",
+                this);
     angle_tolerance_property = new rviz::FloatProperty("Angle tolerance", 0.1,
-                                "Angular distance from the last arrow dropped, that will cause a new arrow to drop.",
-                                this);
+                "Angular distance from the last arrow dropped, that will cause a new arrow to drop.",
+                this);
     keep_property = new rviz::IntProperty("Keep", 100, "Number of arrows to keep before removing the oldest one.",
-                                this);
+                                this, SLOT(on_keep_changed()), this);
     keep_property->setMin(1);
     keep_property->setMax(30000);
 
@@ -29,7 +29,8 @@ OdomViz::OdomViz(){
     pose_color_property = new rviz::ColorProperty("Color", color, "Color of the position arrows.", 
                                 pose_property, SLOT(on_pose_color_changed()), this);
 
-    pose_opacity_property   = new rviz::IntProperty("Opacity", 255, "Amount of opacity to apply to the arrow. 0 is fully transparent.",
+    pose_opacity_property   = new rviz::IntProperty("Opacity", 255, 
+                                "Amount of opacity to apply to the arrow. 0 is fully transparent.",
                                 pose_property, SLOT(on_pose_color_changed()), this);
     pose_opacity_property->setMax(1);
     pose_opacity_property->setMin(255);
@@ -71,7 +72,7 @@ OdomViz::OdomViz(){
                                 vel_property, SLOT(on_vel_params_changed()), this);
     vel_head_rad_property = new rviz::FloatProperty("Head radius", 0.2, "Radius of the each arrow's head, in meters.", 
                                 vel_property, SLOT(on_vel_params_changed()), this);
-    vel_scale_property = new rviz::FloatProperty("Arrow scale", 0.3, "Scale of velocity arrow [0.001 - 1.0]", 
+    vel_scale_property = new rviz::FloatProperty("Arrow scale", 0.3, "Scale of velocity arrow", 
                                 vel_property, SLOT(on_vel_params_changed()), this);
 
     // Covariance 
@@ -118,7 +119,7 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
         return;
     }
 
-    if(entities.size() == keep_property->getInt() && !entities.empty()){
+    if(entities.size() >= keep_property->getInt() && !entities.empty()){
         delete entities.front();
         entities.erase(entities.begin());
     }
@@ -159,12 +160,14 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
 
     // Set parameters of velocity arrow
     entity->set_vel_arrow_color(color);
-    entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter, vel_scale_property->getFloat());
+    entity->set_vel_arrow_params(shaft_length, shaft_diameter, 
+        head_length, head_diameter, vel_scale_property->getFloat());
     entity->set_vel_visible(is_visible);
 
     // Covariances are stored in covariance_property
     typedef rviz::CovarianceProperty::CovarianceVisualPtr CovarianceVisualPtr;
-    CovarianceVisualPtr cov = covariance_property->createAndPushBackVisual(context_->getSceneManager(),context_->getSceneManager()->getRootSceneNode());
+    CovarianceVisualPtr cov = covariance_property->createAndPushBackVisual(
+        context_->getSceneManager(),context_->getSceneManager()->getRootSceneNode());
 
     // Read data from message
     Ogre::Vector3 position = Ogre::Vector3(msg->pose.pose.position.x, 
@@ -205,14 +208,11 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     }
     velocity = velocity - position;
 
-    ROS_INFO("velocity abs:  %f", vel_abs);
-
     cov->setPosition(position);
     cov->setOrientation(orientation);
     cov->setCovariance(msg->pose);
-    entity->set_message(position, velocity, orientation, vel_abs);
+    entity->set(position, velocity, orientation, vel_abs);
     entities.push_back(entity);
-    // ROS_INFO("Arrow added");
 }
 
 void OdomViz::onDisable(){
@@ -223,6 +223,17 @@ void OdomViz::onDisable(){
 void OdomViz::onEnable(){
     MFDClass::onEnable();
     ROS_INFO("Enabled");
+}
+
+void OdomViz::on_keep_changed(){
+    int to_delete = entities.size() - keep_property->getInt();
+    if(to_delete <= 0){
+        return;
+    }
+    for(int i=0; i<to_delete; i++){
+        delete entities[i];
+    }
+    entities.erase(entities.begin(), entities.begin() + to_delete);
 }
 
 void OdomViz::on_position_changed(){
@@ -333,7 +344,8 @@ void OdomViz::on_vel_params_changed(){
     float scale          = vel_scale_property->getFloat();
 
     for(auto entity : entities){
-        entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter, scale);
+        entity->set_vel_arrow_params(shaft_length, shaft_diameter, 
+            head_length, head_diameter, scale);
     }
 }
 
