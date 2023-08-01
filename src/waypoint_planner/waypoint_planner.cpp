@@ -29,22 +29,29 @@ WaypointPlanner::WaypointPlanner() {
   transformer = mrs_lib::Transformer(node_handler);
 
   // Add default properties
-  drone_name_property = new rviz::StringProperty("Drone name", DEFAULT_DRONE, "Drone name + topic = service to send path.",
-                                            getPropertyContainer(), SLOT(update_topic()), this);
-  topic_property = new rviz::StringProperty("Topic", DEFAULT_TOPIC, "Drone name + topic = service to send path.", 
-                                            getPropertyContainer(), SLOT(update_topic()), this);
-  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.",
-                                            getPropertyContainer());
-  use_heading_property = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading",
-      getPropertyContainer());
-  fly_now_property = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.",
-      getPropertyContainer());
-  stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, "If true, the drone will stop at added points.",
-      getPropertyContainer());
-  loop_property = new rviz::BoolProperty("Loop", false, "If true, drone will fly continuously until new path is sent",
-      getPropertyContainer());
+  drone_name_property = new rviz::StringProperty("Drone name", DEFAULT_DRONE, 
+                            "Drone name + topic = service to send path.",
+                            getPropertyContainer(), SLOT(update_topic()), this);
+  topic_property = new rviz::StringProperty("Topic", DEFAULT_TOPIC, 
+                            "Drone name + topic = service to send path.", 
+                            getPropertyContainer(), SLOT(update_topic()), this);
+  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, 
+                            "Value to be added to the actual \"z\" coordinate.",
+                            getPropertyContainer());
+  use_heading_property = new rviz::BoolProperty("Use heading", true, 
+                            "If true, drone will rotate according to set heading",
+                            getPropertyContainer());
+  fly_now_property = new rviz::BoolProperty("Fly now", true, 
+                            "If true, the drone will start moving imediately after enter.",
+                            getPropertyContainer());
+  stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, 
+                            "If true, the drone will stop at added points.",
+                            getPropertyContainer());
+  loop_property = new rviz::BoolProperty("Loop", false, 
+                            "If true, drone will fly continuously until new path is sent",
+                            getPropertyContainer());
   shape_property = new rviz::EnumProperty("Shape", "Axes", "Shape to show positions.",
-      getPropertyContainer(), SLOT(update_shape()), this);
+                            getPropertyContainer(), SLOT(update_shape()), this);
   
   // Allow changing the values of properties
   drone_name_property->setReadOnly(false);
@@ -60,7 +67,8 @@ WaypointPlanner::WaypointPlanner() {
 
 // Callback on topic change
 void WaypointPlanner::update_topic(){
-  client = node_handler.serviceClient<mrs_msgs::PathSrv>(std::string("/") + drone_name_property->getStdString() + std::string("/") + topic_property->getStdString());
+  client = node_handler.serviceClient<mrs_msgs::PathSrv>(std::string("/") + 
+      drone_name_property->getStdString() + std::string("/") + topic_property->getStdString());
   status = std::string("Drone name is set to ") + drone_name_property->getStdString();
   setStatus(QString(status.c_str()));
 }
@@ -75,7 +83,8 @@ void WaypointPlanner::update_position(){
     tmp.setRPY(0,0,angle_properties[i]->getFloat());
     pose_nodes[i]->setOrientation(tmp.getW(), tmp.getX(), tmp.getY(), tmp.getZ());
     // Update is called on creating new position, and seems to be called before onPoseSet.
-    // So no need to change it here on initing. If user changes values manually, position will be present and updated.
+    // So no need to change it here on initing. If user changes values manually, 
+    // position will be present and updated.
     if(i<positions.size()){
       positions[i].set_values(pos, angle_properties[i]->getFloat());
     }
@@ -251,6 +260,49 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event){
   return res & (~Finished);
 }
 
+int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
+  if(is_on_loop){
+    status = "Request denied, the program waits for drone to get to the first waypoint";
+    setStatus(QString(status.c_str()));
+    return Render;
+  }
+  PoseTool::processKeyEvent(event, panel);
+  ROS_INFO("[Waypoint planner]: Received key %d", (int) event->key());
+  // Sends added waypoints to service
+  if(event->key() == KEY_ENTER){
+    if(loop_property->getBool()){
+      std::thread t = std::thread([this]{process_loop();});
+      t.detach();
+    }else{
+      send_waypoints();
+    }
+    
+    // Note: the tool does not exit. Good thing that it doesn't have to XD
+    return Render;
+  }
+  if(event->key() == KEY_DELETE && !positions.empty()){
+    positions.pop_back();
+    std::size_t index = point_properties.size() - 2;
+    point_properties.erase(point_properties.begin() + index);
+    angle_properties.erase(angle_properties.begin() + index);
+    delete pose_nodes.back();
+    pose_nodes.pop_back();
+    if(!arrows.empty()){
+      delete arrows.back();
+      arrows.pop_back();
+    }
+    if(!axess.empty()){
+      delete axess.back();
+      axess.pop_back();
+    }
+    ROS_INFO("[Waypoint planner]: Removing index = %ld", 
+            DEFAULT_PROPERTIES_NUM + positions.size());
+    getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM + positions.size(), 1);
+    current_property->setName("Position " + QString::number(positions.size() + 1));
+  }
+  return Render;
+}
+
 void WaypointPlanner::process_loop(){
   is_on_loop = true;
   // Set general attributes
@@ -275,7 +327,8 @@ void WaypointPlanner::process_loop(){
     setStatus(QString(status.c_str()));
   }else{
     ROS_INFO("[Waypoint planner]: Loop: initial call failed: %s", srv.response.message.c_str());
-    status = "Looping: initial call failed: " + srv.response.message + " Try checking, if drone name is correct.";
+    status = "Looping: initial call failed: " + srv.response.message + 
+        " Try checking, if drone name is correct.";
     setStatus(QString(status.c_str()));
 
     is_on_loop = false;
@@ -287,7 +340,8 @@ void WaypointPlanner::process_loop(){
   std::string topic = drone_name + std::string("/control_manager/diagnostics");
   bool is_ok = true;;
   while(true){
-    auto info_msg = ros::topic::waitForMessage<mrs_msgs::ControlManagerDiagnostics>(topic, node_handler, ros::Duration(1.0));
+    auto info_msg = ros::topic::waitForMessage<mrs_msgs::ControlManagerDiagnostics>
+                                              (topic, node_handler, ros::Duration(1.0));
     if(info_msg.get() == nullptr){
       ROS_INFO("[Waypoint planner]: Diagnostics data are not received");
       continue;
@@ -306,7 +360,8 @@ void WaypointPlanner::process_loop(){
     return;
   }
 
-  Position final_pos = Position(positions[0].x, positions[0].y, positions[0].z, positions[0].theta);
+  Position final_pos = Position(positions[0].x, positions[0].y, 
+                                positions[0].z, positions[0].theta);
   positions.push_back(final_pos);
 
   send_waypoints();
@@ -354,48 +409,6 @@ void WaypointPlanner::send_waypoints(){
   arrows.clear();
   getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM, -1);
   add_property();
-}
-
-int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
-  if(is_on_loop){
-    status = "Request denied, the program waits for drone to get to the first waypoint";
-    setStatus(QString(status.c_str()));
-    return Render;
-  }
-  PoseTool::processKeyEvent(event, panel);
-  ROS_INFO("[Waypoint planner]: Received key %d", (int) event->key());
-  // Sends added waypoints to service
-  if(event->key() == KEY_ENTER){
-    if(loop_property->getBool()){
-      std::thread t = std::thread([this]{process_loop();});
-      t.detach();
-    }else{
-      send_waypoints();
-    }
-    
-    // Note: the tool does not exit. Good thing that it doesn't have to XD
-    return Render;
-  }
-  if(event->key() == KEY_DELETE && !positions.empty()){
-    positions.pop_back();
-    std::size_t index = point_properties.size() - 2;
-    point_properties.erase(point_properties.begin() + index);
-    angle_properties.erase(angle_properties.begin() + index);
-    delete pose_nodes.back();
-    pose_nodes.pop_back();
-    if(!arrows.empty()){
-      delete arrows.back();
-      arrows.pop_back();
-    }
-    if(!axess.empty()){
-      delete axess.back();
-      axess.pop_back();
-    }
-    ROS_INFO("[Waypoint planner]: Removing index = %ld", DEFAULT_PROPERTIES_NUM + positions.size());
-    getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM + positions.size(), 1);
-    current_property->setName("Position " + QString::number(positions.size() + 1));
-  }
-  return Render;
 }
 
 

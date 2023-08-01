@@ -60,10 +60,12 @@ public:
 protected:
   void add_property();
   void onPoseSet(double x, double y, double theta) override;
+
   // Transforms positions from current frame to the fcu frame and saves results to vector.
   // frame_id: frame, that points are set in
   // num: number of required points to transform. -1 will process all available points.
   std::vector<mrs_msgs::Reference> generate_references(std::string frame_id, int num);
+  
   void process_loop();
   void send_waypoints();
 
