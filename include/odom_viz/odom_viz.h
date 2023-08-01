@@ -87,6 +87,7 @@ private:
     rviz::FloatProperty* vel_shaft_rad_property;
     rviz::FloatProperty* vel_head_len_property;
     rviz::FloatProperty* vel_head_rad_property;
+    rviz::FloatProperty* vel_scale_property;
 
     //      Covariance
     rviz::CovarianceProperty* covariance_property;

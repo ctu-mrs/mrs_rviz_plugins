@@ -12,7 +12,7 @@ OdomViz::OdomViz(){
                                 "Angular distance from the last arrow dropped, that will cause a new arrow to drop.",
                                 this);
     keep_property = new rviz::IntProperty("Keep", 100, "Number of arrows to keep before removing the oldest one.",
-                                this /*todo: add update signal*/);
+                                this);
     keep_property->setMin(1);
     keep_property->setMax(30000);
 
@@ -70,6 +70,8 @@ OdomViz::OdomViz(){
     vel_head_len_property = new rviz::FloatProperty("Head length", 0.3, "Length of the each arrow's head, in meters.", 
                                 vel_property, SLOT(on_vel_params_changed()), this);
     vel_head_rad_property = new rviz::FloatProperty("Head radius", 0.2, "Radius of the each arrow's head, in meters.", 
+                                vel_property, SLOT(on_vel_params_changed()), this);
+    vel_scale_property = new rviz::FloatProperty("Arrow scale", 0.3, "Scale of velocity arrow [0.001 - 1.0]", 
                                 vel_property, SLOT(on_vel_params_changed()), this);
 
     // Covariance 
@@ -152,11 +154,12 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     shaft_diameter = vel_shaft_rad_property->getFloat();
     head_length    = vel_head_len_property->getFloat();
     head_diameter  = vel_head_rad_property->getFloat();
+    float scale    = vel_scale_property->getFloat();
     bool is_visible = vel_property->getBool();
 
     // Set parameters of velocity arrow
     entity->set_vel_arrow_color(color);
-    entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter);
+    entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter, vel_scale_property->getFloat());
     entity->set_vel_visible(is_visible);
 
     // Covariances are stored in covariance_property
@@ -183,6 +186,10 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     pose.orientation.x = tmp.x;
     pose.orientation.y = tmp.y;
     pose.orientation.z = tmp.z;
+    Ogre::Vector3 velocity = Ogre::Vector3(msg->twist.twist.linear.x,
+                                            msg->twist.twist.linear.y,
+                                            msg->twist.twist.linear.z);
+    float vel_abs = velocity.length();
     
     // Transforming pose 
     if (!context_->getFrameManager()->transform(msg->header, msg->pose.pose, position, orientation)){
@@ -191,7 +198,6 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
         return;
     }
     // Transform twist
-    Ogre::Vector3 velocity;
     if(!context_->getFrameManager()->transform(body_frame, time, pose, velocity, tmp)){
         ROS_ERROR("Error transforming odometry from frame '%s' to frame '%s'", body_frame.c_str(),
                 qPrintable(fixed_frame_));
@@ -199,12 +205,12 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     }
     velocity = velocity - position;
 
-    ROS_INFO("velocity: %f , %f , %f", velocity.x, velocity.y, velocity.z);
+    ROS_INFO("velocity abs:  %f", vel_abs);
 
     cov->setPosition(position);
     cov->setOrientation(orientation);
     cov->setCovariance(msg->pose);
-    entity->set_message(position, velocity, orientation);
+    entity->set_message(position, velocity, orientation, vel_abs);
     entities.push_back(entity);
     // ROS_INFO("Arrow added");
 }
@@ -324,9 +330,10 @@ void OdomViz::on_vel_params_changed(){
     float shaft_diameter = vel_shaft_rad_property->getFloat();
     float head_length    = vel_head_len_property->getFloat();
     float head_diameter  = vel_head_rad_property->getFloat();
+    float scale          = vel_scale_property->getFloat();
 
     for(auto entity : entities){
-        entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter);
+        entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter, scale);
     }
 }
 

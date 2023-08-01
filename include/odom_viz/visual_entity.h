@@ -22,7 +22,7 @@ public:
 
     ~VisualEntity();
 
-    void set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_);
+    void set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_, float vel_abs_);
 
     // Position
     void set_pose_arrow_color(QColor color);
@@ -32,7 +32,9 @@ public:
 
     // Velocity
     void set_vel_arrow_color(QColor color);
-    void set_vel_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter);
+    void set_vel_arrow_params(float shaft_length, float shaft_diameter, 
+                                float head_length, float head_diameter, 
+                                float scale);
     void set_vel_visible(bool value);
 
 
@@ -41,6 +43,8 @@ protected:
     // Data:
     PoseType pose_type;
     Ogre::Vector3 point;
+    float vel_abs = 1;              // Default value so it's not NaN
+    float scale = 1;                // Default value so it's not NaN
     Ogre::Quaternion orientation;
     Ogre::SceneManager* scene_manager;
     Ogre::SceneNode* pose_arrow_scene_node;

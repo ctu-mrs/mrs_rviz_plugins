@@ -25,9 +25,10 @@ VisualEntity::~VisualEntity(){
    scene_manager->destroySceneNode(vel_arrow_scene_node);
 }
 
-void VisualEntity::set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_){
+void VisualEntity::set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_, float vel_abs_){
     point = point_;
     orientation = orientation_;
+    vel_abs = vel_abs_;
 
     pose_arrow_scene_node->setPosition(point);
     pose_arrow_scene_node->setOrientation(orientation);
@@ -37,8 +38,7 @@ void VisualEntity::set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Og
     Ogre::Vector3 velocity = velocity_;
     vel_arrow_scene_node->setPosition(point);
     vel_arrow_scene_node->setDirection(velocity);
-    // todo: change vector length according to length of velocity vector
-    // Todo: transform to current frame
+    vel_arrow->setScale(Ogre::Vector3(vel_abs*scale, vel_abs*scale, vel_abs*scale));
 }
 
 void VisualEntity::set_pose_type(PoseType type){
@@ -91,8 +91,10 @@ void VisualEntity::set_vel_arrow_color(QColor qcolor){
     vel_arrow->setColor(color);
 }
 
-void VisualEntity::set_vel_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter){
+void VisualEntity::set_vel_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter, float scale_){
+    scale = scale_;
     vel_arrow->set(shaft_length, shaft_diameter, head_length, head_diameter);
+    vel_arrow->setScale(Ogre::Vector3(scale*vel_abs, scale*vel_abs, scale*vel_abs));
 }
 
 void VisualEntity::set_vel_visible(bool value){
