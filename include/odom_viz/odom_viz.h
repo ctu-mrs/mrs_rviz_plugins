@@ -60,7 +60,7 @@ protected:
     void onEnable() override;
 
 private:
-    void processMessage(const nav_msgs::Odometry::ConstPtr& msg);
+    void processMessage(const nav_msgs::Odometry::ConstPtr& msg) override;
     // Properties:
     //      General
     rviz::RosTopicProperty* topic_property;
@@ -98,6 +98,6 @@ private:
     std::vector<VisualEntity*> entities;
     nav_msgs::Odometry::ConstPtr last_msg;
 };
-}
+}// namespace mrs_rviz_plugins
 
 #endif

@@ -12,8 +12,8 @@
 
 #include <QColor>
 
-namespace mrs_rviz_plugins{
-
+namespace mrs_rviz_plugins
+{
 enum PoseType {arrow, axes, invisible};
 
 class VisualEntity{
@@ -58,7 +58,7 @@ protected:
     rviz::Arrow* vel_arrow;
     rviz::Axes* pose_axes;
 };
-}
+}// namespace mrs_rviz_plugins
 
 
 

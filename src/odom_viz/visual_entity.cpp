@@ -2,7 +2,8 @@
 
 #include <ros/console.h>
 
-namespace mrs_rviz_plugins{
+namespace mrs_rviz_plugins
+{
 VisualEntity::VisualEntity(Ogre::SceneManager* scene_manager_){
     scene_manager = scene_manager_;
     
@@ -10,10 +11,10 @@ VisualEntity::VisualEntity(Ogre::SceneManager* scene_manager_){
     vel_arrow_scene_node = scene_manager->getRootSceneNode()->createChildSceneNode();
     axes_scene_node = scene_manager->getRootSceneNode()->createChildSceneNode();
 
-    pose_arrow = new rviz::Arrow(scene_manager, pose_arrow_scene_node);
-    pose_arrow->setDirection(Ogre::Vector3(1, 0, 0));
     vel_arrow = new rviz::Arrow(scene_manager, vel_arrow_scene_node);
     pose_axes = new rviz::Axes(scene_manager, axes_scene_node);
+    pose_arrow = new rviz::Arrow(scene_manager, pose_arrow_scene_node);
+    pose_arrow->setDirection(Ogre::Vector3(1, 0, 0));
 
     pose_type = PoseType::arrow;
 }

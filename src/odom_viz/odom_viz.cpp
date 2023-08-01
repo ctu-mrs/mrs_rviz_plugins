@@ -1,4 +1,3 @@
-
 #include "odom_viz/odom_viz.h"
 
 #include <Eigen/Dense>
@@ -36,8 +35,8 @@ OdomViz::OdomViz(){
     pose_opacity_property   = new rviz::IntProperty("Opacity", 255, 
                                 "Amount of opacity to apply to the arrow. 0 is fully transparent.",
                                 pose_property, SLOT(on_pose_color_changed()), this);
-    pose_opacity_property->setMax(1);
-    pose_opacity_property->setMin(255);
+    pose_opacity_property->setMin(1);
+    pose_opacity_property->setMax(255);
 
     pose_shaft_len_property = new rviz::FloatProperty("Shaft length", 1, "Length of the each arrow's shaft, in meters.",
                                 pose_property, SLOT(on_pose_params_changed()), this);
@@ -62,10 +61,10 @@ OdomViz::OdomViz(){
     color = QColor(0, 25, 255, 255);
 
     vel_color_property = new rviz::ColorProperty("Color", color, "Color of the velocity arrows.",
-                                vel_property, SLOT(on_vel_color_changed), this);
+                                vel_property, SLOT(on_vel_color_changed()), this);
     
     vel_opacity_property = new rviz::IntProperty("Opacity", 255, "Amount of opacity to apply to the arrow. 0 is fully transparent.", 
-                                vel_property, SLOT(on_vel_params_changed()), this);
+                                vel_property, SLOT(on_vel_color_changed()), this);
     vel_opacity_property->setMin(1);
     vel_opacity_property->setMax(255);
     
@@ -110,14 +109,16 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
         Ogre::Vector3 new_point = Ogre::Vector3(msg->pose.pose.position.x, 
                                                 msg->pose.pose.position.y, 
                                                 msg->pose.pose.position.z);
-        Eigen::Quaternionf old_orientation = Eigen::Quaternionf(last_msg->pose.pose.orientation.w,
-                                                                last_msg->pose.pose.orientation.x,
-                                                                last_msg->pose.pose.orientation.y,
-                                                                last_msg->pose.pose.orientation.z);
-        Eigen::Quaternionf new_orientation = Eigen::Quaternionf(msg->pose.pose.orientation.w,
-                                                                msg->pose.pose.orientation.x,
-                                                                msg->pose.pose.orientation.y,
-                                                                msg->pose.pose.orientation.z);
+        Eigen::Quaternionf old_orientation = 
+        Eigen::Quaternionf(last_msg->pose.pose.orientation.w,
+                           last_msg->pose.pose.orientation.x,
+                           last_msg->pose.pose.orientation.y,
+                           last_msg->pose.pose.orientation.z);
+        Eigen::Quaternionf new_orientation = 
+        Eigen::Quaternionf(msg->pose.pose.orientation.w,
+                           msg->pose.pose.orientation.x,
+                           msg->pose.pose.orientation.y,
+                           msg->pose.pose.orientation.z);
                                                                 
         if ((prev_point - new_point).length() >= pose_tolerance_property->getFloat() ||
         old_orientation.angularDistance(new_orientation) >= angle_tolerance_property->getFloat()){
@@ -160,16 +161,17 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     VisualEntity* entity = new mrs_rviz_plugins::VisualEntity(context_->getSceneManager());
     entity->set_pose_arrow_color(color);
     entity->set_pose_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter);
+    entity->set_axes_params(pose_axes_len_property->getFloat(), pose_axes_rad_property->getFloat());
     entity->set_pose_type(type);
 
     // Read parameters of vel arrow
     color = vel_color_property->getColor();
     color.setAlpha(vel_opacity_property->getInt());
-    shaft_length   = vel_shaft_len_property->getFloat(); 
-    shaft_diameter = vel_shaft_rad_property->getFloat();
-    head_length    = vel_head_len_property->getFloat();
-    head_diameter  = vel_head_rad_property->getFloat();
-    float scale    = vel_scale_property->getFloat();
+    shaft_length    = vel_shaft_len_property->getFloat(); 
+    shaft_diameter  = vel_shaft_rad_property->getFloat();
+    head_length     = vel_head_len_property->getFloat();
+    head_diameter   = vel_head_rad_property->getFloat();
+    float scale     = vel_scale_property->getFloat();
     bool is_visible = vel_property->getBool();
 
     // Set parameters of velocity arrow
@@ -363,7 +365,7 @@ void OdomViz::on_vel_params_changed(){
     }
 }
 
-}
+}// namespace mrs_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(mrs_rviz_plugins::OdomViz,rviz::Display )
