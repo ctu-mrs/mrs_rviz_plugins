@@ -1,5 +1,8 @@
 
 #include "odom_viz/odom_viz.h"
+
+#include <Eigen/Dense>
+
 namespace mrs_rviz_plugins
 {
 
@@ -18,6 +21,7 @@ OdomViz::OdomViz(){
 
     // Position
     pose_property = new rviz::BoolProperty("Position", true, "", this, SLOT(on_position_changed()));
+    pose_property->setDisableChildrenIfFalse(true);
 
     shape_property = new rviz::EnumProperty("Shape", "Arrow", "Shape to display the position as.", 
                                 pose_property, SLOT(on_shape_changed()), this);
@@ -54,6 +58,7 @@ OdomViz::OdomViz(){
 
     // Velocity
     vel_property = new rviz::BoolProperty("Velocity", false, "", this, SLOT(on_velocity_changed()));
+    vel_property->setDisableChildrenIfFalse(true);
     color = QColor(0, 25, 255, 255);
 
     vel_color_property = new rviz::ColorProperty("Color", color, "Color of the velocity arrows.",
@@ -99,17 +104,24 @@ void OdomViz::reset(){
 void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     bool drop_arrow = false;
     if(!entities.empty()){
+        Ogre::Vector3 prev_point = Ogre::Vector3(last_msg->pose.pose.position.x, 
+                                                last_msg->pose.pose.position.y, 
+                                                last_msg->pose.pose.position.z);
         Ogre::Vector3 new_point = Ogre::Vector3(msg->pose.pose.position.x, 
                                                 msg->pose.pose.position.y, 
                                                 msg->pose.pose.position.z);
-        Ogre::Quaternion new_orientation = Ogre::Quaternion(msg->pose.pose.orientation.w,
-                                                            msg->pose.pose.orientation.x,
-                                                            msg->pose.pose.orientation.y,
-                                                            msg->pose.pose.orientation.z);
-        if(context_->getFrameManager()->transform(msg->header, msg->pose.pose, new_point, new_orientation)){
-            // TODO: check orientation too
-            double dist = new_point.distance(entities.back()->get_point());
-            drop_arrow = dist >= pose_tolerance_property->getFloat();
+        Eigen::Quaternionf old_orientation = Eigen::Quaternionf(last_msg->pose.pose.orientation.w,
+                                                                last_msg->pose.pose.orientation.x,
+                                                                last_msg->pose.pose.orientation.y,
+                                                                last_msg->pose.pose.orientation.z);
+        Eigen::Quaternionf new_orientation = Eigen::Quaternionf(msg->pose.pose.orientation.w,
+                                                                msg->pose.pose.orientation.x,
+                                                                msg->pose.pose.orientation.y,
+                                                                msg->pose.pose.orientation.z);
+                                                                
+        if ((prev_point - new_point).length() >= pose_tolerance_property->getFloat() ||
+        old_orientation.angularDistance(new_orientation) >= angle_tolerance_property->getFloat()){
+            drop_arrow = true;
         }
     }else{
         drop_arrow = true;
@@ -118,6 +130,8 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     if(!drop_arrow){
         return;
     }
+    last_msg = msg;
+    // If we are here, it is time to drop new arrow
 
     if(entities.size() >= keep_property->getInt() && !entities.empty()){
         delete entities.front();

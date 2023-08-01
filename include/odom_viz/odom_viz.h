@@ -96,6 +96,7 @@ private:
     rviz::CovarianceProperty* covariance_property;
 
     std::vector<VisualEntity*> entities;
+    nav_msgs::Odometry::ConstPtr last_msg;
 };
 }
 
