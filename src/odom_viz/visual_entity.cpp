@@ -13,7 +13,7 @@ VisualEntity::VisualEntity(Ogre::SceneManager* scene_manager_){
     pose_arrow = new rviz::Arrow(scene_manager, pose_arrow_scene_node);
     pose_arrow->setDirection(Ogre::Vector3(1, 0, 0));
     vel_arrow = new rviz::Arrow(scene_manager, vel_arrow_scene_node);
-    vel_arrow->setDirection(Ogre::Vector3(1, 0, 0));
+    // vel_arrow->setDirection(Ogre::Vector3(1, 0, 0));
     pose_axes = new rviz::Axes(scene_manager, axes_scene_node);
 
     pose_type = PoseType::arrow;
@@ -25,29 +25,20 @@ VisualEntity::~VisualEntity(){
    scene_manager->destroySceneNode(vel_arrow_scene_node);
 }
 
-void VisualEntity::set_message(const nav_msgs::Odometry::ConstPtr& msg){
-    point = Ogre::Vector3(msg->pose.pose.position.x, 
-                          msg->pose.pose.position.y, 
-                          msg->pose.pose.position.z);
-    orientation = Ogre::Quaternion(msg->pose.pose.orientation.w,
-                                   msg->pose.pose.orientation.x,
-                                   msg->pose.pose.orientation.y,
-                                   msg->pose.pose.orientation.z);
+void VisualEntity::set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_){
+    point = point_;
+    orientation = orientation_;
 
     pose_arrow_scene_node->setPosition(point);
     pose_arrow_scene_node->setOrientation(orientation);
     axes_scene_node->setPosition(point);
     axes_scene_node->setOrientation(orientation);
 
-
-    Ogre::Vector3 velocity = Ogre::Vector3(msg->twist.twist.linear.x,
-                                           msg->twist.twist.linear.y,
-                                           msg->twist.twist.linear.z);
+    Ogre::Vector3 velocity = velocity_;
     vel_arrow_scene_node->setPosition(point);
     vel_arrow_scene_node->setDirection(velocity);
     // todo: change vector length according to length of velocity vector
     // Todo: transform to current frame
-
 }
 
 void VisualEntity::set_pose_type(PoseType type){

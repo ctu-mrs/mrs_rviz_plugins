@@ -20,7 +20,8 @@
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/color_property.h>
-
+#include <rviz/default_plugin/covariance_property.h>
+#include <rviz/default_plugin/covariance_visual.h>
 
 #include "odom_viz/visual_entity.h"
 #include <vector>
@@ -86,6 +87,9 @@ private:
     rviz::FloatProperty* vel_shaft_rad_property;
     rviz::FloatProperty* vel_head_len_property;
     rviz::FloatProperty* vel_head_rad_property;
+
+    //      Covariance
+    rviz::CovarianceProperty* covariance_property;
 
     std::vector<VisualEntity*> entities;
 };

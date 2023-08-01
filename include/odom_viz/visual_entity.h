@@ -22,7 +22,7 @@ public:
 
     ~VisualEntity();
 
-    void set_message(const nav_msgs::Odometry::ConstPtr& msg);
+    void set_message(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_);
 
     // Position
     void set_pose_arrow_color(QColor color);

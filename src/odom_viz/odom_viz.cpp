@@ -71,6 +71,10 @@ OdomViz::OdomViz(){
                                 vel_property, SLOT(on_vel_params_changed()), this);
     vel_head_rad_property = new rviz::FloatProperty("Head radius", 0.2, "Radius of the each arrow's head, in meters.", 
                                 vel_property, SLOT(on_vel_params_changed()), this);
+
+    // Covariance 
+    covariance_property = new rviz::CovarianceProperty("Covariance", true,
+                             "Whether or not the covariances of the messages should be shown.", this);
 }
 
 void OdomViz::onInitialize(){
@@ -84,6 +88,8 @@ void OdomViz::reset(){
     }
     entities.clear();
 
+    covariance_property->clearVisual();
+
     ROS_INFO("reset called");
 }
 
@@ -93,8 +99,15 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
         Ogre::Vector3 new_point = Ogre::Vector3(msg->pose.pose.position.x, 
                                                 msg->pose.pose.position.y, 
                                                 msg->pose.pose.position.z);
-        double dist = new_point.distance(entities.back()->get_point());
-        drop_arrow = dist >= pose_tolerance_property->getFloat();
+        Ogre::Quaternion new_orientation = Ogre::Quaternion(msg->pose.pose.orientation.w,
+                                                            msg->pose.pose.orientation.x,
+                                                            msg->pose.pose.orientation.y,
+                                                            msg->pose.pose.orientation.z);
+        if(context_->getFrameManager()->transform(msg->header, msg->pose.pose, new_point, new_orientation)){
+            // TODO: check orientation too
+            double dist = new_point.distance(entities.back()->get_point());
+            drop_arrow = dist >= pose_tolerance_property->getFloat();
+        }
     }else{
         drop_arrow = true;
     }
@@ -146,9 +159,54 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg){
     entity->set_vel_arrow_params(shaft_length, shaft_diameter, head_length, head_diameter);
     entity->set_vel_visible(is_visible);
 
-    entity->set_message(msg);
+    // Covariances are stored in covariance_property
+    typedef rviz::CovarianceProperty::CovarianceVisualPtr CovarianceVisualPtr;
+    CovarianceVisualPtr cov = covariance_property->createAndPushBackVisual(context_->getSceneManager(),context_->getSceneManager()->getRootSceneNode());
+
+    // Read data from message
+    Ogre::Vector3 position = Ogre::Vector3(msg->pose.pose.position.x, 
+                                           msg->pose.pose.position.y,
+                                           msg->pose.pose.position.z);
+    Ogre::Quaternion orientation = Ogre::Quaternion(msg->pose.pose.orientation.w,
+                                                    msg->pose.pose.orientation.x,
+                                                    msg->pose.pose.orientation.y,
+                                                    msg->pose.pose.orientation.z);
+    std::string body_frame = msg->child_frame_id;
+    ros::Time time = ros::Time(msg->header.stamp.sec, msg->header.stamp.nsec);
+    geometry_msgs::Pose pose;
+    Ogre::Quaternion tmp;
+    tmp = tmp.IDENTITY;
+    pose.position.x = msg->twist.twist.linear.x;
+    pose.position.y = msg->twist.twist.linear.y;
+    pose.position.z = msg->twist.twist.linear.z;
+    pose.orientation.w = tmp.w;
+    pose.orientation.x = tmp.x;
+    pose.orientation.y = tmp.y;
+    pose.orientation.z = tmp.z;
+    
+    // Transforming pose 
+    if (!context_->getFrameManager()->transform(msg->header, msg->pose.pose, position, orientation)){
+        ROS_ERROR("Error transforming odometry '%s' from frame '%s' to frame '%s'", qPrintable(getName()),
+                msg->header.frame_id.c_str(), qPrintable(fixed_frame_));
+        return;
+    }
+    // Transform twist
+    Ogre::Vector3 velocity;
+    if(!context_->getFrameManager()->transform(body_frame, time, pose, velocity, tmp)){
+        ROS_ERROR("Error transforming odometry from frame '%s' to frame '%s'", body_frame.c_str(),
+                qPrintable(fixed_frame_));
+        return;
+    }
+    velocity = velocity - position;
+
+    ROS_INFO("velocity: %f , %f , %f", velocity.x, velocity.y, velocity.z);
+
+    cov->setPosition(position);
+    cov->setOrientation(orientation);
+    cov->setCovariance(msg->pose);
+    entity->set_message(position, velocity, orientation);
     entities.push_back(entity);
-    ROS_INFO("Arrow added");
+    // ROS_INFO("Arrow added");
 }
 
 void OdomViz::onDisable(){
