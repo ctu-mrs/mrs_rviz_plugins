@@ -28,7 +28,7 @@
 #include <mrs_lib/transformer.h>
 #include <mrs_lib/attitude_converter.h>
 #include <mrs_msgs/ControlManagerDiagnostics.h>
-#include <mrs_msgs/Reference.h> 
+#include <mrs_msgs/Reference.h>
 #include <mrs_msgs/PathSrv.h>
 #include <mrs_msgs/Path.h>
 #include <mrs_msgs/Vec4.h>
@@ -50,12 +50,12 @@ namespace mrs_rviz_plugins
 class WaypointPlanner : public rviz::PoseTool {
 public:
   WaypointPlanner();
-  ~WaypointPlanner() override ;
+  ~WaypointPlanner() override;
   void onInitialize() override;
   void activate() override;
   void deactivate() override;
-  int processMouseEvent(rviz::ViewportMouseEvent& event) override;
-  int processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
+  int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
+  int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected:
   void add_property();
@@ -65,63 +65,64 @@ protected:
   // frame_id: frame, that points are set in
   // num: number of required points to transform. -1 will process all available points.
   std::vector<mrs_msgs::Reference> generate_references(std::string frame_id, int num);
-  
+
   void process_loop();
   void send_waypoints();
 
-Q_OBJECT
+  Q_OBJECT
 protected Q_SLOTS:
   void update_topic();
   void update_position();
   void update_shape();
 
 private:
-  class Position{
-    public:
+  class Position {
+  public:
     float x;
     float y;
     float z;
     float theta;
-    Position(float x_, float y_, float z_, float theta_):x(x_), y(y_), z(z_), theta(theta_){}
-    void set_values(Ogre::Vector3 pos, double theta_){
-      x = pos.x;
-      y = pos.y;
-      z = pos.z;
+    Position(float x_, float y_, float z_, float theta_) : x(x_), y(y_), z(z_), theta(theta_) {
+    }
+    void set_values(Ogre::Vector3 pos, double theta_) {
+      x     = pos.x;
+      y     = pos.y;
+      z     = pos.z;
       theta = theta_;
     }
   };
 
   // Added items
-  std::vector<Ogre::SceneNode*> pose_nodes;
+  std::vector<Ogre::SceneNode*>      pose_nodes;
   std::vector<rviz::VectorProperty*> point_properties;
-  std::vector<rviz::FloatProperty*> angle_properties;
-  std::vector<rviz::Arrow*> arrows;
-  std::vector<rviz::Axes*> axess;
+  std::vector<rviz::FloatProperty*>  angle_properties;
+  std::vector<rviz::Arrow*>          arrows;
+  std::vector<rviz::Axes*>           axess;
 
   // Current properties
-  rviz::Property* current_property;
+  rviz::Property*       current_property;
   rviz::VectorProperty* current_point_property;
-  rviz::FloatProperty* current_theta_property;
+  rviz::FloatProperty*  current_theta_property;
 
   // Initial properties
   rviz::StringProperty* drone_name_property;
   rviz::StringProperty* topic_property;
-  rviz::BoolProperty* use_heading_property;
-  rviz::BoolProperty* fly_now_property;
-  rviz::BoolProperty* stop_at_waypoints_property;
-  rviz::BoolProperty* loop_property;
-  rviz::FloatProperty* height_offset_property;
-  rviz::EnumProperty* shape_property;
+  rviz::BoolProperty*   use_heading_property;
+  rviz::BoolProperty*   fly_now_property;
+  rviz::BoolProperty*   stop_at_waypoints_property;
+  rviz::BoolProperty*   loop_property;
+  rviz::FloatProperty*  height_offset_property;
+  rviz::EnumProperty*   shape_property;
 
   // Communicating through ros
-  ros::NodeHandle node_handler;
+  ros::NodeHandle    node_handler;
   ros::ServiceClient client;
 
   std::vector<WaypointPlanner::Position> positions;
-  std::string status;
-  mrs_lib::Transformer transformer;
-  Ogre::Entity* model;
-  std::atomic_bool is_on_loop;
+  std::string                            status;
+  mrs_lib::Transformer                   transformer;
+  Ogre::Entity*                          model;
+  std::atomic_bool                       is_on_loop;
 };
 
 
