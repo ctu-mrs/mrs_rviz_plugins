@@ -15,13 +15,6 @@
 
 #include <stdlib.h>
 
-#define KEY_ENTER 16777220
-#define KEY_DELETE 16777223
-#define READ_ONLY false
-#define DEFAULT_PROPERTIES_NUM 8
-#define DEFAULT_TOPIC "trajectory_generation/path"
-#define DEFAULT_DRONE "uav15"
-
 namespace mrs_rviz_plugins
 {
 WaypointPlanner::WaypointPlanner() {
@@ -29,13 +22,13 @@ WaypointPlanner::WaypointPlanner() {
   transformer   = mrs_lib::Transformer(node_handler);
 
   // Add default properties
-  drone_name_property =
-      new rviz::StringProperty("Drone name", DEFAULT_DRONE, "Drone name + topic = service to send path.", getPropertyContainer(), SLOT(update_topic()), this);
-  topic_property =
-      new rviz::StringProperty("Topic", DEFAULT_TOPIC, "Drone name + topic = service to send path.", getPropertyContainer(), SLOT(update_topic()), this);
-  height_offset_property     = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.", getPropertyContainer());
-  use_heading_property       = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading", getPropertyContainer());
-  fly_now_property           = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.", getPropertyContainer());
+  drone_name_property    = new rviz::StringProperty("Drone name", DEFAULT_DRONE.c_str(), "Drone name + topic = service to send path.", getPropertyContainer(),
+                                                    SLOT(update_topic()), this);
+  topic_property         = new rviz::StringProperty("Topic", DEFAULT_TOPIC.c_str(), "Drone name + topic = service to send path.", getPropertyContainer(),
+                                                    SLOT(update_topic()), this);
+  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.", getPropertyContainer());
+  use_heading_property   = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading", getPropertyContainer());
+  fly_now_property       = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.", getPropertyContainer());
   stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, "If true, the drone will stop at added points.", getPropertyContainer());
   loop_property              = new rviz::BoolProperty("Loop", false, "If true, drone will fly continuously until new path is sent", getPropertyContainer());
   shape_property             = new rviz::EnumProperty("Shape", "Axes", "Shape to show positions.", getPropertyContainer(), SLOT(update_shape()), this);
@@ -49,7 +42,7 @@ WaypointPlanner::WaypointPlanner() {
   loop_property->setReadOnly(false);
   shape_property->addOption("Axes", 0);
   shape_property->addOption("Arrow", 1);
-  is_on_loop = false;
+  is_in_loop = false;
 }
 
 // Callback on topic change
@@ -64,11 +57,13 @@ void WaypointPlanner::update_topic() {
 void WaypointPlanner::update_position() {
   // Iterate through every position and update them
   for (int i = 0; i < pose_nodes.size(); i++) {
-    Ogre::Vector3 pos = point_properties[i]->getVector();
+    const Ogre::Vector3 pos = point_properties[i]->getVector();
     pose_nodes[i]->setPosition(pos);
-    tf2::Quaternion tmp;
-    tmp.setRPY(0, 0, angle_properties[i]->getFloat());
-    pose_nodes[i]->setOrientation(tmp.getW(), tmp.getX(), tmp.getY(), tmp.getZ());
+
+    tf2::Quaternion quat;
+    quat.setRPY(0, 0, angle_properties[i]->getFloat());
+    pose_nodes[i]->setOrientation(quat.getW(), quat.getX(), quat.getY(), quat.getZ());
+
     // Update is called on creating new position, and seems to be called before onPoseSet.
     // So no need to change it here on initing. If user changes values manually,
     // position will be present and updated.
@@ -79,18 +74,19 @@ void WaypointPlanner::update_position() {
 }
 
 void WaypointPlanner::update_shape() {
-  // Awful API. Where is method setVisible() or smth like that?!
-  // Since I did not found it (I tried hard), it's implemented the ugly way
-  for (auto axes : axess) {
-    delete axes;
+  // Awful API: no clearup method
+  // Cleaning the ugly way
+  for (auto ax : axes) {
+    delete ax;
   }
-  axess.clear();
+  axes.clear();
   for (auto arrow : arrows) {
     delete arrow;
   }
   arrows.clear();
+
   if (shape_property->getOptionInt() == 1) {
-    for (auto node : pose_nodes) {
+    for (const auto& node : pose_nodes) {
       rviz::Arrow* arrow = new rviz::Arrow(scene_manager_, node);
       arrow->setDirection(Ogre::Vector3(1, 0, 0));
       arrow->setColor(1, 0.1, 0, 1);
@@ -98,24 +94,23 @@ void WaypointPlanner::update_shape() {
       arrows.push_back(arrow);
     }
   } else if (shape_property->getOptionInt() == 0) {
-    for (auto node : pose_nodes) {
-      rviz::Axes* axes = new rviz::Axes(scene_manager_, node);
-      axess.push_back(axes);
+    for (const auto& node : pose_nodes) {
+      axes.push_back(new rviz::Axes(scene_manager_, node));
     }
   }
 }
 
 // Saves current_position to the properties. Makes new current_position
-void WaypointPlanner::add_property() {
+void WaypointPlanner::addProperties() {
   current_property = new rviz::Property();
 
   current_point_property = new rviz::VectorProperty("Point: ", Ogre::Vector3::ZERO, QString(), current_property, SLOT(update_position()), this);
   current_point_property->setReadOnly(READ_ONLY);
 
-  current_theta_property = new rviz::FloatProperty("Angle:", 0, QString(), current_property, SLOT(update_position()), this);
+  current_theta_property = new rviz::FloatProperty("Angle: ", 0, QString(), current_property, SLOT(update_position()), this);
   current_theta_property->setReadOnly(READ_ONLY);
 
-  current_property->setName("Position " + QString::number(positions.size() + 1));
+  current_property->setName("Position: " + QString::number(positions.size() + 1));
   current_property->setReadOnly(READ_ONLY);
   getPropertyContainer()->addChild(current_property);
   point_properties.push_back(current_point_property);
@@ -163,11 +158,16 @@ void WaypointPlanner::onInitialize() {
 
   // Set up drone's name
   if (drone_names.size() == 0) {
-    status = std::string("Warning: No drone was found. Drone name set to ") + std::string(DEFAULT_DRONE);
+
+    status = std::string("Warning: No drone was found. Drone name set to: ") + DEFAULT_DRONE;
+
   } else if (drone_names.size() > 1) {
+
     drone_name_property->setStdString(drone_names[0]);
-    status = "Warning: Several drones found. Please, set Drone name property";
+    status = "Warning: Several drones found. Please, set drone name property";
+
   } else {
+
     drone_name_property->setStdString(drone_names[0]);
     status = std::string("Drone name is set to ") + drone_name_property->getStdString();
   }
@@ -178,19 +178,18 @@ void WaypointPlanner::onInitialize() {
 
 // Choosing the tool
 void WaypointPlanner::activate() {
-  for (int i = 0; i < pose_nodes.size(); i++) {
-    pose_nodes[i]->setVisible(true);
+  for (const auto& node : pose_nodes) {
+    node->setVisible(true);
   }
 
   setStatus(QString(status.c_str()));
-
-  add_property();
+  addProperties();
 }
 
 // Switching to another tool
 void WaypointPlanner::deactivate() {
-  for (int i = 0; i < pose_nodes.size(); i++) {
-    pose_nodes[i]->setVisible(false);
+  for (const auto& node : pose_nodes) {
+    node->setVisible(false);
   }
 
   if (!current_property) {
@@ -204,38 +203,42 @@ void WaypointPlanner::deactivate() {
 
 // Saves inputted position. Leaves flag model on inputted position.
 void WaypointPlanner::onPoseSet(double x, double y, double theta) {
-  if (is_on_loop) {
+
+  if (is_in_loop) {
     status = "Request denied, the program waits for drone to get to the first waypoint";
     setStatus(QString(status.c_str()));
     return;
   }
+
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
   if (shape_property->getOptionInt() == 1) {
+
     rviz::Arrow* arrow = new rviz::Arrow(scene_manager_, node);
     arrow->setDirection(Ogre::Vector3(1, 0, 0));
     arrow->setColor(1, 0.1, 0, 1);
     arrow->set(2, 0.2, 0.6, 0.4);
     arrows.push_back(arrow);
+
   } else if (shape_property->getOptionInt() == 0) {
-    rviz::Axes* axes = new rviz::Axes(scene_manager_, node);
-    axess.push_back(axes);
+    axes.push_back(new rviz::Axes(scene_manager_, node));
   }
 
-  Ogre::Vector3   position = Ogre::Vector3(x, y, 0);
-  tf2::Quaternion tmp;
-  tmp.setRPY(0, 0, theta);
-  node->rotate(Ogre::Quaternion(tmp.getW(), tmp.getX(), tmp.getY(), tmp.getZ()));
+  const Ogre::Vector3 position = Ogre::Vector3(x, y, 0);
+
+  tf2::Quaternion quat;
+  quat.setRPY(0, 0, theta);
+  node->rotate(Ogre::Quaternion(quat.getW(), quat.getX(), quat.getY(), quat.getZ()));
   node->setVisible(true);
   node->setPosition(position);
   pose_nodes.push_back(node);
 
   current_point_property->setVector(position);
-  current_theta_property->setFloat(theta);
+  current_theta_property->setFloat(float(theta));
 
-  positions.push_back(WaypointPlanner::Position(x, y, 1, theta));
-  add_property();
+  positions.push_back(WaypointPlanner::Position(float(x), float(y), 1, float(theta)));
+  addProperties();
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event) {
@@ -244,7 +247,7 @@ int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event) {
 }
 
 int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) {
-  if (is_on_loop) {
+  if (is_in_loop) {
     status = "Request denied, the program waits for drone to get to the first waypoint";
     setStatus(QString(status.c_str()));
     return Render;
@@ -254,10 +257,10 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
   // Sends added waypoints to service
   if (event->key() == KEY_ENTER) {
     if (loop_property->getBool()) {
-      std::thread t = std::thread([this] { process_loop(); });
+      std::thread t = std::thread([this] { processLoop(); });
       t.detach();
     } else {
-      send_waypoints();
+      sendWaypoints();
     }
 
     // Note: the tool does not exit. Good thing that it doesn't have to XD
@@ -274,9 +277,9 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
       delete arrows.back();
       arrows.pop_back();
     }
-    if (!axess.empty()) {
-      delete axess.back();
-      axess.pop_back();
+    if (!axes.empty()) {
+      delete axes.back();
+      axes.pop_back();
     }
     ROS_INFO("[Waypoint planner]: Removing index = %ld", DEFAULT_PROPERTIES_NUM + positions.size());
     getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM + positions.size(), 1);
@@ -285,11 +288,11 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
   return Render;
 }
 
-void WaypointPlanner::process_loop() {
-  is_on_loop = true;
+void WaypointPlanner::processLoop() {
+  is_in_loop = true;
   // Set general attributes
   mrs_msgs::Vec4 srv;
-  auto           point = generate_references(context_->getFrameManager()->getFixedFrame(), 1);
+  auto           point = generateReferences(context_->getFrameManager()->getFixedFrame(), 1);
   srv.request.goal[0]  = point[0].position.x;
   srv.request.goal[1]  = point[0].position.y;
   srv.request.goal[2]  = point[0].position.z;
@@ -311,7 +314,7 @@ void WaypointPlanner::process_loop() {
     status = "Looping: initial call failed: " + srv.response.message + " Try checking, if drone name is correct.";
     setStatus(QString(status.c_str()));
 
-    is_on_loop = false;
+    is_in_loop = false;
     return;
   }
 
@@ -321,7 +324,7 @@ void WaypointPlanner::process_loop() {
   bool        is_ok      = true;
   ;
   while (true) {
-    auto info_msg = ros::topic::waitForMessage<mrs_msgs::ControlManagerDiagnostics>(topic, node_handler, ros::Duration(1.0));
+    const auto& info_msg = ros::topic::waitForMessage<mrs_msgs::ControlManagerDiagnostics>(topic, node_handler, ros::Duration(1.0));
     if (info_msg.get() == nullptr) {
       ROS_INFO("[Waypoint planner]: Diagnostics data are not received");
       continue;
@@ -335,7 +338,7 @@ void WaypointPlanner::process_loop() {
     }
   }
 
-  is_on_loop = false;
+  is_in_loop = false;
   if (!is_ok) {
     return;
   }
@@ -343,10 +346,10 @@ void WaypointPlanner::process_loop() {
   Position final_pos = Position(positions[0].x, positions[0].y, positions[0].z, positions[0].theta);
   positions.push_back(final_pos);
 
-  send_waypoints();
+  sendWaypoints();
 }
 
-void WaypointPlanner::send_waypoints() {
+void WaypointPlanner::sendWaypoints() {
   // Set general attributes
   mrs_msgs::PathSrv srv;
   srv.request.path.header.frame_id   = "fcu";
@@ -356,7 +359,7 @@ void WaypointPlanner::send_waypoints() {
   srv.request.path.loop              = loop_property->getBool();
 
   // Transform positions
-  srv.request.path.points = generate_references(context_->getFrameManager()->getFixedFrame(), -1);
+  srv.request.path.points = generateReferences(context_->getFrameManager()->getFixedFrame(), -1);
 
   // Make the call
   client.call(srv);
@@ -378,32 +381,33 @@ void WaypointPlanner::send_waypoints() {
     delete pose_nodes[i];
   }
   pose_nodes.clear();
-  for (auto axes : axess) {
-    delete axes;
+  for (auto ax : axes) {
+    delete ax;
   }
-  axess.clear();
+  axes.clear();
   for (auto arrow : arrows) {
     delete arrow;
   }
   arrows.clear();
   getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM, -1);
-  add_property();
+  addProperties();
 }
 
 
-std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::string current_frame, int num) {
-  num = num != -1 ? num : positions.size();
+std::vector<mrs_msgs::Reference> WaypointPlanner::generateReferences(std::string current_frame, int num) {
+  num = num != -1 ? num : int(positions.size());
+
   // Note: ref.position is reset to 0 for some reason. Although it does not matter now, it is weird
-  std::string                      drone_name = drone_name_property->getStdString();
-  std::string                      topic      = drone_name + std::string("/odometry/odom_main");
+  const std::string                drone_name = drone_name_property->getStdString();
+  const std::string                topic      = drone_name + std::string("/odometry/odom_main");
   std::vector<mrs_msgs::Reference> res(num);
 
   // Make transformer
-  std::string goal_frame = /*"/" +*/ drone_name + "/fcu";
-  auto        tf         = transformer.getTransform(current_frame, goal_frame);
+  const std::string goal_frame = drone_name + "/fcu";
+  const auto&       tf         = transformer.getTransform(current_frame, goal_frame);
   if (!tf) {
     ROS_INFO("[Waypoint planner]: No transformation found. No data sent");
-    return (std::vector<mrs_msgs::Reference>{});
+    return std::vector<mrs_msgs::Reference>{};
   }
 
   // Transforming
@@ -421,34 +425,34 @@ std::vector<mrs_msgs::Reference> WaypointPlanner::generate_references(std::strin
     pose.orientation.z = quaternion.getZ();
 
     // Transform
-    auto point_transformed = transformer.transform(pose, tf.value());
+    const auto& point_transformed = transformer.transform(pose, tf.value());
     if (!point_transformed) {
       ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f. No data sent", current_frame.c_str(), goal_frame.c_str(),
                ros::Time::now().toSec());
-      return (std::vector<mrs_msgs::Reference>{});
+      return std::vector<mrs_msgs::Reference>{};
     }
 
     // Convert transformed heading from quaternion to XY projection
-    pose                         = point_transformed.value();
-    double              rotation = mrs_lib::AttitudeConverter(pose.orientation).getHeading();
-    mrs_msgs::Reference ref;
+    pose                  = point_transformed.value();
+    const double rotation = mrs_lib::AttitudeConverter(pose.orientation).getHeading();
 
     // Save results
+    auto& ref      = res[i];
     ref.position.x = pose.position.x;
     ref.position.y = pose.position.y;
     ref.position.z += height_offset_property->getFloat();
     ref.heading = rotation;
-    res[i]      = ref;
+
     ROS_INFO("[Waypoint planner]: %.2f, %.2f, %.8f", ref.position.x, ref.position.y, ref.position.z);
   }
 
-  ROS_INFO("[Waypoint planner]: All transformation went successfully");
+  ROS_INFO("[Waypoint planner]: All transformations went successfully.");
   return res;
 }
 
 WaypointPlanner::~WaypointPlanner() {
-  for (unsigned i = 0; i < pose_nodes.size(); i++) {
-    scene_manager_->destroySceneNode(pose_nodes[i]);
+  for (const auto& node : pose_nodes) {
+    scene_manager_->destroySceneNode(node);
   }
 }
 }  // namespace mrs_rviz_plugins

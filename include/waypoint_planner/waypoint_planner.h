@@ -43,9 +43,6 @@
 
 namespace mrs_rviz_plugins
 {
-/* class Arrow; */
-/* class DisplayContext; */
-/* class StringProperty; */
 
 class WaypointPlanner : public rviz::PoseTool {
 public:
@@ -58,22 +55,30 @@ public:
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected:
-  void add_property();
+  void addProperties();
   void onPoseSet(double x, double y, double theta) override;
 
   // Transforms positions from current frame to the fcu frame and saves results to vector.
   // frame_id: frame, that points are set in
   // num: number of required points to transform. -1 will process all available points.
-  std::vector<mrs_msgs::Reference> generate_references(std::string frame_id, int num);
+  std::vector<mrs_msgs::Reference> generateReferences(std::string frame_id, int num);
 
-  void process_loop();
-  void send_waypoints();
+  void processLoop();
+  void sendWaypoints();
 
-  Q_OBJECT
 protected Q_SLOTS:
   void update_topic();
   void update_position();
   void update_shape();
+
+  // | --------------------- Default values --------------------- |
+private:
+  const int         KEY_ENTER              = 16777220;
+  const int         KEY_DELETE             = 16777223;
+  const size_t         DEFAULT_PROPERTIES_NUM = 8;
+  const bool        READ_ONLY              = false;
+  const std::string DEFAULT_TOPIC          = "trajectory_generation/path";
+  const std::string DEFAULT_DRONE          = "uav1";
 
 private:
   class Position {
@@ -82,9 +87,11 @@ private:
     float y;
     float z;
     float theta;
+
     Position(float x_, float y_, float z_, float theta_) : x(x_), y(y_), z(z_), theta(theta_) {
     }
-    void set_values(Ogre::Vector3 pos, double theta_) {
+
+    void set_values(const Ogre::Vector3& pos, const float theta_) {
       x     = pos.x;
       y     = pos.y;
       z     = pos.z;
@@ -97,7 +104,7 @@ private:
   std::vector<rviz::VectorProperty*> point_properties;
   std::vector<rviz::FloatProperty*>  angle_properties;
   std::vector<rviz::Arrow*>          arrows;
-  std::vector<rviz::Axes*>           axess;
+  std::vector<rviz::Axes*>           axes;
 
   // Current properties
   rviz::Property*       current_property;
@@ -122,7 +129,7 @@ private:
   std::string                            status;
   mrs_lib::Transformer                   transformer;
   Ogre::Entity*                          model;
-  std::atomic_bool                       is_on_loop;
+  std::atomic_bool                       is_in_loop;
 };
 
 
