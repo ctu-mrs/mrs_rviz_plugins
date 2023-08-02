@@ -32,7 +32,9 @@ The click-and-pull input supplies a 2D position with heading (a waypoint). Tool 
 |:------:|:--------------------:|
 |    W   |  Turn the plugin on  |
 | Delete | Delete last waypoint |
-|  Enter |   Trigger behaviour  |
+|  Enter |   Trigger behaviour  |  
+
+
 ![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
 ## ROS Nodes - the ROS-Rviz interface
 
