@@ -26,12 +26,13 @@ RViz goal tool with modifiable label.
 #### WaypointPlanner
 
 Allows sending a sequence of waypoints to drone.
-The click-and-pull input supplies a 2D position with heading (a waypoint).  
+The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, etc).  
 
-Key "w" turns the plugin on.  
-"Delete" removes the latest waypoint.  
-Pressing "enter" triggers the behavior.  
-Tool properties allow customization (height change, etc).  
+|   Key  |        Action        |
+|:------:|:--------------------:|
+|    W   |  Turn the plugin on  |
+| Delete | Delete last waypoint |
+|  Enter |   Trigger behaviour  |
 ![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
 ## ROS Nodes - the ROS-Rviz interface
 
