@@ -26,7 +26,7 @@ RViz goal tool with modifiable label.
 #### WaypointPlanner
 
 Allows sending a sequence of waypoints to drone.
-The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, etc).  
+The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, fly now, loop, use heading).  
 
 |  Key  |         Action         |
 |:-----:|:----------------------:|
