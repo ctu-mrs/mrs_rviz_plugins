@@ -33,26 +33,26 @@ class OdomViz : public rviz::MessageFilterDisplay<nav_msgs::Odometry> {
 
 public:
   OdomViz();
-  void onInitialize();
+  void onInitialize() override;
 
   // A helper to clear this display back to the initial state.
   void reset() override;
 
 protected Q_SLOTS:
   // General
-  void on_keep_changed();
+  void onKeepChanged();
 
   // Position
-  void on_position_changed();
-  void on_shape_changed();
-  void on_pose_color_changed();
-  void on_pose_params_changed();
-  void on_axes_params_changed();
+  void onPositionChanged();
+  void onShapeChanged();
+  void onPoseColorChanged();
+  void onPoseParamsChanged();
+  void onAxesParamsChanged();
 
   // Velocity
-  void on_velocity_changed();
-  void on_vel_color_changed();
-  void on_vel_params_changed();
+  void onVelocityChanged();
+  void onVelColorChanged();
+  void onVelParamsChanged();
 
 protected:
   void onDisable() override;

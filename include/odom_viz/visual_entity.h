@@ -16,9 +16,9 @@ namespace mrs_rviz_plugins
 {
 enum PoseType
 {
-  arrow,
-  axes,
-  invisible
+  ARROW,
+  AXES,
+  INVISIBLE
 };
 
 class VisualEntity {
@@ -27,21 +27,20 @@ public:
 
   ~VisualEntity();
 
-  void set(Ogre::Vector3 point_, Ogre::Vector3 velocity_, Ogre::Quaternion orientation_, float vel_abs_);
+  void set(const Ogre::Vector3& point_, const Ogre::Vector3& velocity_, const Ogre::Quaternion& orientation_, const float vel_abs_);
 
   // Position
-  void set_pose_arrow_color(QColor color);
-  void set_pose_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter);
-  void set_pose_type(PoseType type);
-  void set_axes_params(float len, float rad);
+  void setPoseArrowColor(const QColor& qcolor);
+  void setPoseArrowParams(const float shaft_length, const float shaft_diameter, const float head_length, const float head_diameter);
+  void setPoseType(const PoseType& type);
+  void setAxesParams(const float len, const float rad);
 
   // Velocity
-  void set_vel_arrow_color(QColor color);
-  void set_vel_arrow_params(float shaft_length, float shaft_diameter, float head_length, float head_diameter, float scale);
-  void set_vel_visible(bool value);
+  void setVelArrowColor(const QColor& color);
+  void setVelArrowParams(const float shaft_length, const float shaft_diameter, const float head_length, const float head_diameter, const float scale);
+  void setVelVisible(const bool value);
 
-
-  Ogre::Vector3 get_point();
+  Ogre::Vector3 getPoint();
 
 protected:
   // Data:
