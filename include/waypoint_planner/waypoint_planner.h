@@ -45,6 +45,8 @@ namespace mrs_rviz_plugins
 {
 
 class WaypointPlanner : public rviz::PoseTool {
+
+  Q_OBJECT
 public:
   WaypointPlanner();
   ~WaypointPlanner() override;
@@ -75,7 +77,7 @@ protected Q_SLOTS:
 private:
   const int         KEY_ENTER              = 16777220;
   const int         KEY_DELETE             = 16777223;
-  const size_t         DEFAULT_PROPERTIES_NUM = 8;
+  const size_t      DEFAULT_PROPERTIES_NUM = 8;
   const bool        READ_ONLY              = false;
   const std::string DEFAULT_TOPIC          = "trajectory_generation/path";
   const std::string DEFAULT_DRONE          = "uav1";

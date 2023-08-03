@@ -119,7 +119,7 @@ void WaypointPlanner::addProperties() {
 
 // Turning the plugin on
 void WaypointPlanner::onInitialize() {
-  setName("Plan way");
+  setName("Plan path");
 
   // Set up the arrow
   PoseTool::onInitialize();
@@ -282,7 +282,7 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
       axes.pop_back();
     }
     ROS_INFO("[Waypoint planner]: Removing index = %ld", DEFAULT_PROPERTIES_NUM + positions.size());
-    getPropertyContainer()->removeChildren(DEFAULT_PROPERTIES_NUM + positions.size(), 1);
+    getPropertyContainer()->removeChildren(int(DEFAULT_PROPERTIES_NUM + positions.size()), 1);
     current_property->setName("Position " + QString::number(positions.size() + 1));
   }
   return Render;
