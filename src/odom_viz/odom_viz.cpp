@@ -114,7 +114,11 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
   }
   last_msg = msg;
 
+  // Keep only certain number of visual entities (including covariances)
   if (entities.size() >= keep_property->getInt() && !entities.empty()) {
+    if(entities.front()->getHasCov()){
+        covariance_property->popFrontVisual();
+    }
     delete entities.front();
     entities.erase(entities.begin());
   }
@@ -160,9 +164,16 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
   entity->setVelArrowParams(shaft_length, shaft_diameter, head_length, head_diameter, vel_scale_property->getFloat());
   entity->setVelVisible(is_visible);
 
+  // Associate a CovarianceVisual in covariance_property
+  const bool is_cov_null = isArrayAllNull(msg->pose.covariance) && isArrayAllNull(msg->twist.covariance);
+  entity->setHasCov(!is_cov_null);
+
   // Covariances are stored in covariance_property
   typedef rviz::CovarianceProperty::CovarianceVisualPtr CovarianceVisualPtr;
-  const CovarianceVisualPtr cov = covariance_property->createAndPushBackVisual(context_->getSceneManager(), context_->getSceneManager()->getRootSceneNode());
+  CovarianceVisualPtr cov; 
+  if(!is_cov_null){
+    cov = covariance_property->createAndPushBackVisual(context_->getSceneManager(), context_->getSceneManager()->getRootSceneNode());
+  }
 
   // Read data from message
   Ogre::Vector3    position = Ogre::Vector3(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
@@ -195,11 +206,22 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
   }
   velocity = velocity - position;
 
-  cov->setPosition(position);
-  cov->setOrientation(orientation);
-  cov->setCovariance(msg->pose);
+  if(!is_cov_null){
+    cov->setPosition(position);
+    cov->setOrientation(orientation);
+    cov->setCovariance(msg->pose);
+  }
   entity->set(position, velocity, orientation, vel_abs);
   entities.push_back(entity);
+}
+
+template<size_t a> bool OdomViz::isArrayAllNull(const boost::array<double, a> arr) {
+  for (auto covariance_value : arr) {
+    if (covariance_value != 0.0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void OdomViz::onDisable() {

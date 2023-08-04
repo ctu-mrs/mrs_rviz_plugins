@@ -40,14 +40,19 @@ public:
   void setVelArrowParams(const float shaft_length, const float shaft_diameter, const float head_length, const float head_diameter, const float scale);
   void setVelVisible(const bool value);
 
+  // Covariance
+  void setHasCov(const bool value);
+  bool getHasCov();
+
   Ogre::Vector3 getPoint();
 
 protected:
   // Data:
-  PoseType            pose_type;
-  Ogre::Vector3       point;
   float               vel_abs = 1;  // Default value so it's not NaN
   float               scale   = 1;  // Default value so it's not NaN
+  bool                has_cov;      // Whether a CovarianceVisual is associated with this entity
+  PoseType            pose_type;
+  Ogre::Vector3       point;
   Ogre::Quaternion    orientation;
   Ogre::SceneManager* scene_manager;
   Ogre::SceneNode*    pose_arrow_scene_node;
