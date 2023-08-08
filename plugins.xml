@@ -33,3 +33,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsControlTool">
+  <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
+    <description>
+      Publish a goal pose for the robot. After one use, reverts to default tool.
+    </description>
+  </class>
+</library>

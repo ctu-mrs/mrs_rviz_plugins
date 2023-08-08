@@ -182,6 +182,25 @@ target_link_libraries(MrsNamedGoalTool
   ${catkin_LIBRARIES}
   )
 
+## CONTROL TOOL
+
+add_library(MrsControlTool
+  include/control/client_wrapper.h
+  include/control/control.h
+  src/control/client_wrapper.cpp
+  src/control/control.cpp
+  )
+
+add_dependencies(MrsControlTool
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsControlTool
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
 ## --------------------------------------------------------------
 ## |                           Install                          |
 ## --------------------------------------------------------------

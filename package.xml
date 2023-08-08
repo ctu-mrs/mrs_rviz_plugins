@@ -19,6 +19,7 @@
   <depend>nodelet</depend>
 
   <depend>mrs_msgs</depend>
+  <depend>visualisation_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>mrs_lib</depend>
