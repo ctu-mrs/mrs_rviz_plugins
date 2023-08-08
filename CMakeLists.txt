@@ -185,9 +185,9 @@ target_link_libraries(MrsNamedGoalTool
 ## CONTROL TOOL
 
 add_library(MrsControlTool
-  include/control/client_wrapper.h
+  include/control/im_server.h
   include/control/control.h
-  src/control/client_wrapper.cpp
+  src/control/im_server.cpp
   src/control/control.cpp
   )
 

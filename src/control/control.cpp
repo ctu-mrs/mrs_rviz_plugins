@@ -1,83 +1,73 @@
 #include "control/control.h"
 
 #include <visualization_msgs/InteractiveMarker.h>
-#include <visualization_msgs/InteractiveMarkerPose.h>
-#include <rviz/properties/status_list.h>
 
-#include <rviz/default_plugin/interactive_markers/interactive_marker.h>
+#include <rviz/visualization_manager.h>
 
 namespace mrs_rviz_plugins{
 
-  ControlTool::ControlTool(){
-    shortcut_key_ = 'c';
-    ROS_INFO("Status list creating ...");
-    status_list   = new rviz::StatusList(QString("Status"), getPropertyContainer());
+ControlTool::ControlTool(){
+  shortcut_key_ = 'c';
+  server = new ImServer();
+}
 
+void ControlTool::onInitialize(){
+  rviz::InteractiveMarkerDisplay* dis = new rviz::InteractiveMarkerDisplay();
+  dynamic_cast<rviz::VisualizationManager*>(context_)->addDisplay(dis, true);
+
+  dis->setName(QString("Control Display"));
+  dis->setTopic(QString("control/update"), QString("visualization_msgs/InteractiveMarkerUpdate"));
+
+  // TODO: /mrs_drone_spawner/diagnostics seems to have that info and it is more efficient
+  // Note: it may also be put in timer for example, check a new drone every 3 secs
+  // Preparing for searching the drone's name
+  XmlRpc::XmlRpcValue      req = "/node";
+  XmlRpc::XmlRpcValue      res;
+  XmlRpc::XmlRpcValue      pay;
+  std::vector<std::string> drone_names;
+  ros::master::execute("getSystemState", req, res, pay, true);
+
+  // Search for the drone's name
+  std::string state[res[2][2].size()];
+  for (int x = 0; x < res[2][2].size(); x++) {
+    std::string name = res[2][2][x][0].toXml().c_str();
+    if (name.find("trajectory_generation/path") == std::string::npos) {
+      continue;
+    }
+    ROS_INFO("[Waypoint planner]: %s found", name.c_str());
+
+    std::size_t index = name.find("/", 0, 1);
+    if (index != std::string::npos) {
+      name = name.erase(0, index + 1);
+    }
+
+    index = name.find("/", 1, 1);
+    if (index != std::string::npos) {
+      name = name.erase(index);
+    }
+
+    drone_names.push_back(name);
+    ROS_INFO("[Control tool]: %s was added to drone names", name.c_str());
+    state[x] = name;
   }
 
-  void ControlTool::activate(){
-    // Regular marker
-    visualization_msgs::Marker marker_msg;
-    marker_msg.type = visualization_msgs::Marker::CUBE;
-    marker_msg.scale.x = 0.45;
-    marker_msg.scale.y = 0.45;
-    marker_msg.scale.z = 0.45;
-    marker_msg.color.r = 0.5;
-    marker_msg.color.g = 0.5;
-    marker_msg.color.b = 0.5;
-    marker_msg.color.a = 1.0;
-    marker_msg.id = 1;
-    marker_msg.pose.position.x = 0;
-    marker_msg.pose.position.y = 0;
-    marker_msg.pose.position.z = 0;
-
-    // Control
-    visualization_msgs::InteractiveMarkerControl control_msg;
-    control_msg.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-    control_msg.always_visible = true;
-    control_msg.always_visible = true;
-    control_msg.independent_marker_orientation = true;
-    control_msg.name = "control1";
-    // control_msg.orientation = IDENTITY by default
-    control_msg.orientation_mode = visualization_msgs::InteractiveMarkerControl::INHERIT;
-    control_msg.markers.push_back(marker_msg);
-
-    // Interactive marker
-    visualization_msgs::InteractiveMarker int_marker_msg;
-    int_marker_msg.header.frame_id = "base_link";
-    int_marker_msg.pose.position.y = 0;
-    int_marker_msg.scale = 1;
-    int_marker_msg.name = "marker1";
-    int_marker_msg.controls.push_back(control_msg);
-
-    // Scene node
-    Ogre::SceneNode* node = context_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
-    node->setPosition(0, 0, 0);
-
-    ROS_INFO("InteractiveMarker");
-    rviz::InteractiveMarker* im = new rviz::InteractiveMarker(node, context_);
-
-    ROS_INFO("Control");
-    rviz::InteractiveMarkerControl* im_control = new rviz::InteractiveMarkerControl(context_, node, im);
-
-    ROS_INFO("InteractiveMarker process msg");
-    im->processMessage(int_marker_msg);
+  // Initialize all the markers
+  for(auto name : drone_names){
+    server->addDrone(name);
   }
+}
 
-  void ControlTool::deactivate(){
+void ControlTool::activate(){
+}
 
-  }
+void ControlTool::deactivate(){
 
-  int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
-    // ROS_INFO("[Control Tool]: Received key %d", (int)event->key());
-    // client->onFixedFrameChanged();
-    // client->update(1, 2);
-    // if(num == 0){
-    //     // putInteractiveMarker();
-    //     num++;
-    // }
-    return Render;
-  }
+}
+
+int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
+  
+  return Render;
+}
 
 }// namespace mrs_rviz_plugins
 

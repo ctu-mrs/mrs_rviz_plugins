@@ -15,7 +15,7 @@
 #include <rviz/default_plugin/interactive_marker_display.h>
 #include <rviz/tool.h>
 
-#include "control/client_wrapper.h"
+#include "control/im_server.h"
 
 namespace mrs_rviz_plugins{
 
@@ -23,21 +23,16 @@ namespace mrs_rviz_plugins{
 class ControlTool : public rviz::Tool{
 
 public:
-    ControlTool();
-    // ~ControlTool() override;
-    // void onInitialize() override;
-    void activate() override;
-    void deactivate() override;
-    // int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
-    int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
+  ControlTool();
+  // ~ControlTool() override;
+  void onInitialize() override;
+  void activate() override;
+  void deactivate() override;
+  // int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
+  int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected:
-
-    int num = 0;
-
-    ClientWrapper* client;
-    rviz::StatusList* status_list;
-
+  ImServer* server;
 
 }; // class ControlTool
 
