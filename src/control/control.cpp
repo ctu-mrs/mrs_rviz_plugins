@@ -4,6 +4,8 @@
 
 #include <rviz/visualization_manager.h>
 
+
+
 namespace mrs_rviz_plugins{
 
 ControlTool::ControlTool() : rviz::SelectionTool(){
@@ -129,6 +131,8 @@ void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {
 int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   int flags = rviz::SelectionTool::processMouseEvent(event);
 
+  // TODO: what to write here?
+  // The method is taken from interaction_tool.cpp
   if (event.panel->contextMenuVisible())
   {
     return flags;
@@ -151,6 +155,7 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
     flags = Render;
   }
 
+  // If alt is pressed, interaction is disabled, so finish
   if(event.alt()){
     return flags;
   }
@@ -175,7 +180,55 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
 int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   int res = rviz::SelectionTool::processKeyEvent(event, panel);
 
+  // Menu
+  if(event->key() == KEY_M){
+    processMKey();
+  }
+
   return res;
+}
+
+void ControlTool::processMKey(){
+  ROS_INFO("M key received");
+  std::vector<std::string> marker_names{};
+
+  rviz::M_Picked picked = context_->getSelectionManager()->getSelection();
+  
+  // Find all selected markers
+  for (auto picked_it :  picked){
+    rviz::Picked pick = picked_it.second;
+    rviz::SelectionHandler* handler = context_->getSelectionManager()->getHandler(pick.handle);
+    if (!(pick.pixel_count > 0 && handler)){
+      continue;
+    }
+
+    rviz::InteractiveObjectPtr object = handler->getInteractiveObject().lock();
+    if (!(object && object->isInteractive())){
+      continue;
+    }
+    
+    auto int_mar_con_ptr = boost::dynamic_pointer_cast<rviz::InteractiveMarkerControl>(object);
+    if(!int_mar_con_ptr){
+      continue;
+    }
+
+    rviz::InteractiveMarker* int_mar = int_mar_con_ptr->getParent();
+    if(!int_mar){
+      continue;
+    }
+
+    marker_names.push_back(int_mar->getName());
+  }
+  // Make menu
+  rviz::RenderPanel* render_panel = dynamic_cast<rviz::VisualizationManager*>(context_)->getRenderPanel();
+  render_panel->showContextMenu(server->getMenu(marker_names));
+  
+
+
+}
+
+void ControlTool::some_action(){
+  ROS_INFO("Action called");
 }
 
 }// namespace mrs_rviz_plugins

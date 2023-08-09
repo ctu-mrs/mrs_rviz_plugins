@@ -8,6 +8,8 @@
 #endif
 
 #include <QString>
+#include <QAction>
+#include <QMenu>
 
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
@@ -19,12 +21,17 @@
 #include <rviz/selection/selection_handler.h>
 #include <rviz/selection/selection_manager.h>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/pointer_cast.hpp>
+
+
 #include "control/im_server.h"
 
 namespace mrs_rviz_plugins{
 
 class ControlTool : public rviz::SelectionTool{
 
+  Q_OBJECT
 public:
   ControlTool();
   ~ControlTool() override;
@@ -33,6 +40,9 @@ public:
   void deactivate() override;
   int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
+
+protected Q_SLOTS:
+  void some_action();
 
 protected:
   // Check if the mouse has moved from one object to another,
@@ -44,6 +54,16 @@ protected:
   // The object (control) which currently has the mouse focus.
   rviz::InteractiveObjectWPtr focused_object_;
   ImServer* server;
+
+  const int KEY_M = 77;
+  const int KEY_W = 87;
+  const int KEY_A = 65;
+  const int KEY_S = 83;
+  const int KEY_D = 68;
+  const int KEY_R = 82;
+
+private:
+  void processMKey();
 
 }; // class ControlTool
 
