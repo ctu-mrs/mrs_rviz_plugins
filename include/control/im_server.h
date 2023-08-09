@@ -32,12 +32,27 @@ public:
   void addDrone(const std::string name);
 
 protected:
-  void updatePositions();
+  typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
+
   interactive_markers::InteractiveMarkerServer* server;
   std::map<std::string, interactive_markers::MenuHandler*> menu_handlers;
 
+  // No method to get entries from menu handler, so we have to save them on inserting
+  std::map<std::string, std::vector<MenuEntryHandle>> entries;
 
-
+  enum EntryIndex{
+    LAND = 0,
+    LAND_HOME = 1,
+    TAKEOFF = 2,
+    SET_CONSTRAINTS = 3,
+    SET_GAINS = 4,
+    SET_CONTROLLER = 5,
+    SET_TRACKER = 6,
+    SET_ODOM_SOURCE = 7,
+    SET_LAT_ESTIMATOR = 8,
+    SET_ALT_ESTIMATOR = 9,
+    SET_HDG_ESTIMATOR = 10
+  };
 }; // class ClientWrapper
 
 }// namespace mrs_rviz_plugins
