@@ -4,8 +4,6 @@
 
 #include <rviz/visualization_manager.h>
 
-
-
 namespace mrs_rviz_plugins{
 
 ControlTool::ControlTool() : rviz::SelectionTool(){
@@ -26,7 +24,7 @@ void ControlTool::onInitialize(){
   dis->setTopic(QString("control/update"), QString("visualization_msgs/InteractiveMarkerUpdate"));
 
   // TODO: /mrs_drone_spawner/diagnostics seems to have that info and it is more efficient
-  // Note: it may also be put in timer for example, check a new drone every 3 secs
+  // Note: it may also be put in timer for example, check a new drone every 3 secs (will be implemented in im_server)
   // Preparing for searching the drone's name
   XmlRpc::XmlRpcValue      req = "/node";
   XmlRpc::XmlRpcValue      res;
@@ -222,9 +220,6 @@ void ControlTool::processMKey(){
   // Make menu
   rviz::RenderPanel* render_panel = dynamic_cast<rviz::VisualizationManager*>(context_)->getRenderPanel();
   render_panel->showContextMenu(server->getMenu(marker_names));
-  
-
-
 }
 
 void ControlTool::some_action(){

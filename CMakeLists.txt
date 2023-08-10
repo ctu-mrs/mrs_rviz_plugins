@@ -187,8 +187,10 @@ target_link_libraries(MrsNamedGoalTool
 add_library(MrsControlTool
   include/control/im_server.h
   include/control/control.h
+  include/control/drone_entity.h
   src/control/im_server.cpp
   src/control/control.cpp
+  src/control/drone_entity.cpp
   )
 
 add_dependencies(MrsControlTool
