@@ -215,7 +215,10 @@ void ControlTool::processMKey(){
       continue;
     }
 
-    marker_names.push_back(int_mar->getName());
+    std::string marker_name = int_mar->getName();
+    std::string::size_type pos = marker_name.find(' ');   // because marker_name == "uav_name marker"
+    std::string drone_name = marker_name.substr(0, pos);
+    marker_names.push_back(drone_name);
   }
   // Make menu
   rviz::RenderPanel* render_panel = dynamic_cast<rviz::VisualizationManager*>(context_)->getRenderPanel();

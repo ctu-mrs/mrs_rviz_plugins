@@ -29,7 +29,7 @@ public:
   // TODO: optimize the following so they return read-only copy
   std::vector<std::string> getConstraints();
   std::vector<std::string> getGains();
-  std::vector<std::string> getConrollers();
+  std::vector<std::string> getControllers();
   std::vector<std::string> getTrackers();
   std::vector<std::string> getOdomSources();
   std::vector<std::string> getLatEstimators();
@@ -58,17 +58,17 @@ protected:
   bool compareAndUpdate(std::vector<std::string>& current, const std::vector<std::string>& actual);
 
   //|-------------------- Menu Callbacks --------------------|
-  static void land           (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void landHome       (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void takeoff        (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setConstraint  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setGain        (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setController  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setTracker     (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setOdomSource  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  static void setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void land           (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void landHome       (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void takeoff        (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setConstraint  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setGain        (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setController  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setTracker     (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setOdomSource  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 
   //|---------------------- Attributes ----------------------|
   std::string name;

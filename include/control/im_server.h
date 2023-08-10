@@ -73,10 +73,10 @@ protected:
   QMenu* set_hdg_estimator;
 
   // Note: callbacks of DroneEntity do not work if the instance is not allocated on the heap
-  std::vector<DroneEntity*> drones;
+  std::map<std::string, DroneEntity*> drones;
 
   // Drones to be affected by global menu
-  std::vector<std::string> selected_drones;
+  std::vector<DroneEntity*> selected_drones;
 
 }; // class ClientWrapper
 

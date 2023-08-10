@@ -66,8 +66,6 @@ bool DroneEntity::compareAndUpdate(std::vector<std::string>& current, const std:
 }
 
 void DroneEntity::updateMenu(){
-  // TODO: add callbacks
-  // TODO: add options (view control's code to find out which exactly)
   // TODO: make some of first 3 etries invisible according to their current state
   
   // This seems to be inefficient, but must work. And since no 
@@ -78,9 +76,9 @@ void DroneEntity::updateMenu(){
   menu_handler = new interactive_markers::MenuHandler();
 
   entries.resize(EntryIndex::SIZE);
-  entries[LAND             ] = menu_handler->insert("Land", &DroneEntity::land);
-  entries[LAND_HOME        ] = menu_handler->insert("Land Home", &DroneEntity::landHome);
-  entries[TAKEOFF          ] = menu_handler->insert("Takeoff", &DroneEntity::takeoff);
+  entries[LAND             ] = menu_handler->insert("Land", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){land(feedback);});
+  entries[LAND_HOME        ] = menu_handler->insert("Land Home", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){landHome(feedback);});
+  entries[TAKEOFF          ] = menu_handler->insert("Takeoff", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){takeoff(feedback);});
   entries[SET_CONSTRAINT   ] = menu_handler->insert("Set Constraint");
   entries[SET_GAIN         ] = menu_handler->insert("Set Gains");
   entries[SET_CONTROLLER   ] = menu_handler->insert("Set Controller");
@@ -228,7 +226,7 @@ std::vector<std::string> DroneEntity::getConstraints() {
 std::vector<std::string> DroneEntity::getGains() {
   return gains;
 }
-std::vector<std::string> DroneEntity::getConrollers() {
+std::vector<std::string> DroneEntity::getControllers() {
   return controllers;
 }
 std::vector<std::string> DroneEntity::getTrackers() {
