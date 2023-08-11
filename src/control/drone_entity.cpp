@@ -13,7 +13,7 @@ DroneEntity::DroneEntity(const std::string name_){
   server = new interactive_markers::InteractiveMarkerServer("control", name.c_str(), true);
 
   // | ------------------------ Services ------------------------ |
-  // service_goto_reference       = mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv>(nh, "uav_manager/reference_out");
+  service_goto_reference       = mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv>(nh, "control_manager/reference");
   // service_trajectory_reference = mrs_lib::ServiceClientHandler<mrs_msgs::TrajectoryReferenceSrv>(nh, "uav_manager/trajectory_reference_out");
   
   service_land                 = mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, "uav_manager/land");
@@ -84,8 +84,6 @@ bool DroneEntity::compareAndUpdate(std::vector<std::string>& current, const std:
 }
 
 void DroneEntity::updateMenu(){
-  // TODO: make some of first 3 etries invisible according to their current state
-  
   // This seems to be inefficient, but must work. And since no 
   // clearEntry() method is present, it's the only option
   if(menu_handler != nullptr){
@@ -94,9 +92,12 @@ void DroneEntity::updateMenu(){
   menu_handler = new interactive_markers::MenuHandler();
 
   entries.resize(EntryIndex::SIZE);
-  entries[LAND             ] = menu_handler->insert("Land", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){land(feedback);});
-  entries[LAND_HOME        ] = menu_handler->insert("Land Home", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){landHome(feedback);});
-  entries[TAKEOFF          ] = menu_handler->insert("Takeoff", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){takeoff(feedback);});
+  if(null_tracker){
+    entries[TAKEOFF          ] = menu_handler->insert("Takeoff", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){takeoff(feedback);});
+  } else{
+    entries[LAND             ] = menu_handler->insert("Land", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){land(feedback);});
+    entries[LAND_HOME        ] = menu_handler->insert("Land Home", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){landHome(feedback);});
+  }
   entries[SET_CONSTRAINT   ] = menu_handler->insert("Set Constraint");
   entries[SET_GAIN         ] = menu_handler->insert("Set Gains");
   entries[SET_CONTROLLER   ] = menu_handler->insert("Set Controller");
@@ -186,6 +187,8 @@ void DroneEntity::statusCallback(const mrs_msgs::UavStatusConstPtr& msg) {
   updated |= compareAndUpdate(odom_lat_sources, msg->odom_estimators_hori);
   updated |= compareAndUpdate(odom_alt_sources, msg->odom_estimators_vert);
   updated |= compareAndUpdate(odom_hdg_sources, msg->odom_estimators_hdg);
+  updated |= msg->null_tracker != null_tracker;
+  null_tracker = msg->null_tracker;
 
   if(updated){
     updateMenu();
@@ -324,6 +327,102 @@ bool DroneEntity::setHdgEstimator(std::string value) {
   return service.response.success; 
 }
 
+bool DroneEntity::flyForward() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 2.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::flyBackward() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = -2.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::flyRight() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = -2.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::flyLeft() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = 2.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::flyUp() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = 1.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::flyDown() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = -1.0;
+  reference.request.reference.heading = 0.0;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::rotateClockwise() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = -0.5;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
+bool DroneEntity::rotateAntiClockwise() {
+  mrs_msgs::ReferenceStampedSrv reference;
+  reference.request.header.frame_id = name + "/fcu_untilted";
+  reference.request.header.stamp = ros::Time::now();
+  reference.request.reference.position.x = 0.0;
+  reference.request.reference.position.y = 0.0;
+  reference.request.reference.position.z = 0.0;
+  reference.request.reference.heading = 0.5;
+  service_goto_reference.call(reference);
+  return reference.response.success;
+}
+
 std::vector<std::string> DroneEntity::getConstraints() {
   return constraints;
 }
@@ -354,6 +453,10 @@ std::vector<std::string> DroneEntity::getAltEstimators() {
 
 std::vector<std::string> DroneEntity::getHdgEstimators() {
   return odom_hdg_sources;
+}
+
+bool DroneEntity::getNullTracker(){
+  return null_tracker;
 }
 
 void DroneEntity::setServiceNumCalls(const int value){

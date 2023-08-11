@@ -49,6 +49,8 @@ protected:
   // and update focused_object_ if so. 
   void updateFocus(const rviz::ViewportMouseEvent& event);
 
+  std::vector<std::string> findSelectedMarkers();
+
   uint64_t last_selection_frame_count_;
 
   // The object (control) which currently has the mouse focus.
@@ -56,14 +58,18 @@ protected:
   ImServer* server;
 
   const int KEY_M = 77;
-  const int KEY_W = 87;
-  const int KEY_A = 65;
-  const int KEY_S = 83;
-  const int KEY_D = 68;
-  const int KEY_R = 82;
+  const int KEY_W = 87;       const int KEY_H = 72;
+  const int KEY_A = 65;       const int KEY_J = 74;
+  const int KEY_S = 83;       const int KEY_K = 75;
+  const int KEY_D = 68;       const int KEY_L = 76;
+  const int KEY_R = 82;       const int KEY_F = 70;
+  const int KEY_Q = 81;
+  const int KEY_E = 69;
+
+  bool remote_mode_on = false;
 
 private:
-  void processMKey();
+  void showMenu();
 
 }; // class ControlTool
 

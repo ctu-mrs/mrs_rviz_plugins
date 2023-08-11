@@ -27,27 +27,26 @@ void chooseOptions(std::vector<std::string>& possible, const std::vector<std::st
   }
 }
 
-boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names) {
+bool ImServer::select(std::vector<std::string> names) {
   selected_drones.clear();
-  for(std::string name : drone_names){
-
+  for(std::string name : names){
     ROS_INFO("drone selected: %s", name.c_str());
     auto drone = drones.find(name);
     if(drone == drones.end()){
-      ROS_ERROR("[Control tool]: Selected drone has not been found among existing drones");
+      ROS_ERROR("[Control tool]: Selected drone is not found among existing drones");
       selected_drones.clear();
-      return (boost::shared_ptr<QMenu>());
+      return false;
     }
     selected_drones.push_back(drone->second);
   }
+  return true;
+}
 
+boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names) {
   if(selected_drones.empty()){
     ROS_INFO("No drone has been selected");
     return (boost::shared_ptr<QMenu>());
   }
-
-  // Note: sub-menus are defined on topic /uav_name/mrs_uav_status/uav_status
-  // One more note: actions can be connected through lambda functions
 
   // Create basic instances
   menu.reset(new QMenu());
@@ -68,10 +67,18 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
   connect(land_home, &QAction::triggered, this, &ImServer::landHome);
   connect(takeoff, &QAction::triggered, this, &ImServer::takeoffNow);
 
-  // TODO: check state of each drone, and if they are different, do not put Land and Takeoff
-  menu->addAction(land);
-  menu->addAction(land_home);
-  menu->addAction(takeoff);
+  // Check state of each drone, and if they are different, do not put Land and Takeoff
+  bool first_value = selected_drones[0]->getNullTracker();
+  bool is_same = true;
+  for(auto& selected_drone : selected_drones){
+    is_same &= first_value == selected_drone->getNullTracker();
+  }
+  if(is_same && first_value){
+    menu->addAction(takeoff);
+  } else if(is_same && !first_value){
+    menu->addAction(land);
+    menu->addAction(land_home);
+  }
 
   // Filter the options that are not present in every selected drone
   ROS_INFO("Started filtering");
@@ -175,6 +182,53 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
   return menu;
 }
 
+void ImServer::flyForwardSelected(){
+  for(auto drone : selected_drones){
+    drone->flyForward();
+  }
+}
+
+void ImServer::flyBackwardSelected(){
+  for(auto drone : selected_drones){
+    drone->flyBackward();
+  }
+}
+
+void ImServer::flyRightSelected(){
+  for(auto drone : selected_drones){
+    drone->flyRight();
+  }
+}
+
+void ImServer::flyLeftSelected(){
+  for(auto drone : selected_drones){
+    drone->flyLeft();
+  }
+}
+
+void ImServer::flyUpSelected(){
+  for(auto drone : selected_drones){
+    drone->flyUp();
+  }
+}
+
+void ImServer::flyDownSelected(){
+  for(auto drone : selected_drones){
+    drone->flyDown();
+  }
+}
+
+void ImServer::rotateClockwiseSelected(){
+  for(auto drone : selected_drones){
+    drone->rotateClockwise();
+  }
+}
+
+void ImServer::rotateAntiClockwiseSelected(){
+  for(auto drone : selected_drones){
+    drone->rotateAntiClockwise();
+  }
+}
 
 void ImServer::landNow() {
   bool res = true;

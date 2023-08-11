@@ -175,18 +175,107 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   return flags;
 }
 
-int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
-  int res = rviz::SelectionTool::processKeyEvent(event, panel);
+std::vector<std::string> ControlTool::findSelectedMarkers(){
+  std::vector<std::string> marker_names{};
+  rviz::M_Picked picked = context_->getSelectionManager()->getSelection();
+  
+  // Find all selected markers
+  for (auto picked_it :  picked){
+    rviz::Picked pick = picked_it.second;
+    rviz::SelectionHandler* handler = context_->getSelectionManager()->getHandler(pick.handle);
+    if (!(pick.pixel_count > 0 && handler)){
+      continue;
+    }
 
-  // Menu
-  if(event->key() == KEY_M){
-    processMKey();
+    rviz::InteractiveObjectPtr object = handler->getInteractiveObject().lock();
+    if (!(object && object->isInteractive())){
+      continue;
+    }
+    
+    auto int_mar_con_ptr = boost::dynamic_pointer_cast<rviz::InteractiveMarkerControl>(object);
+    if(!int_mar_con_ptr){
+      continue;
+    }
+
+    rviz::InteractiveMarker* int_mar = int_mar_con_ptr->getParent();
+    if(!int_mar){
+      continue;
+    }
+
+    std::string marker_name = int_mar->getName();
+    std::string::size_type pos = marker_name.find(' ');   // because marker_name == "uav_name marker"
+    std::string drone_name = marker_name.substr(0, pos);
+    marker_names.push_back(drone_name);
   }
+
+  return marker_names;
+}
+
+int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
+  int res = Render;
+
+  server->select(findSelectedMarkers());
+
+  // KEY_F is binded to focus on selected items in SelectionTool
+  if(!(remote_mode_on && event->key() == KEY_F)){
+    res = rviz::SelectionTool::processKeyEvent(event, panel);
+  }
+
+  ROS_INFO("Received key %d", event->key());
+  // ROS_INFO("Modifyer: %d", event->modifiers());
+
+  if(event->key() == KEY_M){
+    showMenu();
+    return res;
+  }
+
+  if(event->key() == KEY_R && event->modifiers() == Qt::ShiftModifier){
+    remote_mode_on = !remote_mode_on;
+    ROS_INFO("Remote mode switched: %s", remote_mode_on ? "on" : "off");
+    return res;
+  }
+
+  if(!remote_mode_on){
+    return res;
+  }
+
+  if(event->key() == KEY_W || event->key() == KEY_H){
+    server->flyForwardSelected();
+  }
+
+  if(event->key() == KEY_A || event->key() == KEY_J){
+    server->flyLeftSelected();
+  }
+
+  if(event->key() == KEY_S || event->key() == KEY_K){
+    server->flyBackwardSelected();
+  }
+
+  if(event->key() == KEY_D || event->key() == KEY_L){
+    server->flyRightSelected();
+  }
+
+  if(event->key() == KEY_R){
+    server->flyUpSelected();
+  }
+
+  if(event->key() == KEY_F){
+    server->flyDownSelected();
+  }
+
+  if(event->key() == KEY_Q){
+    server->rotateAntiClockwiseSelected();
+  }
+
+  if(event->key() == KEY_E){
+    server->rotateClockwiseSelected();
+  }
+
 
   return res;
 }
 
-void ControlTool::processMKey(){
+void ControlTool::showMenu(){
   ROS_INFO("M key received");
   std::vector<std::string> marker_names{};
 

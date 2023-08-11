@@ -40,6 +40,15 @@ public:
   ImServer();
 
   void addDrone(const std::string name);
+  void flyForwardSelected();
+  void flyBackwardSelected();
+  void flyRightSelected();
+  void flyLeftSelected();
+  void flyUpSelected();
+  void flyDownSelected();
+  void rotateClockwiseSelected();
+  void rotateAntiClockwiseSelected();
+  bool select(std::vector<std::string> names);
 
   boost::shared_ptr<QMenu> getMenu(std::vector<std::string>& names);
 
@@ -49,6 +58,7 @@ protected Q_SLOTS:
   void takeoffNow();
 
 protected:
+
   // Lambda functions are created out of these functions and connected to corresponding actions
   void setConstraints(std::string value);
   void setGains(std::string value);

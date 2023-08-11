@@ -43,6 +43,7 @@ public:
   std::vector<std::string> getLatEstimators();
   std::vector<std::string> getAltEstimators();
   std::vector<std::string> getHdgEstimators();
+  bool getNullTracker();
 
   void setServiceNumCalls(const int value);
 
@@ -73,6 +74,14 @@ public:
   bool setLatEstimator(std::string value);
   bool setAltEstimator(std::string value);
   bool setHdgEstimator(std::string value);
+  bool flyForward();
+  bool flyBackward();
+  bool flyRight();
+  bool flyLeft();
+  bool flyUp();
+  bool flyDown();
+  bool rotateClockwise();
+  bool rotateAntiClockwise();
 
 protected:
   void updateMenu();
@@ -123,6 +132,7 @@ protected:
   std::vector<std::string> odom_lat_sources{};  // Seems to be the same as odom source (https://github.com/ctu-mrs/mrs_uav_status/blob/78f9ee8fce216a810d15d14d7a4e479e2c41d503/src/status.cpp#L872C65-L872C65)
   std::vector<std::string> odom_alt_sources{};
   std::vector<std::string> odom_hdg_sources{};
+  bool null_tracker; // Is responsible for showing Land vs Takeoff
 
   // No method to get entries from menu handler, so we have to save them on inserting
   typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
