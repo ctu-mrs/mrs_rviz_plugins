@@ -52,13 +52,14 @@ protected:
   // Lambda functions are created out of these functions and connected to corresponding actions
   void setConstraints(std::string value);
   void setGains(std::string value);
-  void setController(std::string value);
-  void setTracker(std::string value);
-  void setOdomSource(std::string value);
-  void setLatEstimator(std::string value);
-  void setAltEstimator(std::string value);
-  void setHdgEstimator(std::string value);
+  void setControllers(std::string value);
+  void setTrackers(std::string value);
+  void setOdomSources(std::string value);
+  void setLatEstimators(std::string value);
+  void setAltEstimators(std::string value);
+  void setHdgEstimators(std::string value);
 
+  // TODO: maybe delete these attributes from here? (could be loval vars only)
   boost::shared_ptr<QMenu> menu;
   QAction* land;
   QAction* land_home;

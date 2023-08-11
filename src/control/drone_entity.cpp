@@ -194,79 +194,136 @@ void DroneEntity::statusCallback(const mrs_msgs::UavStatusConstPtr& msg) {
 
 // Menu callbacks
 void DroneEntity::land(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
-  std_srvs::Trigger service;
-  service_land.call(service, service_num_calls, service_delay);
-  ROS_INFO("[Control tool]: %s land call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  land();
 }
 
 void DroneEntity::landHome(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
-  std_srvs::Trigger service;
-  service_land_home.call(service, service_num_calls, service_delay);
-  ROS_INFO("[Control tool]: %s land_home call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  landHome();
 }
 
 void DroneEntity::takeoff(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
-  std_srvs::Trigger service;
-  service_takeoff.call(service, service_num_calls, service_delay);
-  ROS_INFO("[Control tool]: %s land_home call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  takeoff();
 }
 
 void DroneEntity::setConstraint(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setConstraint(value);
+}
+
+void DroneEntity::setGain(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setGain(value);
+}
+
+void DroneEntity::setController(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setController(value);
+}
+
+void DroneEntity::setTracker(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setTracker(value);
+}
+
+void DroneEntity::setOdomSource(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setOdomSource(value);
+}
+
+void DroneEntity::setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setLatEstimator(value);
+}
+
+void DroneEntity::setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setAltEstimator(value);
+}
+
+void DroneEntity::setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  setHdgEstimator(value);
+}
+
+
+// API for ImServer
+bool DroneEntity::land() {
+  std_srvs::Trigger service;
+  service_land.call(service, service_num_calls, service_delay);
+  ROS_INFO("[Control tool]: %s land call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
+}
+
+bool DroneEntity::landHome() {
+  std_srvs::Trigger service;
+  service_land_home.call(service, service_num_calls, service_delay);
+  ROS_INFO("[Control tool]: %s land_home call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
+}
+
+bool DroneEntity::takeoff() {
+  std_srvs::Trigger service;
+  service_takeoff.call(service, service_num_calls, service_delay);
+  ROS_INFO("[Control tool]: %s land_home call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
+}
+
+bool DroneEntity::setConstraint(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_constraints.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_constraint call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setGain(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setGain(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_gains.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_gains call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setController(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setController(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_controller.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_controller call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setTracker(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setTracker(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_tracker.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_tracker call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setOdomSource(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setOdomSource(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_odometry_source.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_odometry_source_out call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setLatEstimator(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_lat_estimator.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_odometry_lat_estimator_out call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setAltEstimator(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_alt_estimator.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_odometry_alt_estimator_out call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
 
-void DroneEntity::setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+bool DroneEntity::setHdgEstimator(std::string value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_hdg_estimator.call(service, service_num_calls, service_delay);
   ROS_INFO("[Control tool]: %s set_odometry_hdg_estimator_out call processed %s. %s", name.c_str(), service.response.success ? "successfuly" : "with fail", service.response.message.c_str());
+  return service.response.success; 
 }
- 
+
 std::vector<std::string> DroneEntity::getConstraints() {
   return constraints;
 }

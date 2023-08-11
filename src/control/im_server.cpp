@@ -131,42 +131,42 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
 
   for(auto option : controller_options){
     QAction* action = new QAction(option.c_str(), set_controller);
-    connect(action, &QAction::triggered, this, [this, option](){setController(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setControllers(option);});
     set_controller->addAction(action);
   }
   menu->addMenu(set_controller);
 
   for(auto option : tracker_options){
     QAction* action = new QAction(option.c_str(), set_tracker);
-    connect(action, &QAction::triggered, this, [this, option](){setTracker(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setTrackers(option);});
     set_tracker->addAction(action);
   }
   menu->addMenu(set_tracker);
 
   for(auto option : odom_source_options){
     QAction* action = new QAction(option.c_str(), set_odom_source);
-    connect(action, &QAction::triggered, this, [this, option](){setOdomSource(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setOdomSources(option);});
     set_odom_source->addAction(action);
   }
   menu->addMenu(set_odom_source);
 
   for(auto option : odom_lat_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_lat_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setLatEstimator(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setLatEstimators(option);});
     set_lat_estimator->addAction(action);
   }
   menu->addMenu(set_lat_estimator);
 
   for(auto option : odom_alt_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_alt_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setAltEstimator(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setAltEstimators(option);});
     set_alt_estimator->addAction(action);
   }
   menu->addMenu(set_alt_estimator);
 
   for(auto option : odom_hdg_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_hdg_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setHdgEstimator(option);});
+    connect(action, &QAction::triggered, this, [this, option](){setHdgEstimators(option);});
     set_hdg_estimator->addAction(action);
   }
   menu->addMenu(set_hdg_estimator);
@@ -177,37 +177,135 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
 
 
 void ImServer::landNow() {
-  ROS_INFO("Land called.");
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->land();
+  }
+  if(res){
+    ROS_INFO("[Control tool]: selected drones landed successfully");
+  } else{
+    ROS_INFO("[Control toll]: landing failed on one or more drones");
+  }
 }
+
 void ImServer::landHome() {
-  ROS_INFO("Land Home called.");
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->landHome();
+  }
+  if(res){
+    ROS_INFO("[Control tool]: selected drones landed home successfully");
+  } else{
+    ROS_INFO("[Control toll]: landing home failed on one or more drones");
+  }
 }
+
 void ImServer::takeoffNow() {
-  ROS_INFO("Takeoff called.");
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->takeoff();
+  }
+  if(res){
+    ROS_INFO("[Control tool]: selected drones took off successfully");
+  } else{
+    ROS_INFO("[Control toll]: taking off failed on one or more drones");
+  }
 }
+
 void ImServer::setConstraints(std::string value) {
-  ROS_INFO("Set Constraints called. Value: %s", value.c_str());
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setConstraint(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: constraints are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting constraints failed on one or more drones");
+  }
 }
+
 void ImServer::setGains(std::string value) {
-  ROS_INFO("Set Gains called. Value: %s", value.c_str());
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setGain(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: gains are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting gains failed on one or more drones");
+  }
 }
-void ImServer::setController(std::string value) {
-  ROS_INFO("Set Controller called. Value: %s", value.c_str());
+
+void ImServer::setControllers(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setController(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: controllers are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting controllers failed on one or more drones");
+  }
 }
-void ImServer::setTracker(std::string value) {
-  ROS_INFO("Set Tracker called. Value: %s", value.c_str());
+
+void ImServer::setTrackers(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setTracker(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: trackers are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting trackers failed on one or more drones");
+  }
 }
-void ImServer::setOdomSource(std::string value) {
-  ROS_INFO("Set Odom Soutce called. Value: %s", value.c_str());
+
+void ImServer::setOdomSources(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setOdomSource(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: odometry sources are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting odomentry sources failed on one or more drones");
+  }
 }
-void ImServer::setLatEstimator(std::string value) {
-  ROS_INFO("Set Lat Estimator called. Value: %s", value.c_str());
+
+void ImServer::setLatEstimators(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setLatEstimator(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: lat estimators are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting lat estimators failed on one or more drones");
+  }
 }
-void ImServer::setAltEstimator(std::string value) {
-  ROS_INFO("Set Alt Estimator called. Value: %s", value.c_str());
+
+void ImServer::setAltEstimators(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setAltEstimator(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: alt estimators are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting alt estimators failed on one or more drones");
+  }
 }
-void ImServer::setHdgEstimator(std::string value) {
-  ROS_INFO("Set Hdg Estimator called. Value: %s", value.c_str());
+
+void ImServer::setHdgEstimators(std::string value) {
+  bool res = true;
+  for(auto drone : selected_drones){
+    res &= drone->setHdgEstimator(value);
+  }
+  if(res){
+    ROS_INFO("[Control tool]: hdg estimators are set successfully");
+  } else{
+    ROS_INFO("[Control toll]: setting hdg estimators failed on one or more drones");
+  }
 }
 
 } // namespace mrs_rviz_plugins

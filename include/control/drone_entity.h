@@ -29,6 +29,7 @@
 
 namespace mrs_rviz_plugins{
 
+// TODO: add wasd controlling!
 class DroneEntity{
 public:
   DroneEntity(const std::string name);
@@ -59,6 +60,20 @@ public:
     SET_HDG_ESTIMATOR = 10,
     SIZE              = 11
   };
+
+  // | -------------------- API for ImServer -------------------- |
+  bool land           ();
+  bool landHome       ();
+  bool takeoff        ();
+  bool setConstraint  (std::string value);
+  bool setGain        (std::string value);
+  bool setController  (std::string value);
+  bool setTracker     (std::string value);
+  bool setOdomSource  (std::string value);
+  bool setLatEstimator(std::string value);
+  bool setAltEstimator(std::string value);
+  bool setHdgEstimator(std::string value);
+
 protected:
   void updateMenu();
   void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
