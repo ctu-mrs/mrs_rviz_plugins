@@ -42,14 +42,13 @@ public:
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
 protected Q_SLOTS:
-  void some_action();
 
 protected:
   // Check if the mouse has moved from one object to another,
   // and update focused_object_ if so. 
   void updateFocus(const rviz::ViewportMouseEvent& event);
 
-  std::vector<std::string> findSelectedMarkers();
+  std::vector<std::string> findSelectedDroneNames();
 
   uint64_t last_selection_frame_count_;
 
@@ -67,9 +66,6 @@ protected:
   const int KEY_E = 69;
 
   bool remote_mode_on = false;
-
-private:
-  void showMenu();
 
 }; // class ControlTool
 

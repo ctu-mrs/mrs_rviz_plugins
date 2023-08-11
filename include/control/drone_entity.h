@@ -29,7 +29,6 @@
 
 namespace mrs_rviz_plugins{
 
-// TODO: add wasd controlling!
 class DroneEntity{
 public:
   DroneEntity(const std::string name);
@@ -105,7 +104,6 @@ protected:
 
   // | ------------------------ Services ------------------------ |
   mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
-  mrs_lib::ServiceClientHandler<mrs_msgs::TrajectoryReferenceSrv> service_trajectory_reference;
   mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_land;
   mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_land_home;
   mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_takeoff;
@@ -117,7 +115,6 @@ protected:
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_lat_estimator;
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_alt_estimator;
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_hdg_estimator;
-  mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_hover;
   int service_num_calls = 20;
   double service_delay  = 0.1;
   

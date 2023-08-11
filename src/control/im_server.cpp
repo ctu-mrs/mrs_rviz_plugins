@@ -11,7 +11,6 @@ ImServer::ImServer(){
 
 // TODO: add timer to check for new drones
 void ImServer::addDrone(const std::string name) {
-  ROS_INFO("drone added %s", name.c_str());
   drones.insert(std::make_pair(name, new DroneEntity(name)));
 }
 
@@ -30,7 +29,6 @@ void chooseOptions(std::vector<std::string>& possible, const std::vector<std::st
 bool ImServer::select(std::vector<std::string> names) {
   selected_drones.clear();
   for(std::string name : names){
-    ROS_INFO("drone selected: %s", name.c_str());
     auto drone = drones.find(name);
     if(drone == drones.end()){
       ROS_ERROR("[Control tool]: Selected drone is not found among existing drones");
@@ -42,9 +40,9 @@ bool ImServer::select(std::vector<std::string> names) {
   return true;
 }
 
-boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names) {
+boost::shared_ptr<QMenu> ImServer::getMenu() {
   if(selected_drones.empty()){
-    ROS_INFO("No drone has been selected");
+    ROS_INFO("[Control tool]: No drone has been selected");
     return (boost::shared_ptr<QMenu>());
   }
 
@@ -81,7 +79,6 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
   }
 
   // Filter the options that are not present in every selected drone
-  ROS_INFO("Started filtering");
   DroneEntity* drone = selected_drones[0];
 
   std::vector<std::string> constraint_options        = drone->getConstraints();
@@ -121,7 +118,6 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
   }
 
   // Set menu actions
-  ROS_INFO("Started setting menu actions");
   for(auto option : constraint_options){
     QAction* action = new QAction(option.c_str(), set_constraints);
     connect(action, &QAction::triggered, this, [this, option](){setConstraints(option);});
@@ -178,7 +174,6 @@ boost::shared_ptr<QMenu> ImServer::getMenu(std::vector<std::string>& drone_names
   }
   menu->addMenu(set_hdg_estimator);
 
-  ROS_INFO("Menu made");
   return menu;
 }
 

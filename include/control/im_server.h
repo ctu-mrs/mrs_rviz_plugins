@@ -50,7 +50,7 @@ public:
   void rotateAntiClockwiseSelected();
   bool select(std::vector<std::string> names);
 
-  boost::shared_ptr<QMenu> getMenu(std::vector<std::string>& names);
+  boost::shared_ptr<QMenu> getMenu();
 
 protected Q_SLOTS:
   void landNow();

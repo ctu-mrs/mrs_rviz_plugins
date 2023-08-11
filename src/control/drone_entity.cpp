@@ -14,8 +14,6 @@ DroneEntity::DroneEntity(const std::string name_){
 
   // | ------------------------ Services ------------------------ |
   service_goto_reference       = mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv>(nh, "control_manager/reference");
-  // service_trajectory_reference = mrs_lib::ServiceClientHandler<mrs_msgs::TrajectoryReferenceSrv>(nh, "uav_manager/trajectory_reference_out");
-  
   service_land                 = mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, "uav_manager/land");
   service_land_home            = mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, "uav_manager/land_home");
   service_takeoff              = mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, "uav_manager/takeoff");
@@ -27,7 +25,6 @@ DroneEntity::DroneEntity(const std::string name_){
   service_set_lat_estimator    = mrs_lib::ServiceClientHandler<mrs_msgs::String>(nh, "odometry/change_odometry_source");  // Seems to call same service, because status prints similar message
   service_set_alt_estimator    = mrs_lib::ServiceClientHandler<mrs_msgs::String>(nh, "odometry/change_alt_estimator_type_string");
   service_set_hdg_estimator    = mrs_lib::ServiceClientHandler<mrs_msgs::String>(nh, "odometry/change_hdg_estimator_type_string");
-  // service_hover                = mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, "uav_manager/hover_out");
 
   // | ------------------- Interactive marker ------------------- |
   // Regular marker
@@ -173,11 +170,10 @@ void DroneEntity::updateMenu(){
 
   menu_handler->apply(*server, name + " marker");
   server->applyChanges();
-  ROS_INFO("Menu options updated");
+  ROS_INFO("[Control tool]: Menu options updated");
 }
 
 void DroneEntity::statusCallback(const mrs_msgs::UavStatusConstPtr& msg) {
-  // Note: This might run simultaniously with other method reading from these vectors
   bool updated = false;
 
   updated |= compareAndUpdate(constraints, msg->constraints);
