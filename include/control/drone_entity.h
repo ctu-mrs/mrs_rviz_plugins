@@ -1,17 +1,24 @@
 #ifndef DRONE_ENTITY_H
 #define DRONE_ENTITY_H
 
-#include <ros/ros.h>
-
-#include <mrs_msgs/UavStatus.h>
-
-#include <visualization_msgs/InteractiveMarker.h>
+#include <visualization_msgs/InteractiveMarkerFeedback.h>
 #include <visualization_msgs/InteractiveMarkerUpdate.h>
 #include <visualization_msgs/InteractiveMarkerInit.h>
-#include <visualization_msgs/InteractiveMarkerFeedback.h>
+#include <visualization_msgs/InteractiveMarker.h>
 
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
+
+#include <mrs_lib/service_client_handler.h>
+
+#include <mrs_msgs/TrajectoryReferenceSrv.h>
+#include <mrs_msgs/ReferenceStampedSrv.h>
+#include <mrs_msgs/UavStatus.h>
+#include <mrs_msgs/String.h>
+
+#include <std_srvs/Trigger.h>
+
+#include <ros/ros.h>
 
 #include <QString>
 #include <QAction>
@@ -36,6 +43,8 @@ public:
   std::vector<std::string> getAltEstimators();
   std::vector<std::string> getHdgEstimators();
 
+  void setServiceNumCalls(const int value);
+
   enum EntryIndex{
     LAND              = 0,
     LAND_HOME         = 1,
@@ -57,7 +66,7 @@ protected:
   // Return true if current has been changed, false otherwise.
   bool compareAndUpdate(std::vector<std::string>& current, const std::vector<std::string>& actual);
 
-  //|-------------------- Menu Callbacks --------------------|
+  // | --------------------- Menu Callbacks --------------------- |
   void land           (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void landHome       (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void takeoff        (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
@@ -70,7 +79,25 @@ protected:
   void setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 
-  //|---------------------- Attributes ----------------------|
+  // | ------------------------ Services ------------------------ |
+  mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
+  mrs_lib::ServiceClientHandler<mrs_msgs::TrajectoryReferenceSrv> service_trajectory_reference;
+  mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_land;
+  mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_land_home;
+  mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_takeoff;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_constraints;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_gains;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_controller;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_tracker;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_odometry_source;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_lat_estimator;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_alt_estimator;
+  mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_hdg_estimator;
+  mrs_lib::ServiceClientHandler<std_srvs::Trigger> service_hover;
+  int service_num_calls = 20;
+  double service_delay  = 0.1;
+  
+  // | ----------------------- Attributes ----------------------- |
   std::string name;
 
   // Menu options
