@@ -1,15 +1,20 @@
-cmake_minimum_required(VERSION 3.1.2)
+cmake_minimum_required(VERSION 3.5)
 project(mrs_rviz_plugins)
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  nodelet
+set(CATKIN_DEPENDENCIES
   cmake_modules
-  rviz
+  geometry_msgs
+  mrs_lib
   mrs_msgs
   nav_msgs
-  mrs_lib
-  geometry_msgs
+  nodelet
+  pluginlib
+  roscpp
+  rviz
+  )
+
+find_package(catkin REQUIRED COMPONENTS
+  ${CATKIN_DEPENDENCIES}
   )
 
 set(CMAKE_AUTOMOC ON)
@@ -35,17 +40,24 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_definitions(-DQT_NO_KEYWORDS)
+
 # ignore c++17 deprecation warnings for the register storage class specifier because of OGRE
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz
+  MrsRvizPlugins_Bumper
+  MrsRvizPlugins_Covariance
+  MrsRvizPlugins_NavGoal
+  MrsRvizPlugins_PoseEstimate
+  MrsRvizPlugins_Sphere
+  MrsRvizPlugins_PoseWithCovarianceArray
+  MrsRvizPlugins_TrackArray
   )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${LIBRARIES}
-  CATKIN_DEPENDS roscpp mrs_msgs rviz mrs_lib nav_msgs geometry_msgs
+  CATKIN_DEPENDS ${CATKIN_DEPENDENCIES}
   )
 
 include_directories(
@@ -55,112 +67,112 @@ include_directories(
 
 ## BUMPER VIZUALIZATION
 
-add_library(MrsBumperRviz
+add_library(MrsRvizPlugins_Bumper
   include/bumper/display.h
   include/bumper/visual.h
   src/bumper/display.cpp
   src/bumper/visual.cpp
   )
 
-add_dependencies(MrsBumperRviz
+add_dependencies(MrsRvizPlugins_Bumper
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsBumperRviz
+target_link_libraries(MrsRvizPlugins_Bumper
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
 
 ## SPHERE VIZUALIZATION
 
-add_library(MrsSphereRviz
+add_library(MrsRvizPlugins_Sphere
   include/sphere/display.h
   include/sphere/visual.h
   src/sphere/display.cpp
   src/sphere/visual.cpp
   )
 
-add_dependencies(MrsSphereRviz
+add_dependencies(MrsRvizPlugins_Sphere
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsSphereRviz
+target_link_libraries(MrsRvizPlugins_Sphere
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
 
 ## COVARIANCE
 
-add_library(MrsCovarianceRviz
+add_library(MrsRvizPlugins_Covariance
   include/covariance/property.h
   include/covariance/visual.h
   src/covariance/property.cpp
   src/covariance/visual.cpp
   )
 
-add_dependencies(MrsCovarianceRviz
+add_dependencies(MrsRvizPlugins_Covariance
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsCovarianceRviz
+target_link_libraries(MrsRvizPlugins_Covariance
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
 
 ## POSE WITH COVARIANCE ARRAY
 
-add_library(MrsPoseWithCovarianceArrayRviz
+add_library(MrsRvizPlugins_PoseWithCovarianceArray
   include/pose_with_covariance_array/display.h
   src/pose_with_covariance_array/display.cpp
   )
 
-add_dependencies(MrsPoseWithCovarianceArrayRviz
+add_dependencies(MrsRvizPlugins_PoseWithCovarianceArray
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsPoseWithCovarianceArrayRviz
+target_link_libraries(MrsRvizPlugins_PoseWithCovarianceArray
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
-  MrsCovarianceRviz
+  MrsRvizPlugins_Covariance
   )
 
 ## RVIZ NAV GOAL
 
-add_library(MrsRvizNavGoal
+add_library(MrsRvizPlugins_NavGoal
   src/rviz_interface/nav_goal.cpp
   )
 
-target_link_libraries(MrsRvizNavGoal
+target_link_libraries(MrsRvizPlugins_NavGoal
   ${catkin_LIBRARIES}
   )
 
 ## RVIZ POSE ESTIMATE
 
-add_library(MrsRvizPoseEstimate
+add_library(MrsRvizPlugins_PoseEstimate
   src/rviz_interface/pose_estimate.cpp
   )
 
-target_link_libraries(MrsRvizPoseEstimate
+target_link_libraries(MrsRvizPlugins_PoseEstimate
   ${catkin_LIBRARIES}
   )
 
 ## RVIZ TRACK ARRAY
 
-add_library(MrsTrackArrayRviz
+add_library(MrsRvizPlugins_TrackArray
   include/track_array/display.h
   src/track_array/display.cpp
   )
 
-add_dependencies(MrsTrackArrayRviz
+add_dependencies(MrsRvizPlugins_TrackArray
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsTrackArrayRviz
+target_link_libraries(MrsRvizPlugins_TrackArray
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
