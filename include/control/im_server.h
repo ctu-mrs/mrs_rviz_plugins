@@ -69,19 +69,7 @@ protected:
   void setAltEstimators(std::string value);
   void setHdgEstimators(std::string value);
 
-  // TODO: maybe delete these attributes from here? (could be loval vars only)
   boost::shared_ptr<QMenu> menu;
-  QAction* land;
-  QAction* land_home;
-  QAction* takeoff;
-  QMenu* set_constraints;
-  QMenu* set_gains;
-  QMenu* set_controller;
-  QMenu* set_tracker;
-  QMenu* set_odom_source;
-  QMenu* set_lat_estimator;
-  QMenu* set_alt_estimator;
-  QMenu* set_hdg_estimator;
 
   // Note: callbacks of DroneEntity do not work if the instance is not allocated on the heap
   std::map<std::string, DroneEntity*> drones;

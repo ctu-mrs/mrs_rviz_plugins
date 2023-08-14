@@ -8,7 +8,8 @@ DroneEntity::DroneEntity(const std::string name_){
   name = name_;
   nh = ros::NodeHandle(name);
   status_subscriber = nh.subscribe("mrs_uav_status/uav_status", 1, &DroneEntity::statusCallback, this, ros::TransportHints().tcpNoDelay());
-  
+  custom_services_subsrciber = nh.subscribe("mrs_uav_status/set_trigger_service", 5, &DroneEntity::newSeviceCallback, this, ros::TransportHints().tcpNoDelay());
+
   ROS_INFO("subscriber topic: %s", status_subscriber.getTopic().c_str());
   server = new interactive_markers::InteractiveMarkerServer("control", name.c_str(), true);
 
@@ -88,7 +89,7 @@ void DroneEntity::updateMenu(){
   }
   menu_handler = new interactive_markers::MenuHandler();
 
-  entries.resize(EntryIndex::SIZE);
+  entries.resize(EntryIndex::SIZE + custom_services.size());
   if(null_tracker){
     entries[TAKEOFF          ] = menu_handler->insert("Takeoff", [this](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback){takeoff(feedback);});
   } else{
@@ -103,6 +104,13 @@ void DroneEntity::updateMenu(){
   entries[SET_LAT_ESTIMATOR] = menu_handler->insert("Set Lat Estimator");
   entries[SET_ALT_ESTIMATOR] = menu_handler->insert("Set Alt Estimator");
   entries[SET_HDG_ESTIMATOR] = menu_handler->insert("Set Hdg Estimator");
+
+  for(const std::string& service_name : custom_service_names){
+    menu_handler->insert(service_name, [this]
+    (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+      processCustomService(feedback);
+    });
+  }
 
   for(const auto constraint : constraints){
     menu_handler->insert(entries[SET_CONSTRAINT], constraint, 
@@ -191,6 +199,22 @@ void DroneEntity::statusCallback(const mrs_msgs::UavStatusConstPtr& msg) {
   }
 }
 
+void DroneEntity::newSeviceCallback(const std_msgs::StringConstPtr& msg) {
+  std::size_t index = msg->data.find(" ");
+
+  if(index == std::string::npos){
+    ROS_INFO("[Control tool]: invalid add service request received: %s", msg->data.c_str());
+    return;
+  }
+
+  std::string service_address = msg->data.substr(0, index);
+  std::string service_name = msg->data.substr(index+1, std::string::npos);
+  custom_services.push_back(mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, service_address));
+  custom_service_names.push_back(service_name);
+  updateMenu();
+  ROS_INFO("[Control tool] %s: new service \"%s\" has been added.", name.c_str(), service_name.c_str());
+}
+
 // Menu callbacks
 void DroneEntity::land(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   land();
@@ -234,6 +258,22 @@ void DroneEntity::setAltEstimator(std::string value, const visualization_msgs::I
 
 void DroneEntity::setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setHdgEstimator(value);
+}
+
+void DroneEntity::processCustomService(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  int service_index;
+  // If Takeoff option is active
+  if(null_tracker){
+    service_index = feedback->menu_entry_id - (EntryIndex::SIZE) + 1;
+  }
+  // If Land and Land Home options are active
+  else{
+    service_index = feedback->menu_entry_id - (EntryIndex::SIZE);
+  }
+
+  std_srvs::Trigger trigger;
+  custom_services[service_index].call(trigger, service_num_calls, service_delay);
+  ROS_INFO("[Control tool]: %s %s call processed %s. %s", name.c_str(), custom_service_names[service_index].c_str(), trigger.response.success ? "successfuly" : "with fail", trigger.response.message.c_str());
 }
 
 

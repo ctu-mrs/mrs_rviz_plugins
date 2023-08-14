@@ -17,6 +17,7 @@
 #include <mrs_msgs/String.h>
 
 #include <std_srvs/Trigger.h>
+#include <std_msgs/String.h>
 
 #include <ros/ros.h>
 
@@ -85,6 +86,8 @@ public:
 protected:
   void updateMenu();
   void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
+  void newSeviceCallback(const std_msgs::StringConstPtr& msg);
+
   // Compares the vectors. If they contain different values, changes current so it is the same as actual
   // Return true if current has been changed, false otherwise.
   bool compareAndUpdate(std::vector<std::string>& current, const std::vector<std::string>& actual);
@@ -101,6 +104,7 @@ protected:
   void setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void processCustomService(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 
   // | ------------------------ Services ------------------------ |
   mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
@@ -115,13 +119,12 @@ protected:
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_lat_estimator;
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_alt_estimator;
   mrs_lib::ServiceClientHandler<mrs_msgs::String> service_set_hdg_estimator;
+  std::vector<mrs_lib::ServiceClientHandler<std_srvs::Trigger>> custom_services;
+  std::vector<std::string> custom_service_names;
   int service_num_calls = 20;
   double service_delay  = 0.1;
   
-  // | ----------------------- Attributes ----------------------- |
-  std::string name;
-
-  // Menu options
+  // | -------------------------- Menu -------------------------- |
   std::vector<std::string> constraints{};
   std::vector<std::string> gains{};
   std::vector<std::string> controllers{};
@@ -129,7 +132,7 @@ protected:
   std::vector<std::string> odom_lat_sources{};  // Seems to be the same as odom source (https://github.com/ctu-mrs/mrs_uav_status/blob/78f9ee8fce216a810d15d14d7a4e479e2c41d503/src/status.cpp#L872C65-L872C65)
   std::vector<std::string> odom_alt_sources{};
   std::vector<std::string> odom_hdg_sources{};
-  bool null_tracker; // Is responsible for showing Land vs Takeoff
+  bool null_tracker; // Responsible for showing Land vs Takeoff
 
   // No method to get entries from menu handler, so we have to save them on inserting
   typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
@@ -138,8 +141,12 @@ protected:
   interactive_markers::InteractiveMarkerServer* server;
   interactive_markers::MenuHandler* menu_handler = nullptr;
 
+  // | ----------------------- Attributes ----------------------- |
+  std::string name;
+
   ros::NodeHandle nh;
   ros::Subscriber status_subscriber;
+  ros::Subscriber custom_services_subsrciber;
   
 };//class DroneEntity
 

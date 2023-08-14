@@ -48,17 +48,17 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
 
   // Create basic instances
   menu.reset(new QMenu());
-  land              = new QAction("Land",            menu.get());
-  land_home         = new QAction("Land Home",       menu.get());
-  takeoff           = new QAction("Takeoff",         menu.get());
-  set_constraints   = new QMenu("Set Constraints",   menu.get());
-  set_gains         = new QMenu("Set Gains",         menu.get());
-  set_controller    = new QMenu("Set Controller",    menu.get());
-  set_tracker       = new QMenu("Set Tracker",       menu.get());
-  set_odom_source   = new QMenu("Set Odom Source",   menu.get());
-  set_lat_estimator = new QMenu("Set Lat Estimator", menu.get());
-  set_alt_estimator = new QMenu("Set Alt Estimator", menu.get());
-  set_hdg_estimator = new QMenu("Set Hdg Estimator", menu.get());
+  QAction* land              = new QAction("Land",            menu.get());
+  QAction* land_home       = new QAction("Land Home",       menu.get());
+  QAction* takeoff         = new QAction("Takeoff",         menu.get());
+  QMenu* set_constraints   = new QMenu("Set Constraints",   menu.get());
+  QMenu* set_gains         = new QMenu("Set Gains",         menu.get());
+  QMenu* set_controller    = new QMenu("Set Controller",    menu.get());
+  QMenu* set_tracker       = new QMenu("Set Tracker",       menu.get());
+  QMenu* set_odom_source   = new QMenu("Set Odom Source",   menu.get());
+  QMenu* set_lat_estimator = new QMenu("Set Lat Estimator", menu.get());
+  QMenu* set_alt_estimator = new QMenu("Set Alt Estimator", menu.get());
+  QMenu* set_hdg_estimator = new QMenu("Set Hdg Estimator", menu.get());
 
   // Connect signals
   connect(land, &QAction::triggered, this, &ImServer::landNow);
