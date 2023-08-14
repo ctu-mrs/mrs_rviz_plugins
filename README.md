@@ -25,7 +25,8 @@ RViz goal tool with modifiable label.
 
 #### Control tool
 
-Integrates [mrs_uav_status](https://github.com/ctu-mrs/mrs_uav_status/tree/master) and Selection tool functionality into one tool.
+Integrates [mrs_uav_status](https://github.com/ctu-mrs/mrs_uav_status/tree/master) and Selection tool functionality into one tool.  
+Shortcut key for the tool is 'c'.
 
 ##### Mouse control
 
