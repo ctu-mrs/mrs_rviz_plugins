@@ -42,7 +42,7 @@ public:
   ImServer();
   ~ImServer();
 
-  void addDrone(const std::string name);
+  void addDrone(const std::string& name);
   void flyForwardSelected();
   void flyBackwardSelected();
   void flyRightSelected();
@@ -51,7 +51,7 @@ public:
   void flyDownSelected();
   void rotateClockwiseSelected();
   void rotateAntiClockwiseSelected();
-  bool select(std::vector<std::string> names);
+  bool select(const std::vector<std::string>& names);
 
   boost::shared_ptr<QMenu> getMenu();
 
@@ -63,14 +63,14 @@ protected Q_SLOTS:
 protected:
 
   // Lambda functions are created out of these functions and connected to corresponding actions
-  void setConstraints(std::string value);
-  void setGains(std::string value);
-  void setControllers(std::string value);
-  void setTrackers(std::string value);
-  void setOdomSources(std::string value);
-  void setLatEstimators(std::string value);
-  void setAltEstimators(std::string value);
-  void setHdgEstimators(std::string value);
+  void setConstraints   (const std::string& value);
+  void setGains         (const std::string& value);
+  void setControllers   (const std::string& value);
+  void setTrackers      (const std::string& value);
+  void setOdomSources   (const std::string& value);
+  void setLatEstimators (const std::string& value);
+  void setAltEstimators (const std::string& value);
+  void setHdgEstimators (const std::string& value);
 
   void checkNewDrones(const ros::TimerEvent&);
 

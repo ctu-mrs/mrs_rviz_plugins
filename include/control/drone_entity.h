@@ -32,10 +32,9 @@ namespace mrs_rviz_plugins{
 
 class DroneEntity{
 public:
-  DroneEntity(const std::string name);
+  DroneEntity(const std::string& name);
   ~DroneEntity();
 
-  // TODO: optimize the following so they return read-only copy
   std::vector<std::string> getConstraints();
   std::vector<std::string> getGains();
   std::vector<std::string> getControllers();
@@ -67,14 +66,14 @@ public:
   bool land           ();
   bool landHome       ();
   bool takeoff        ();
-  bool setConstraint  (std::string value);
-  bool setGain        (std::string value);
-  bool setController  (std::string value);
-  bool setTracker     (std::string value);
-  bool setOdomSource  (std::string value);
-  bool setLatEstimator(std::string value);
-  bool setAltEstimator(std::string value);
-  bool setHdgEstimator(std::string value);
+  bool setConstraint  (const std::string& value);
+  bool setGain        (const std::string& value);
+  bool setController  (const std::string& value);
+  bool setTracker     (const std::string& value);
+  bool setOdomSource  (const std::string& value);
+  bool setLatEstimator(const std::string& value);
+  bool setAltEstimator(const std::string& value);
+  bool setHdgEstimator(const std::string& value);
   bool flyForward();
   bool flyBackward();
   bool flyRight();
@@ -85,9 +84,10 @@ public:
   bool rotateAntiClockwise();
 
 protected:
+
+  // Makes menu correspond to the current state of uav 
+  // (land/takeoff options, custom services)
   void updateMenu();
-  void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
-  void newSeviceCallback(const std_msgs::StringConstPtr& msg);
 
   // Compares the vectors. If they contain different values, changes current so it is the same as actual
   // Return true if current has been changed, false otherwise.
@@ -97,15 +97,19 @@ protected:
   void land           (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void landHome       (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void takeoff        (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setConstraint  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setGain        (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setController  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setTracker     (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setOdomSource  (std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-  void setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setConstraint  (const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setGain        (const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setController  (const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setTracker     (const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setOdomSource  (const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setLatEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setAltEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void setHdgEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   void processCustomService(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+
+  // | --------------------- State Callbacks -------------------- |
+  void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
+  void newSeviceCallback(const std_msgs::StringConstPtr& msg);
 
   // | ------------------------ Services ------------------------ |
   mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
@@ -133,6 +137,10 @@ protected:
   std::vector<std::string> odom_lat_sources{};  // Seems to be the same as odom source (https://github.com/ctu-mrs/mrs_uav_status/blob/78f9ee8fce216a810d15d14d7a4e479e2c41d503/src/status.cpp#L872C65-L872C65)
   std::vector<std::string> odom_alt_sources{};
   std::vector<std::string> odom_hdg_sources{};
+
+
+  // | ----------------------- Attributes ----------------------- |
+  std::string name;
   bool null_tracker; // Responsible for showing Land vs Takeoff
 
   // No method to get entries from menu handler, so we have to save them on inserting
@@ -141,9 +149,6 @@ protected:
 
   interactive_markers::InteractiveMarkerServer* server = nullptr;
   interactive_markers::MenuHandler* menu_handler = nullptr;
-
-  // | ----------------------- Attributes ----------------------- |
-  std::string name;
 
   ros::NodeHandle nh;
   ros::Subscriber status_subscriber;

@@ -37,27 +37,32 @@ public:
   ~ControlTool() override;
   void onInitialize() override;
   void activate() override;
-  void deactivate() override;
   int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
-
-protected Q_SLOTS:
 
 protected:
   // Check if the mouse has moved from one object to another,
   // and update focused_object_ if so. 
   void updateFocus(const rviz::ViewportMouseEvent& event);
 
+  // Retuns vector containing names of selected drones
   std::vector<std::string> findSelectedDroneNames();
 
+  // Note: this was in code of Interaction tool
   uint64_t last_selection_frame_count_;
 
   // The object (control) which currently has the mouse focus.
   rviz::InteractiveObjectWPtr focused_object_;
+
+  // | ----------------------- Attributes ----------------------- |
   ImServer* server = nullptr;
   rviz::InteractiveMarkerDisplay* dis = nullptr;
 
   bool remote_mode_on = false;
+
+  // | --------------------- Default values --------------------- |
+  const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off";
+  const QString DEFAULT_MODE_MESSAGE = "<b>Click and drag</b> to select objects on the screen. <b>Right-click</b> on drone to show services. <b>'R':</b> remote mode";
 
   const int KEY_M = 77;
   const int KEY_W = 87;
@@ -72,9 +77,6 @@ protected:
   const int KEY_F = 70;
   const int KEY_Q = 81;
   const int KEY_E = 69;
-
-  const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off";
-  const QString DEFAULT_MODE_MESSAGE = "<b>Click and drag</b> to select objects on the screen. <b>Right-click</b> on drone to show services. <b>'R':</b> remote mode";
 
 }; // class ControlTool
 

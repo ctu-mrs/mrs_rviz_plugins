@@ -18,7 +18,7 @@ ImServer::~ImServer(){
   drones.clear();
 }
 
-void ImServer::addDrone(const std::string name) {
+void ImServer::addDrone(const std::string& name) {
   drones.insert(std::make_pair(name, new DroneEntity(name)));
 }
 
@@ -72,9 +72,9 @@ void chooseOptions(std::vector<std::string>& possible, const std::vector<std::st
   }
 }
 
-bool ImServer::select(std::vector<std::string> names) {
+bool ImServer::select(const std::vector<std::string>& names) {
   selected_drones.clear();
-  for(std::string name : names){
+  for(const std::string& name : names){
     auto drone = drones.find(name);
     if(drone == drones.end()){
       ROS_ERROR("[Control tool]: Selected drone is not found among existing drones");
@@ -112,7 +112,7 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   connect(takeoff, &QAction::triggered, this, &ImServer::takeoffNow);
 
   // Check state of each drone, and if they are different, do not put Land and Takeoff
-  bool first_value = selected_drones[0]->getNullTracker();
+  const bool first_value = selected_drones[0]->getNullTracker();
   bool is_same = true;
   for(auto& selected_drone : selected_drones){
     is_same &= first_value == selected_drone->getNullTracker();
@@ -164,56 +164,56 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   }
 
   // Set menu actions
-  for(auto option : constraint_options){
+  for(const auto& option : constraint_options){
     QAction* action = new QAction(option.c_str(), set_constraints);
     connect(action, &QAction::triggered, this, [this, option](){setConstraints(option);});
     set_constraints->addAction(action);
   }
   menu->addMenu(set_constraints);
 
-  for(auto option : gain_options){
+  for(const auto& option : gain_options){
     QAction* action = new QAction(option.c_str(), set_gains);
     connect(action, &QAction::triggered, this, [this, option](){setGains(option);});
     set_gains->addAction(action);
   }
   menu->addMenu(set_gains);
 
-  for(auto option : controller_options){
+  for(const auto& option : controller_options){
     QAction* action = new QAction(option.c_str(), set_controller);
     connect(action, &QAction::triggered, this, [this, option](){setControllers(option);});
     set_controller->addAction(action);
   }
   menu->addMenu(set_controller);
 
-  for(auto option : tracker_options){
+  for(const auto& option : tracker_options){
     QAction* action = new QAction(option.c_str(), set_tracker);
     connect(action, &QAction::triggered, this, [this, option](){setTrackers(option);});
     set_tracker->addAction(action);
   }
   menu->addMenu(set_tracker);
 
-  for(auto option : odom_source_options){
+  for(const auto& option : odom_source_options){
     QAction* action = new QAction(option.c_str(), set_odom_source);
     connect(action, &QAction::triggered, this, [this, option](){setOdomSources(option);});
     set_odom_source->addAction(action);
   }
   menu->addMenu(set_odom_source);
 
-  for(auto option : odom_lat_estimtor_options){
+  for(const auto& option : odom_lat_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_lat_estimator);
     connect(action, &QAction::triggered, this, [this, option](){setLatEstimators(option);});
     set_lat_estimator->addAction(action);
   }
   menu->addMenu(set_lat_estimator);
 
-  for(auto option : odom_alt_estimtor_options){
+  for(const auto& option : odom_alt_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_alt_estimator);
     connect(action, &QAction::triggered, this, [this, option](){setAltEstimators(option);});
     set_alt_estimator->addAction(action);
   }
   menu->addMenu(set_alt_estimator);
 
-  for(auto option : odom_hdg_estimtor_options){
+  for(const auto& option : odom_hdg_estimtor_options){
     QAction* action = new QAction(option.c_str(), set_hdg_estimator);
     connect(action, &QAction::triggered, this, [this, option](){setHdgEstimators(option);});
     set_hdg_estimator->addAction(action);
@@ -224,56 +224,56 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
 }
 
 void ImServer::flyForwardSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyForward();
   }
 }
 
 void ImServer::flyBackwardSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyBackward();
   }
 }
 
 void ImServer::flyRightSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyRight();
   }
 }
 
 void ImServer::flyLeftSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyLeft();
   }
 }
 
 void ImServer::flyUpSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyUp();
   }
 }
 
 void ImServer::flyDownSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->flyDown();
   }
 }
 
 void ImServer::rotateClockwiseSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->rotateClockwise();
   }
 }
 
 void ImServer::rotateAntiClockwiseSelected(){
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     drone->rotateAntiClockwise();
   }
 }
 
 void ImServer::landNow() {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->land();
   }
   if(res){
@@ -285,7 +285,7 @@ void ImServer::landNow() {
 
 void ImServer::landHome() {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->landHome();
   }
   if(res){
@@ -297,7 +297,7 @@ void ImServer::landHome() {
 
 void ImServer::takeoffNow() {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->takeoff();
   }
   if(res){
@@ -307,9 +307,9 @@ void ImServer::takeoffNow() {
   }
 }
 
-void ImServer::setConstraints(std::string value) {
+void ImServer::setConstraints(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setConstraint(value);
   }
   if(res){
@@ -319,9 +319,9 @@ void ImServer::setConstraints(std::string value) {
   }
 }
 
-void ImServer::setGains(std::string value) {
+void ImServer::setGains(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setGain(value);
   }
   if(res){
@@ -331,9 +331,9 @@ void ImServer::setGains(std::string value) {
   }
 }
 
-void ImServer::setControllers(std::string value) {
+void ImServer::setControllers(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setController(value);
   }
   if(res){
@@ -343,9 +343,9 @@ void ImServer::setControllers(std::string value) {
   }
 }
 
-void ImServer::setTrackers(std::string value) {
+void ImServer::setTrackers(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setTracker(value);
   }
   if(res){
@@ -355,9 +355,9 @@ void ImServer::setTrackers(std::string value) {
   }
 }
 
-void ImServer::setOdomSources(std::string value) {
+void ImServer::setOdomSources(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setOdomSource(value);
   }
   if(res){
@@ -367,9 +367,9 @@ void ImServer::setOdomSources(std::string value) {
   }
 }
 
-void ImServer::setLatEstimators(std::string value) {
+void ImServer::setLatEstimators(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setLatEstimator(value);
   }
   if(res){
@@ -379,9 +379,9 @@ void ImServer::setLatEstimators(std::string value) {
   }
 }
 
-void ImServer::setAltEstimators(std::string value) {
+void ImServer::setAltEstimators(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setAltEstimator(value);
   }
   if(res){
@@ -391,9 +391,9 @@ void ImServer::setAltEstimators(std::string value) {
   }
 }
 
-void ImServer::setHdgEstimators(std::string value) {
+void ImServer::setHdgEstimators(const std::string& value) {
   bool res = true;
-  for(auto drone : selected_drones){
+  for(const auto& drone : selected_drones){
     res &= drone->setHdgEstimator(value);
   }
   if(res){

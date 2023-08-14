@@ -35,11 +35,6 @@ void ControlTool::activate(){
   setStatus(DEFAULT_MODE_MESSAGE);
 }
 
-void ControlTool::deactivate(){
-  rviz::SelectionTool::deactivate();
-
-}
-
 // TODO: what to write here?
 // The method is taken from interaction_tool.cpp  
 void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {

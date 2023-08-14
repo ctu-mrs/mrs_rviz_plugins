@@ -4,7 +4,7 @@ using namespace visualization_msgs;
 
 namespace mrs_rviz_plugins{
 
-DroneEntity::DroneEntity(const std::string name_){
+DroneEntity::DroneEntity(const std::string& name_){
   name = name_;
   nh = ros::NodeHandle(name);
   status_subscriber = nh.subscribe("mrs_uav_status/uav_status", 1, &DroneEntity::statusCallback, this, ros::TransportHints().tcpNoDelay());
@@ -239,35 +239,35 @@ void DroneEntity::takeoff(const visualization_msgs::InteractiveMarkerFeedbackCon
   takeoff();
 }
 
-void DroneEntity::setConstraint(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setConstraint(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setConstraint(value);
 }
 
-void DroneEntity::setGain(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setGain(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setGain(value);
 }
 
-void DroneEntity::setController(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setController(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setController(value);
 }
 
-void DroneEntity::setTracker(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setTracker(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setTracker(value);
 }
 
-void DroneEntity::setOdomSource(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setOdomSource(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setOdomSource(value);
 }
 
-void DroneEntity::setLatEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setLatEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setLatEstimator(value);
 }
 
-void DroneEntity::setAltEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setAltEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setAltEstimator(value);
 }
 
-void DroneEntity::setHdgEstimator(std::string value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+void DroneEntity::setHdgEstimator(const std::string& value, const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   setHdgEstimator(value);
 }
 
@@ -310,7 +310,7 @@ bool DroneEntity::takeoff() {
   return service.response.success; 
 }
 
-bool DroneEntity::setConstraint(std::string value) {
+bool DroneEntity::setConstraint(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_constraints.call(service, service_num_calls, service_delay);
@@ -318,7 +318,7 @@ bool DroneEntity::setConstraint(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setGain(std::string value) {
+bool DroneEntity::setGain(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_gains.call(service, service_num_calls, service_delay);
@@ -326,7 +326,7 @@ bool DroneEntity::setGain(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setController(std::string value) {
+bool DroneEntity::setController(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_controller.call(service, service_num_calls, service_delay);
@@ -334,7 +334,7 @@ bool DroneEntity::setController(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setTracker(std::string value) {
+bool DroneEntity::setTracker(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_tracker.call(service, service_num_calls, service_delay);
@@ -342,7 +342,7 @@ bool DroneEntity::setTracker(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setOdomSource(std::string value) {
+bool DroneEntity::setOdomSource(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_odometry_source.call(service, service_num_calls, service_delay);
@@ -350,7 +350,7 @@ bool DroneEntity::setOdomSource(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setLatEstimator(std::string value) {
+bool DroneEntity::setLatEstimator(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_lat_estimator.call(service, service_num_calls, service_delay);
@@ -358,7 +358,7 @@ bool DroneEntity::setLatEstimator(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setAltEstimator(std::string value) {
+bool DroneEntity::setAltEstimator(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_alt_estimator.call(service, service_num_calls, service_delay);
@@ -366,7 +366,7 @@ bool DroneEntity::setAltEstimator(std::string value) {
   return service.response.success; 
 }
 
-bool DroneEntity::setHdgEstimator(std::string value) {
+bool DroneEntity::setHdgEstimator(const std::string& value) {
   mrs_msgs::String service;
   service.request.value = value;
   service_set_hdg_estimator.call(service, service_num_calls, service_delay);
