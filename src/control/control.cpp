@@ -12,12 +12,18 @@ ControlTool::ControlTool() : rviz::SelectionTool(){
 }
 
 ControlTool::~ControlTool(){
+  if(server != nullptr){
+    delete server;
+  }
+  if(dis != nullptr){
+    delete dis;
+  }
 }
 
 void ControlTool::onInitialize(){
   rviz::SelectionTool::onInitialize();
 
-  rviz::InteractiveMarkerDisplay* dis = new rviz::InteractiveMarkerDisplay();
+  dis = new rviz::InteractiveMarkerDisplay();
   dynamic_cast<rviz::VisualizationManager*>(context_)->addDisplay(dis, true);
 
   dis->setName(QString("Control Display"));

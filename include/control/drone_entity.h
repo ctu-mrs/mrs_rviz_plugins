@@ -33,6 +33,7 @@ namespace mrs_rviz_plugins{
 class DroneEntity{
 public:
   DroneEntity(const std::string name);
+  ~DroneEntity();
 
   // TODO: optimize the following so they return read-only copy
   std::vector<std::string> getConstraints();
@@ -138,7 +139,7 @@ protected:
   typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
   std::vector<MenuEntryHandle> entries;
 
-  interactive_markers::InteractiveMarkerServer* server;
+  interactive_markers::InteractiveMarkerServer* server = nullptr;
   interactive_markers::MenuHandler* menu_handler = nullptr;
 
   // | ----------------------- Attributes ----------------------- |

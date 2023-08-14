@@ -65,6 +65,15 @@ DroneEntity::DroneEntity(const std::string name_){
   updateMenu();
 }
 
+DroneEntity::~DroneEntity(){
+  if(menu_handler != nullptr){
+    delete menu_handler;
+  }
+  if(server != nullptr){
+    delete server;
+  }
+}
+
 bool DroneEntity::compareAndUpdate(std::vector<std::string>& current, const std::vector<std::string>& actual) {
   if(current.size() != actual.size()){
     current = actual;

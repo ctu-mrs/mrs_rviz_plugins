@@ -54,7 +54,8 @@ protected:
 
   // The object (control) which currently has the mouse focus.
   rviz::InteractiveObjectWPtr focused_object_;
-  ImServer* server;
+  ImServer* server = nullptr;
+  rviz::InteractiveMarkerDisplay* dis = nullptr;
 
   const int KEY_M = 77;
   const int KEY_W = 87;       const int KEY_H = 72;

@@ -11,12 +11,19 @@ ImServer::ImServer(){
   check_new_drones = nh.createTimer(ros::Duration(3.0), &ImServer::checkNewDrones, this);
 }
 
-// TODO: add timer to check for new drones
+ImServer::~ImServer(){
+  for(auto drone_ptr : drones){
+    delete drone_ptr.second;
+  }
+  drones.clear();
+}
+
 void ImServer::addDrone(const std::string name) {
   drones.insert(std::make_pair(name, new DroneEntity(name)));
 }
 
 void ImServer::checkNewDrones(const ros::TimerEvent&){
+  // TODO: is it ok?
   const auto& msg = ros::topic::waitForMessage<mrs_msgs::SpawnerDiagnostics>("/mrs_drone_spawner/diagnostics", ros::Duration(1.0));
   for(const std::string& uav_name : msg->active_vehicles){
     if(drones.find(uav_name) == drones.end()){

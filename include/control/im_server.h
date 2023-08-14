@@ -40,6 +40,7 @@ class ImServer : public QObject{
   Q_OBJECT
 public:
   ImServer();
+  ~ImServer();
 
   void addDrone(const std::string name);
   void flyForwardSelected();
