@@ -218,6 +218,9 @@ void DroneEntity::newSeviceCallback(const std_msgs::StringConstPtr& msg) {
 
   std::string service_address = msg->data.substr(0, index);
   std::string service_name = msg->data.substr(index+1, std::string::npos);
+  if(service_address.at(0) != '/'){
+    service_address = "/" + name + "/" + service_address;
+  }
   custom_services.push_back(mrs_lib::ServiceClientHandler<std_srvs::Trigger>(nh, service_address));
   custom_service_names.push_back(service_name);
   updateMenu();
