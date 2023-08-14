@@ -22,6 +22,8 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 
+#include <mrs_msgs/SpawnerDiagnostics.h>
+
 #include <ros/ros.h>
 
 #include <QString>
@@ -69,6 +71,8 @@ protected:
   void setAltEstimators(std::string value);
   void setHdgEstimators(std::string value);
 
+  void checkNewDrones(const ros::TimerEvent&);
+
   boost::shared_ptr<QMenu> menu;
 
   // Note: callbacks of DroneEntity do not work if the instance is not allocated on the heap
@@ -76,6 +80,9 @@ protected:
 
   // Drones to be affected by global menu
   std::vector<DroneEntity*> selected_drones;
+
+  ros::Timer check_new_drones;
+  ros::NodeHandle nh;
 
 }; // class ClientWrapper
 

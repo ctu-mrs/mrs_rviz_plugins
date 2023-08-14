@@ -6,12 +6,23 @@ using namespace visualization_msgs;
 namespace mrs_rviz_plugins{
 
 ImServer::ImServer(){
-  
+  nh = ros::NodeHandle();
+  checkNewDrones(ros::TimerEvent());
+  check_new_drones = nh.createTimer(ros::Duration(3.0), &ImServer::checkNewDrones, this);
 }
 
 // TODO: add timer to check for new drones
 void ImServer::addDrone(const std::string name) {
   drones.insert(std::make_pair(name, new DroneEntity(name)));
+}
+
+void ImServer::checkNewDrones(const ros::TimerEvent&){
+  const auto& msg = ros::topic::waitForMessage<mrs_msgs::SpawnerDiagnostics>("/mrs_drone_spawner/diagnostics", ros::Duration(1.0));
+  for(const std::string& uav_name : msg->active_vehicles){
+    if(drones.find(uav_name) == drones.end()){
+      addDrone(uav_name);
+    }
+  }
 }
 
 // If element of "possible" is not in "present", deletes it
