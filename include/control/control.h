@@ -57,16 +57,24 @@ protected:
   ImServer* server = nullptr;
   rviz::InteractiveMarkerDisplay* dis = nullptr;
 
+  bool remote_mode_on = false;
+
   const int KEY_M = 77;
-  const int KEY_W = 87;       const int KEY_H = 72;
-  const int KEY_A = 65;       const int KEY_J = 74;
-  const int KEY_S = 83;       const int KEY_K = 75;
-  const int KEY_D = 68;       const int KEY_L = 76;
-  const int KEY_R = 82;       const int KEY_F = 70;
+  const int KEY_W = 87;
+  const int KEY_A = 65;
+  const int KEY_S = 83;
+  const int KEY_D = 68;
+  const int KEY_H = 72;
+  const int KEY_J = 74;
+  const int KEY_K = 75;
+  const int KEY_L = 76;
+  const int KEY_R = 82;
+  const int KEY_F = 70;
   const int KEY_Q = 81;
   const int KEY_E = 69;
 
-  bool remote_mode_on = false;
+  const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off";
+  const QString DEFAULT_MODE_MESSAGE = "<b>Click and drag</b> to select objects on the screen. <b>Right-click</b> on drone to show services. <b>'R':</b> remote mode";
 
 }; // class ControlTool
 

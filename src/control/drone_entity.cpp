@@ -10,7 +10,6 @@ DroneEntity::DroneEntity(const std::string name_){
   status_subscriber = nh.subscribe("mrs_uav_status/uav_status", 1, &DroneEntity::statusCallback, this, ros::TransportHints().tcpNoDelay());
   custom_services_subsrciber = nh.subscribe("mrs_uav_status/set_trigger_service", 5, &DroneEntity::newSeviceCallback, this, ros::TransportHints().tcpNoDelay());
 
-  ROS_INFO("subscriber topic: %s", status_subscriber.getTopic().c_str());
   server = new interactive_markers::InteractiveMarkerServer("control", name.c_str(), true);
 
   // | ------------------------ Services ------------------------ |

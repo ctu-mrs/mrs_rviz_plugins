@@ -23,13 +23,41 @@ void ImServer::addDrone(const std::string name) {
 }
 
 void ImServer::checkNewDrones(const ros::TimerEvent&){
-  // TODO: is it ok?
-  const auto& msg = ros::topic::waitForMessage<mrs_msgs::SpawnerDiagnostics>("/mrs_drone_spawner/diagnostics", ros::Duration(1.0));
-  for(const std::string& uav_name : msg->active_vehicles){
+  // Preparing for searching the drone's name
+  XmlRpc::XmlRpcValue      req = "/node";
+  XmlRpc::XmlRpcValue      res;
+  XmlRpc::XmlRpcValue      pay;
+  std::vector<std::string> drone_names;
+  ros::master::execute("getSystemState", req, res, pay, true);
+
+  // Search for the drone's name
+  std::string state[res[2][2].size()];
+  for (int x = 0; x < res[2][2].size(); x++) {
+    std::string name = res[2][2][x][0].toXml().c_str();
+    if (name.find("control_manager/diagnostics") == std::string::npos) {
+      continue;
+    }
+
+    std::size_t index = name.find("/", 0, 1);
+    if (index != std::string::npos) {
+      name = name.erase(0, index + 1);
+    }
+
+    index = name.find("/", 1, 1);
+    if (index != std::string::npos) {
+      name = name.erase(index);
+    }
+
+    drone_names.push_back(name);
+    state[x] = name;
+  }
+
+  for(const std::string& uav_name : drone_names){
     if(drones.find(uav_name) == drones.end()){
       addDrone(uav_name);
     }
   }
+
 }
 
 // If element of "possible" is not in "present", deletes it

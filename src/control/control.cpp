@@ -32,7 +32,7 @@ void ControlTool::onInitialize(){
 
 void ControlTool::activate(){
   rviz::SelectionTool::activate();
-
+  setStatus(DEFAULT_MODE_MESSAGE);
 }
 
 void ControlTool::deactivate(){
@@ -126,6 +126,8 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
     return flags;
   }
 
+  setStatus(remote_mode_on ? REMOTE_MODE_MESSAGE : DEFAULT_MODE_MESSAGE);
+
   {
     rviz::InteractiveObjectPtr focused_object = focused_object_.lock();
     if (focused_object)
@@ -197,6 +199,7 @@ int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   if(event->key() == KEY_R && event->modifiers() == Qt::ShiftModifier){
     remote_mode_on = !remote_mode_on;
     ROS_INFO("[Control tool] Remote mode switched: %s", remote_mode_on ? "on" : "off");
+    setStatus(remote_mode_on ? REMOTE_MODE_MESSAGE : DEFAULT_MODE_MESSAGE);
     return res;
   }
 
