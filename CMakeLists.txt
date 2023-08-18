@@ -52,6 +52,8 @@ set(LIBRARIES
   MrsRvizPlugins_Sphere
   MrsRvizPlugins_PoseWithCovarianceArray
   MrsRvizPlugins_TrackArray
+  MrsRvizPlugins_NamedGoalTool
+  MrsRvizPlugins_MrsWaypointPlanner
   )
 
 catkin_package(
@@ -173,6 +175,40 @@ add_dependencies(MrsRvizPlugins_TrackArray
   )
 
 target_link_libraries(MrsRvizPlugins_TrackArray
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## NAMED GOAL TOOL
+
+add_library(MrsRvizPlugins_NamedGoalTool
+  include/named_goal_tool/named_goal_tool.h
+  src/named_goal_tool/named_goal_tool.cpp
+  )
+
+add_dependencies(MrsRvizPlugins_NamedGoalTool
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins_NamedGoalTool
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## WAYPOINT PLANNER
+
+add_library(MrsRvizPlugins_MrsWaypointPlanner
+  include/waypoint_planner/waypoint_planner.h
+  src/waypoint_planner/waypoint_planner.cpp
+)
+
+add_dependencies(MrsRvizPlugins_MrsWaypointPlanner
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins_MrsWaypointPlanner
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )

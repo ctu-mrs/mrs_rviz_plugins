@@ -25,3 +25,19 @@
     <message_type>mrs_msgs/TrackArrayStamped</message_type>
   </class>
 </library>
+
+<library path="lib/libMrsNamedGoalTool">
+  <class name="mrs_rviz_plugins/NamedSetGoal" type="mrs_rviz_plugins::NamedGoalTool" base_class_type="rviz::Tool">
+    <description>
+      Publish a goal pose for the robot. After one use, reverts to default tool.
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsWaypointPlanner">
+  <class name="mrs_rviz_plugins/WaypointPlanner" type="mrs_rviz_plugins::WaypointPlanner" base_class_type="rviz::Tool">
+    <description>
+      Set several positions, that drone has to fly through.
+    </description>
+  </class>
+</library>

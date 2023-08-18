@@ -19,6 +19,23 @@ Integrates seamlessly.
 
 Integrates seamlessly.
 
+#### NamedSetGoal
+
+RViz goal tool with modifiable label.
+
+#### WaypointPlanner
+
+Allows sending a sequence of waypoints to drone.
+The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, fly now, loop, use heading).  
+
+|  Key  |         Action         |
+|:-----:|:----------------------:|
+|   w   | Turn the plugin on/off |
+|  del  |  Delete last waypoint  |
+| enter |   Trigger behaviour    |
+
+
+![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal
