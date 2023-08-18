@@ -47,13 +47,13 @@ private:
 
 private:
   mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped> sh_rviz_goal_;
-  void                                                  callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>& wrp);
+
+  void callbackRvizNavGoal(const geometry_msgs::PoseStamped::ConstPtr wrp);
 
   mrs_lib::SubscribeHandler<mrs_msgs::TrackerCommand> sh_tracker_cmd_;
 
-  void timeoutGeneric(const std::string& topic, const ros::Time& last_msg, [[maybe_unused]] const int n_pubs);
+  void timeoutTrackerCmd(const std::string& topic, const ros::Time& last_msg);
 
-  void       callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
   bool       got_odom_uav_ = false;
   std::mutex mutex_odom_uav_;
 
@@ -100,7 +100,7 @@ void NavGoal::onInit() {
 
   // | ----------------------- subscribers ---------------------- |
   sh_rviz_goal_   = mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>(shopts, "rviz_nav_goal_in", &NavGoal::callbackRvizNavGoal, this);
-  sh_tracker_cmd_ = mrs_lib::SubscribeHandler<mrs_msgs::TrackerCommand>(shopts, "tracker_cmd_in", ros::Duration(1.0), &NavGoal::timeoutGeneric, this);
+  sh_tracker_cmd_ = mrs_lib::SubscribeHandler<mrs_msgs::TrackerCommand>(shopts, "tracker_cmd_in", ros::Duration(1.0), &NavGoal::timeoutTrackerCmd, this);
 
   // | --------------- initialize service clients --------------- |
   srv_client_reference_ = nh_.serviceClient<mrs_msgs::ReferenceStampedSrv>("reference_service_out");
@@ -118,7 +118,7 @@ void NavGoal::onInit() {
 
 /* callbackRvizNavGoal() //{ */
 
-void NavGoal::callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>& wrp) {
+void NavGoal::callbackRvizNavGoal(const geometry_msgs::PoseStamped::ConstPtr msg) {
 
   /* do not continue if the nodelet is not initialized */
   if (!is_initialized_) {
@@ -130,8 +130,7 @@ void NavGoal::callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseS
     return;
   }
 
-  geometry_msgs::PoseStampedConstPtr goal_ptr = wrp.getMsg();
-  geometry_msgs::PoseStamped         goal     = *goal_ptr;
+  geometry_msgs::PoseStamped goal = *msg;
 
   auto tracker_cmd = sh_tracker_cmd_.getMsg();
 
@@ -193,9 +192,9 @@ void NavGoal::callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseS
 
 //}
 
-/* timeoutGeneric() //{ */
+/* timeoutTrackerCmd() //{ */
 
-void NavGoal::timeoutGeneric(const std::string& topic, const ros::Time& last_msg, [[maybe_unused]] const int n_pubs) {
+void NavGoal::timeoutTrackerCmd(const std::string& topic, const ros::Time& last_msg) {
 
   ROS_WARN_THROTTLE(1.0, "[NavGoal]: not receiving '%s' for %.3f s", topic.c_str(), (ros::Time::now() - last_msg).toSec());
 }
