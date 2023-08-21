@@ -19,6 +19,11 @@ Integrates seamlessly.
 
 Integrates seamlessly.
 
+#### nav_msgs/Odometry vizualization
+
+Includes visualization of velocity and its covariance, integrates seamlessly.
+Use `mrs_rviz_plugins/OdometryWithVelocity` display type.
+
 #### NamedSetGoal
 
 RViz goal tool with modifiable label.
