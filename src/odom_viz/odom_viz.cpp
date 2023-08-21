@@ -116,8 +116,8 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
 
   // Keep only certain number of visual entities (including covariances)
   if (entities.size() >= keep_property->getInt() && !entities.empty()) {
-    if(entities.front()->getHasCov()){
-        covariance_property->popFrontVisual();
+    if (entities.front()->getHasCov()) {
+      covariance_property->popFrontVisual();
     }
     delete entities.front();
     entities.erase(entities.begin());
@@ -170,8 +170,8 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
 
   // Covariances are stored in covariance_property
   typedef rviz::CovarianceProperty::CovarianceVisualPtr CovarianceVisualPtr;
-  CovarianceVisualPtr cov; 
-  if(!is_cov_null){
+  CovarianceVisualPtr                                   cov;
+  if (!is_cov_null) {
     cov = covariance_property->createAndPushBackVisual(context_->getSceneManager(), context_->getSceneManager()->getRootSceneNode());
   }
 
@@ -206,7 +206,7 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
   }
   velocity = velocity - position;
 
-  if(!is_cov_null){
+  if (!is_cov_null) {
     cov->setPosition(position);
     cov->setOrientation(orientation);
     cov->setCovariance(msg->pose);
@@ -215,7 +215,8 @@ void OdomViz::processMessage(const nav_msgs::Odometry::ConstPtr& msg) {
   entities.push_back(entity);
 }
 
-template<size_t a> bool OdomViz::isArrayAllNull(const boost::array<double, a> arr) {
+template <size_t a>
+bool OdomViz::isArrayAllNull(const boost::array<double, a> arr) {
   for (auto covariance_value : arr) {
     if (covariance_value != 0.0) {
       return false;
@@ -235,7 +236,7 @@ void OdomViz::onEnable() {
 }
 
 void OdomViz::onKeepChanged() {
-  int to_delete = int(entities.size()) - keep_property->getInt();
+  const int to_delete = int(entities.size()) - keep_property->getInt();
   if (to_delete <= 0) {
     return;
   }

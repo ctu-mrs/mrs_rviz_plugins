@@ -60,7 +60,8 @@ protected:
 
 private:
   void processMessage(const nav_msgs::Odometry::ConstPtr& msg) override;
-  template<size_t a> bool isArrayAllNull(const boost::array<double, a> arr);
+  template <size_t a>
+  bool isArrayAllNull(const boost::array<double, a> arr);
 
   // Properties:
   //      General

@@ -103,12 +103,12 @@ void VisualEntity::setVelVisible(const bool value) {
   vel_arrow_scene_node->setVisible(value);
 }
 
-void VisualEntity::setHasCov(const bool value){
-    has_cov = value;
+void VisualEntity::setHasCov(const bool value) {
+  has_cov = value;
 }
 
-bool VisualEntity::getHasCov(){
-    return has_cov;
+bool VisualEntity::getHasCov() {
+  return has_cov;
 }
 
 }  // namespace mrs_rviz_plugins
