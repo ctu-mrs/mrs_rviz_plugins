@@ -39,8 +39,8 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsOdomViz
-  )
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsOdomViz MrsWaypointPlanner
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -197,6 +197,23 @@ add_dependencies(MrsOdomViz
 )
 
 target_link_libraries(MrsOdomViz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
+## WAYPOINT PLANNER
+
+add_library(MrsWaypointPlanner
+  include/waypoint_planner/waypoint_planner.h
+  src/waypoint_planner/waypoint_planner.cpp
+)
+
+add_dependencies(MrsWaypointPlanner
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsWaypointPlanner
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
 )

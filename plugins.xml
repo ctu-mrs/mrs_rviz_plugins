@@ -41,3 +41,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsWaypointPlanner">
+  <class name="mrs_rviz_plugins/WaypointPlanner" type="mrs_rviz_plugins::WaypointPlanner" base_class_type="rviz::Tool">
+    <description>
+      Set sequence of waypoints that a drone has to fly through.
+    </description>
+  </class>
+</library>
