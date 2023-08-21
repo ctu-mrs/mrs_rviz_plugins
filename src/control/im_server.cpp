@@ -34,7 +34,8 @@ void ImServer::checkNewDrones(const ros::TimerEvent&){
   std::string state[res[2][2].size()];
   for (int x = 0; x < res[2][2].size(); x++) {
     std::string name = res[2][2][x][0].toXml().c_str();
-    if (name.find("control_manager/diagnostics") == std::string::npos) {
+    // "control_manager/diagnostics" does not work for some reason
+    if (name.find("trajectory_generation/path") == std::string::npos) {
       continue;
     }
 
