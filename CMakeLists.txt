@@ -54,6 +54,7 @@ set(LIBRARIES
   MrsRvizPlugins_TrackArray
   MrsRvizPlugins_NamedGoalTool
   MrsRvizPlugins_MrsWaypointPlanner
+  MrsRvizPlugins_MrsOdomViz
   )
 
 catkin_package(
@@ -196,6 +197,25 @@ target_link_libraries(MrsRvizPlugins_NamedGoalTool
   ${catkin_LIBRARIES}
   )
 
+## ODOM ViZ
+
+add_library(MrsRvizPlugins_MrsOdomViz
+  include/odom_viz/odom_viz.h
+  include/odom_viz/visual_entity.h
+  src/odom_viz/odom_viz.cpp
+  src/odom_viz/visual_entity.cpp
+)
+
+add_dependencies(MrsRvizPlugins_MrsOdomViz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsRvizPlugins_MrsOdomViz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
 ## WAYPOINT PLANNER
 
 add_library(MrsRvizPlugins_MrsWaypointPlanner
@@ -206,12 +226,12 @@ add_library(MrsRvizPlugins_MrsWaypointPlanner
 add_dependencies(MrsRvizPlugins_MrsWaypointPlanner
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
-  )
+)
 
 target_link_libraries(MrsRvizPlugins_MrsWaypointPlanner
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
-  )
+)
 
 ## --------------------------------------------------------------
 ## |                           Install                          |
