@@ -37,7 +37,15 @@
 <library path="lib/libMrsControlTool">
   <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
     <description>
-      Publish a goal pose for the robot. After one use, reverts to default tool.
+      Uav control tool. Implements mrs_uav_status functionality.
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsStatusDisplay">
+  <class name="mrs_rviz_plugins/StatusDisplay" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
+    <description>
+      Shows all the information, that mrs_uav_status provide.
     </description>
   </class>
 </library>

@@ -1,3 +1,10 @@
+/* Functions updateFocus and processMouseEvent were taken from
+ * https://github.com/ros-visualization/rviz/blob/noetic-devel/src/rviz/default_plugin/tools/interaction_tool.cpp
+
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ */
+
 #include "control/control.h"
 
 #include <visualization_msgs/InteractiveMarker.h>
