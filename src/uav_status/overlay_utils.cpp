@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE. 
  *********************************************************************/
 
-#include "overlay_utils.h"
+#include "uav_status/overlay_utils.h"
 #include <ros/ros.h>
 
 namespace jsk_rviz_plugins
