@@ -115,6 +115,7 @@ private:
   double cpu_load;
   double cpu_freq;
   double ram_free;
+  double total_ram;
   double disk_free;
   bool comp_state_update_required = true;
 

@@ -29,13 +29,10 @@ namespace mrs_rviz_plugins
 
 
 
-    uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
+    uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
-    if(!cm_update_required){
-      return;
-    }
 
     drawControlManager();
     drawOdometry();
@@ -243,8 +240,15 @@ namespace mrs_rviz_plugins
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
-
+ 
     // CPU load
+    QColor cpu_load_color = QColor(255, 0, 0, 255);
+    if(cpu_load > 80.0){
+      cpu_load_color = QColor(255, 0, 0, 255);
+    } else if(cpu_load > 60.0){
+      cpu_load_color = QColor(255, 255, 0, 255);
+    }
+    painter.fillRect(0, 25, 92, 13, cpu_load_color);
     QString cpu_load_str;
     cpu_load_str.sprintf("CPU: %.1f%", cpu_load);
     painter.drawStaticText(0, 20, QStaticText(cpu_load_str));
@@ -252,21 +256,37 @@ namespace mrs_rviz_plugins
     // CPU frequency
     QString cpu_freq_str;
     cpu_freq_str.sprintf("%.2f GHz", cpu_freq);
-    painter.drawStaticText(140, 20, QStaticText(cpu_freq_str));
+    painter.drawStaticText(110, 20, QStaticText(cpu_freq_str));
 
     // Free RAM
+    double used_ram = total_ram - ram_free;
+    double ram_ratio = used_ram / total_ram;
+    QColor ram_color = QColor(0, 0, 0, 0);
+    if (ram_ratio > 0.7) {
+      ram_color = QColor(255, 0, 0, 255);
+    } else if (ram_ratio > 0.5) {
+      ram_color = QColor(255, 255, 0, 255);
+    }
+    painter.fillRect(0, 45, 92, 13, ram_color);
     QString ram_free_str;
     ram_free_str.sprintf("RAM: %.1f G", ram_free);
     painter.drawStaticText(0, 40, QStaticText(ram_free_str));
 
     // Free disk
+    QColor free_disk_color = QColor(0, 0, 0, 0);
+    if(disk_free < 100){
+      free_disk_color = QColor(255, 0, 0, 255);
+    } else if(disk_free < 200){
+      free_disk_color = QColor(255, 255, 0, 255);
+    }
+    painter.fillRect(109, 45, 118, 13, free_disk_color);
     QString disk_free_str;
     if(disk_free < 10000){
       disk_free_str.sprintf("HDD: %.1f G", disk_free/10);
     } else{
       disk_free_str.sprintf("HDD: %.1f G", disk_free/10000);
     }
-    painter.drawStaticText(140, 40, QStaticText(disk_free_str));
+    painter.drawStaticText(110, 40, QStaticText(disk_free_str));
 
 
     general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
@@ -383,11 +403,13 @@ namespace mrs_rviz_plugins
     double new_cpu_load = msg->cpu_load;
     double new_cpu_freq = msg->cpu_ghz;
     double new_ram_free = msg->free_ram;
+    double new_total_ram = msg->total_ram;
     double new_disk_free = msg->free_hdd;
 
     comp_state_update_required |= compareAndUpdate(new_cpu_load, cpu_load);
     comp_state_update_required |= compareAndUpdate(new_cpu_freq, cpu_freq);
     comp_state_update_required |= compareAndUpdate(new_ram_free, ram_free);
+    comp_state_update_required |= compareAndUpdate(new_total_ram, total_ram);
     comp_state_update_required |= compareAndUpdate(new_disk_free, disk_free);
   }
 
