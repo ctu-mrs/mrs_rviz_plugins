@@ -50,10 +50,13 @@ private:
   // New message processing methods
   void processControlManager(const mrs_msgs::UavStatusConstPtr& msg);
   void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
+  void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
   void drawOdometry();
+  void drawGeneralInfo();
+  
 
   // Subscribers
   ros::Subscriber uav_status_sub;
@@ -73,7 +76,7 @@ private:
   // Individual overlays
   jsk_rviz_plugins::OverlayObject::Ptr contol_manager_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr odometry_overlay;
-  jsk_rviz_plugins::OverlayObject::Ptr computer_load_overlay;
+  jsk_rviz_plugins::OverlayObject::Ptr general_info_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr mavros_state_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr first_unknown_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr second_unknown_overlay;
@@ -107,6 +110,13 @@ private:
   std::string curr_estimator_vert = "!NO DATA!";
   std::string curr_estimator_hdg = "!NO DATA!";
   bool odom_update_required = true;
+
+  // General info
+  double cpu_load;
+  double cpu_freq;
+  double ram_free;
+  double disk_free;
+  bool comp_state_update_required = true;
 
 
   mrs_msgs::UavStatus last_uav_status;

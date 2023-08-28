@@ -21,9 +21,15 @@ namespace mrs_rviz_plugins
 
     contol_manager_overlay.reset(new jsk_rviz_plugins::OverlayObject("Control manager overlay"));
     odometry_overlay.reset(new jsk_rviz_plugins::OverlayObject("Odometry overlay"));
-    
+    general_info_overlay.reset(new jsk_rviz_plugins::OverlayObject("General info"));
+    mavros_state_overlay.reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
+    first_unknown_overlay.reset(new jsk_rviz_plugins::OverlayObject("TODO"));
+    second_unknown_overlay.reset(new jsk_rviz_plugins::OverlayObject("TODO 2"));
+    rosnode_shitlist_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
+
+
+
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
-    ROS_INFO("Inited");
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
@@ -33,6 +39,7 @@ namespace mrs_rviz_plugins
 
     drawControlManager();
     drawOdometry();
+    drawGeneralInfo();
   }
 
   void StatusDisplay::drawControlManager() {
@@ -218,6 +225,53 @@ namespace mrs_rviz_plugins
     odometry_overlay->setDimensions(odometry_overlay->getTextureWidth(), odometry_overlay->getTextureHeight());
   }
 
+  void StatusDisplay::drawGeneralInfo(){
+    // General info overlay
+    general_info_overlay->updateTextureSize(230, 60);
+    general_info_overlay->setPosition(233, 0);
+    general_info_overlay->show();
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = general_info_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*general_info_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    // CPU load
+    QString cpu_load_str;
+    cpu_load_str.sprintf("CPU: %.1f%", cpu_load);
+    painter.drawStaticText(0, 20, QStaticText(cpu_load_str));
+
+    // CPU frequency
+    QString cpu_freq_str;
+    cpu_freq_str.sprintf("%.2f GHz", cpu_freq);
+    painter.drawStaticText(140, 20, QStaticText(cpu_freq_str));
+
+    // Free RAM
+    QString ram_free_str;
+    ram_free_str.sprintf("RAM: %.1f G", ram_free);
+    painter.drawStaticText(0, 40, QStaticText(ram_free_str));
+
+    // Free disk
+    QString disk_free_str;
+    if(disk_free < 10000){
+      disk_free_str.sprintf("HDD: %.1f G", disk_free/10);
+    } else{
+      disk_free_str.sprintf("HDD: %.1f G", disk_free/10000);
+    }
+    painter.drawStaticText(140, 40, QStaticText(disk_free_str));
+
+
+    general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
+  }
+
 
   void StatusDisplay::reset(){
   }
@@ -235,6 +289,7 @@ namespace mrs_rviz_plugins
   void StatusDisplay::uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg) {
     processControlManager(msg);
     processOdometry(msg);
+    processGeneralInfo(msg);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -288,8 +343,6 @@ namespace mrs_rviz_plugins
     std::string new_curr_estimator_vert;
     std::string new_curr_estimator_hdg;
 
-    ROS_INFO("processOdometry called");
-
     new_avg_odom_rate   = msg->odom_hz;
     new_color           = msg->odom_color;
     new_heading         = msg->odom_hdg;
@@ -316,23 +369,48 @@ namespace mrs_rviz_plugins
     odom_update_required |= compareAndUpdate(new_state_x, state_x);
     odom_update_required |= compareAndUpdate(new_state_y, state_y);
     odom_update_required |= compareAndUpdate(new_state_z, state_z);
-    odom_update_required |= compareAndUpdate(new_cmd_x , cmd_x);
-    odom_update_required |= compareAndUpdate(new_cmd_y , cmd_y);
-    odom_update_required |= compareAndUpdate(new_cmd_z , cmd_z);
-    odom_update_required |= compareAndUpdate(new_cmd_hdg , cmd_hdg);
+    odom_update_required |= compareAndUpdate(new_cmd_x, cmd_x);
+    odom_update_required |= compareAndUpdate(new_cmd_y, cmd_y);
+    odom_update_required |= compareAndUpdate(new_cmd_z, cmd_z);
+    odom_update_required |= compareAndUpdate(new_cmd_hdg, cmd_hdg);
     odom_update_required |= compareAndUpdate(new_odom_frame, odom_frame);
     odom_update_required |= compareAndUpdate(new_curr_estimator_hori, curr_estimator_hori);
     odom_update_required |= compareAndUpdate(new_curr_estimator_vert, curr_estimator_vert);
     odom_update_required |= compareAndUpdate(new_curr_estimator_hdg, curr_estimator_hdg);
   }
 
+  void StatusDisplay::processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg){
+    double new_cpu_load = msg->cpu_load;
+    double new_cpu_freq = msg->cpu_ghz;
+    double new_ram_free = msg->free_ram;
+    double new_disk_free = msg->free_hdd;
+
+    comp_state_update_required |= compareAndUpdate(new_cpu_load, cpu_load);
+    comp_state_update_required |= compareAndUpdate(new_cpu_freq, cpu_freq);
+    comp_state_update_required |= compareAndUpdate(new_ram_free, ram_free);
+    comp_state_update_required |= compareAndUpdate(new_disk_free, disk_free);
+  }
+
   void StatusDisplay::nameUpdate(){
+    // Controller
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
     curr_controller  = "!NO DATA!";
     curr_tracker     = "!NO DATA!";
     curr_gains       = "";
     curr_constraints = "";
+    avg_controller_rate = 0.0;
     cm_update_required = true;
+
+    // Odometry
+    odom_frame = "!NO DATA!";
+    curr_estimator_hori = "!NO DATA!";
+    curr_estimator_vert = "!NO DATA!";
+    curr_estimator_hdg = "!NO DATA!";
+    avg_odom_rate = 0.0;
+    odom_update_required = true;
+
+    // General info
+    comp_state_update_required = true;
   }
 
   void StatusDisplay::tmpUpdate(){
