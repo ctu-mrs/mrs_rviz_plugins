@@ -10,6 +10,7 @@
 #include <QStaticText>
 #include <QPainter>
 #include <QColor>
+#include <QTextStream>
 
 #include <rviz/properties/bool_property.h>
 
@@ -48,9 +49,11 @@ private:
 
   // New message processing methods
   void processControlManager(const mrs_msgs::UavStatusConstPtr& msg);
+  void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
+  void drawOdometry();
 
   // Subscribers
   ros::Subscriber uav_status_sub;
@@ -77,9 +80,9 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_shitlist_overlay;
 
   // Controller data:
-  double       avg_rate;
+  double       avg_controller_rate;
   bool         null_tracker;
-  double       rate;
+  double       controller_rate;
   std::string  curr_controller  = "!NO DATA!";
   std::string  curr_tracker     = "!NO DATA!";
   std::string  curr_gains;
@@ -87,6 +90,23 @@ private:
   bool         callbacks_enabled;
   bool         has_goal;
   bool         cm_update_required = true;
+
+  // Odometry data
+  double avg_odom_rate;
+  double color;
+  double heading;
+  double state_x;
+  double state_y;
+  double state_z;
+  double cmd_x;
+  double cmd_y;
+  double cmd_z;
+  double cmd_hdg;
+  std::string odom_frame = "!NO DATA!";
+  std::string curr_estimator_hori = "!NO DATA!";
+  std::string curr_estimator_vert = "!NO DATA!";
+  std::string curr_estimator_hdg = "!NO DATA!";
+  bool odom_update_required = true;
 
 
   mrs_msgs::UavStatus last_uav_status;
