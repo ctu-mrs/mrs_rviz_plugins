@@ -133,6 +133,14 @@ namespace jsk_rviz_plugins
     }
   }
 
+  void OverlayObject::show(bool val){
+    if(val){
+      show();
+    }else{
+      hide();
+    }
+  }
+
   bool OverlayObject::isTextureReady()
   {
     return !texture_.isNull();

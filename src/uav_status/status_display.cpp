@@ -4,13 +4,15 @@ namespace mrs_rviz_plugins
 {
   StatusDisplay::StatusDisplay(){
     uav_name_property         = new rviz::StringProperty("Uav name",       "uav22", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
-    contol_manager_property   = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this);
-    odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this);
-    computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this);
-    mavros_state_property     = new rviz::BoolProperty("Mavros state",      false, "Show mavros state data",           this);
-    first_unknown_property    = new rviz::BoolProperty("Unknown 1",         false, "Show somethin, idk anythin 1",     this);
-    second_unknown_property   = new rviz::BoolProperty("Unknown 2",         false, "Show somethin, idk anythin 2",     this);
-    rosnode_shitlist_property = new rviz::BoolProperty("ROS Node Shitlist", false, "Show rosnodes and their workload", this);
+    control_manager_property   = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
+    odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this,  SLOT(odometryUpdate()), this);
+    computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
+    mavros_state_property     = new rviz::BoolProperty("Mavros state",      false, "Show mavros state data",           this,  SLOT(mavrosStateUpdate()), this);
+    topic_rates_property      = new rviz::BoolProperty("Topic rates",       false, "Show somethin, idk anythin 1",     this,  SLOT(topicRatesUpdate()), this);
+    custom_str_property       = new rviz::BoolProperty("Custom strings",    false, "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
+    node_stats_property       = new rviz::BoolProperty("Node stats list",   false, "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
+    
+    
     debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
 
 
@@ -32,13 +34,15 @@ namespace mrs_rviz_plugins
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
 
-    drawControlManager();
-    drawOdometry();
-    drawGeneralInfo();
-    drawMavros();
-    drawCustomTopicRates();
-    drawCustomStrings();
-    drawNodeStats();
+    if(cm_update_required         || global_update_required) drawControlManager();
+    if(odom_update_required       || global_update_required) drawOdometry();
+    if(comp_state_update_required || global_update_required) drawGeneralInfo();
+    if(mavros_update_required     || global_update_required) drawMavros();
+    if(topics_update_required     || global_update_required) drawCustomTopicRates();
+    if(string_update_required     || global_update_required) drawCustomStrings();
+    if(node_stats_update_required || global_update_required) drawNodeStats();
+
+    global_update_required = false;
   }
 
   void StatusDisplay::drawControlManager() {
@@ -48,7 +52,10 @@ namespace mrs_rviz_plugins
     // Control manager overlay
     contol_manager_overlay->updateTextureSize(230, 60);
     contol_manager_overlay->setPosition(0, 0);
-    contol_manager_overlay->show();
+    contol_manager_overlay->show(control_manager_property->getBool());
+    if(!control_manager_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = contol_manager_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -102,8 +109,11 @@ namespace mrs_rviz_plugins
   void StatusDisplay::drawOdometry(){
     // Odometry overlay
     odometry_overlay->updateTextureSize(230, 120);
-    odometry_overlay->setPosition(0, 63);
-    odometry_overlay->show();
+    odometry_overlay->setPosition(0, odom_pos_y);
+    odometry_overlay->show(odometry_property->getBool());
+    if(!odometry_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = odometry_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -220,7 +230,7 @@ namespace mrs_rviz_plugins
       painter.drawStaticText(0, 100, QStaticText(error));
     }
 
-
+    odom_update_required = false;
     odometry_overlay->setDimensions(odometry_overlay->getTextureWidth(), odometry_overlay->getTextureHeight());
   }
 
@@ -229,8 +239,11 @@ namespace mrs_rviz_plugins
 
     // General info overlay
     general_info_overlay->updateTextureSize(230, 60);
-    general_info_overlay->setPosition(233, 0);
-    general_info_overlay->show();
+    general_info_overlay->setPosition(gen_info_pos_x, 0);
+    general_info_overlay->show(computer_load_property->getBool());
+    if(!computer_load_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = general_info_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -292,7 +305,7 @@ namespace mrs_rviz_plugins
     }
     painter.drawStaticText(110, 40, QStaticText(disk_free_str));
 
-
+    comp_state_update_required = false;    
     general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
   }
 
@@ -301,8 +314,11 @@ namespace mrs_rviz_plugins
 
     // Mavros overlay
     mavros_state_overlay->updateTextureSize(230, 120);
-    mavros_state_overlay->setPosition(233, 63);
-    mavros_state_overlay->show();
+    mavros_state_overlay->setPosition(mavros_pos_x, mavros_pos_y);
+    mavros_state_overlay->show(mavros_state_property->getBool());
+    if(!mavros_state_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -411,6 +427,7 @@ namespace mrs_rviz_plugins
     tmp.sprintf("%s%.1f/%s%.1fkg",mass_set >= 10.0 ? "" : " ", mass_set, mass_estimate >= 10.0 ? "" : " ", mass_estimate);
     painter.drawStaticText(115, 100, QStaticText(tmp));
 
+    mavros_update_required = false;
     mavros_state_overlay->setDimensions(mavros_state_overlay->getTextureWidth(), mavros_state_overlay->getTextureHeight());
   }
 
@@ -419,8 +436,11 @@ namespace mrs_rviz_plugins
 
     // Topic rate overlay
     topic_rates_overlay->updateTextureSize(230, 183);
-    topic_rates_overlay->setPosition(466, 0);
-    topic_rates_overlay->show();
+    topic_rates_overlay->setPosition(topic_rate_pos_x, 0);
+    topic_rates_overlay->show(topic_rates_property->getBool());
+    if(!topic_rates_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = topic_rates_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -458,6 +478,7 @@ namespace mrs_rviz_plugins
       painter.drawStaticText(210, 20*i, QStaticText("Hz"));
     }
 
+    topics_update_required = false;
     topic_rates_overlay->setDimensions(topic_rates_overlay->getTextureWidth(), topic_rates_overlay->getTextureHeight());
   }
 
@@ -466,8 +487,11 @@ namespace mrs_rviz_plugins
 
     // Custom string overlay
     custom_strings_overlay->updateTextureSize(230, 183);
-    custom_strings_overlay->setPosition(699, 0);
-    custom_strings_overlay->show();
+    custom_strings_overlay->setPosition(custom_str_pos_x, 0);
+    custom_strings_overlay->show(custom_str_property->getBool());
+    if(!custom_str_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = custom_strings_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -506,15 +530,18 @@ namespace mrs_rviz_plugins
       painter.drawStaticText(0, 20*i, QStaticText(tmp_display_string.c_str()));
     }
 
-
+    string_update_required = false;
     custom_strings_overlay->setDimensions(custom_strings_overlay->getTextureWidth(), custom_strings_overlay->getTextureHeight());
   }
 
   void StatusDisplay::drawNodeStats(){
     // Rosnode stats overlay
     rosnode_stats_overlay->updateTextureSize(394, 183);
-    rosnode_stats_overlay->setPosition(932, 0);
-    rosnode_stats_overlay->show();
+    rosnode_stats_overlay->setPosition(node_stats_pos_x, 0);
+    rosnode_stats_overlay->show(node_stats_property->getBool());
+    if(!node_stats_property->getBool()){
+      return;
+    }
 
     jsk_rviz_plugins::ScopedPixelBuffer buffer = rosnode_stats_overlay->getBuffer();
     QColor bg_color_ = QColor(0,  0,   0,   100);
@@ -552,7 +579,7 @@ namespace mrs_rviz_plugins
       painter.drawStaticText(345, 20*(i+1), QStaticText(tmp));
     }
 
-
+    node_stats_update_required = false;
     rosnode_stats_overlay->setDimensions(rosnode_stats_overlay->getTextureWidth(), rosnode_stats_overlay->getTextureHeight());
   }
 
@@ -759,6 +786,128 @@ namespace mrs_rviz_plugins
 
     // General info
     comp_state_update_required = true;
+  }
+
+  void StatusDisplay::controlManagerUpdate() {
+    cm_update_required = true;
+    present_columns[CM_INDEX] = control_manager_property->getBool() || odometry_property->getBool();
+    odometryUpdate();
+    computerLoadUpdate();
+    return;
+  }
+
+  void StatusDisplay::odometryUpdate() {
+    odom_update_required = true;
+    if(!odometry_property->getBool()){
+      if(!control_manager_property->getBool()){
+        present_columns[ODOM_INDEX] = false;
+      }
+      computerLoadUpdate();
+      return;
+    }
+
+    present_columns[ODOM_INDEX] = true;
+
+    if(control_manager_property->getBool()){
+      odom_pos_y = 63;
+    } else {
+      odom_pos_y = 0;
+    }
+    computerLoadUpdate();
+  }
+
+  void StatusDisplay::computerLoadUpdate() {
+    comp_state_update_required = true;
+    if(!computer_load_property->getBool()){
+      if(!mavros_state_property->getBool()){
+        present_columns[GEN_INFO_INDEX] = false;
+      }
+      mavrosStateUpdate();
+      topicRatesUpdate();
+      return;
+    }
+
+    present_columns[GEN_INFO_INDEX] = true;
+
+    gen_info_pos_x = 0;
+    for(int i=0; i<GEN_INFO_INDEX; ++i){
+      gen_info_pos_x += present_columns[i] ? 233 : 0;
+    }
+    mavrosStateUpdate();
+  }
+
+  void StatusDisplay::mavrosStateUpdate() {
+    mavros_update_required = true;
+    if(!mavros_state_property->getBool()){
+      if(!computer_load_property->getBool()){
+        present_columns[MAVROS_INDEX] = false;
+      }
+      topicRatesUpdate();
+      return;
+    }
+
+    present_columns[MAVROS_INDEX] = true;
+
+    mavros_pos_x = 0;
+    for(int i=0; i<MAVROS_INDEX; ++i){
+      mavros_pos_x += present_columns[i] ? 233 : 0;
+    }
+
+    if(computer_load_property->getBool()){
+      mavros_pos_y = 63;
+    } else {
+      mavros_pos_y = 0;
+    }
+    topicRatesUpdate();
+  }
+
+  void StatusDisplay::topicRatesUpdate() {
+    topics_update_required = true;
+    if(!topic_rates_property->getBool()){
+      present_columns[TOPIC_RATE_INDEX] = false;
+      customStrUpdate();
+      return;
+    }
+
+    present_columns[TOPIC_RATE_INDEX] = true;
+
+    topic_rate_pos_x = 0;
+    for(int i=0; i<TOPIC_RATE_INDEX; ++i){
+      topic_rate_pos_x += present_columns[i] ? 233 : 0;
+    }
+    customStrUpdate();
+  }
+
+  void StatusDisplay::customStrUpdate() {
+    string_update_required = true;
+    if(!custom_str_property->getBool()){
+      present_columns[CUSTOM_STR_INDEX] = false;
+      nodeStatsUpdate();
+      return;
+    }
+
+    present_columns[CUSTOM_STR_INDEX] = true;
+
+    custom_str_pos_x = 0;
+    for(int i=0; i<CUSTOM_STR_INDEX; ++i){
+      custom_str_pos_x += present_columns[i] ? 233 : 0;
+    }
+    nodeStatsUpdate();
+  }
+
+  void StatusDisplay::nodeStatsUpdate() {
+    node_stats_update_required = true;
+    if(!node_stats_property->getBool()){
+      present_columns[NODE_STATS_INDEX] = false;
+      return;
+    }
+
+    present_columns[NODE_STATS_INDEX] = true;
+
+    node_stats_pos_x = 0;
+    for(int i=0; i<NODE_STATS_INDEX; ++i){
+      node_stats_pos_x += present_columns[i] ? 233 : 0;
+    }
   }
 
   void StatusDisplay::tmpUpdate(){

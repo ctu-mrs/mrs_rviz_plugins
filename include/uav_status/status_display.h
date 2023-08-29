@@ -30,6 +30,14 @@
 #define RED 103
 #define YELLOW 104
 
+#define CM_INDEX 0
+#define ODOM_INDEX 0
+#define GEN_INFO_INDEX 1
+#define MAVROS_INDEX 1
+#define TOPIC_RATE_INDEX 2
+#define CUSTOM_STR_INDEX 3
+#define NODE_STATS_INDEX 4
+
 namespace mrs_rviz_plugins
 {
 
@@ -48,6 +56,14 @@ public:
 
 private Q_SLOTS:
   void nameUpdate();
+  void controlManagerUpdate();
+  void odometryUpdate();
+  void computerLoadUpdate();
+  void mavrosStateUpdate();
+  void topicRatesUpdate();
+  void customStrUpdate();
+  void nodeStatsUpdate();
+
   void tmpUpdate();
 private:
   // Helper function
@@ -86,12 +102,13 @@ private:
   
   // Properties
   rviz::StringProperty* uav_name_property;
-  rviz::BoolProperty* contol_manager_property;
+  rviz::BoolProperty* control_manager_property;
   rviz::BoolProperty* odometry_property;
   rviz::BoolProperty* computer_load_property;
   rviz::BoolProperty* mavros_state_property;
-  rviz::BoolProperty* first_unknown_property;
-  rviz::BoolProperty* second_unknown_property;
+  rviz::BoolProperty* topic_rates_property;
+  rviz::BoolProperty* custom_str_property;
+  rviz::BoolProperty* node_stats_property;
   rviz::IntProperty*  debug_property;
 
   // Individual overlays
@@ -179,6 +196,18 @@ private:
   const QColor RED_COLOR      = QColor(255, 0, 0, 255);
   const QColor YELLOW_COLOR   = QColor(255, 255, 0, 255);
   const QColor NO_COLOR       = QColor(0, 0, 0, 0);
+
+  // | ---------------------- Layout data ----------------------- |
+  std::vector<bool> present_columns{true, true, false, false, false};
+  int odom_pos_y       = 63;
+  int gen_info_pos_x   = 233;
+  int mavros_pos_x     = 233;
+  int mavros_pos_y     = 63;
+  int topic_rate_pos_x = 466;
+  int custom_str_pos_x = 699;
+  int node_stats_pos_x = 932;
+
+  bool global_update_required = true;
 };
 
 } // namespace mrs_rviz_plugins

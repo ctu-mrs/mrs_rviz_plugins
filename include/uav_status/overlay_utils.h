@@ -99,6 +99,7 @@ namespace jsk_rviz_plugins
     virtual std::string getName();
     virtual void hide();
     virtual void show();
+    virtual void show(bool val);
     virtual bool isTextureReady();
     virtual void updateTextureSize(unsigned int width, unsigned int height);
     virtual ScopedPixelBuffer getBuffer();
