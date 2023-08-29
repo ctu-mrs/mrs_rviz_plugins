@@ -51,7 +51,8 @@ private Q_SLOTS:
 private:
   // Helper function
   QColor getColor(int code){
-    if(code == GREEN) return RED_COLOR;
+    if(code == NORMAL) return NO_COLOR;
+    if(code == GREEN) return NO_COLOR;
     if(code == RED)   return RED_COLOR;
     return YELLOW_COLOR;
   }
@@ -65,6 +66,7 @@ private:
   void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
   void processMavros(const mrs_msgs::UavStatusConstPtr& msg);
   void processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg);
+  void processCustomStrings(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
@@ -72,6 +74,7 @@ private:
   void drawGeneralInfo();
   void drawMavros();
   void drawCustomTopicRates();
+  void drawCustomStrings();
   
   // Subscribers
   ros::Subscriber uav_status_sub;
@@ -94,7 +97,7 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr general_info_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr mavros_state_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr topic_rates_overlay;
-  jsk_rviz_plugins::OverlayObject::Ptr second_unknown_overlay;
+  jsk_rviz_plugins::OverlayObject::Ptr custom_strings_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_shitlist_overlay;
 
   // Controller data:
@@ -156,6 +159,10 @@ private:
   // Custom topics
   std::vector<mrs_msgs::CustomTopic> custom_topic_vec;
   bool topics_update_required;
+
+  // Custom string outputs
+  std::vector<std::string> custom_string_vec;
+  bool string_update_required;
 
 
   ros::NodeHandle nh;

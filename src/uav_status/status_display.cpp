@@ -19,15 +19,13 @@ namespace mrs_rviz_plugins
   
   void StatusDisplay::onInitialize(){
 
-    contol_manager_overlay.reset(new jsk_rviz_plugins::OverlayObject("Control manager"));
-    odometry_overlay.reset(new jsk_rviz_plugins::OverlayObject("Odometry"));
-    general_info_overlay.reset(new jsk_rviz_plugins::OverlayObject("General info"));
-    mavros_state_overlay.reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
-    topic_rates_overlay.reset(new jsk_rviz_plugins::OverlayObject("Topic rates"));
-    second_unknown_overlay.reset(new jsk_rviz_plugins::OverlayObject("TODO 2"));
+    contol_manager_overlay  .reset(new jsk_rviz_plugins::OverlayObject("Control manager"));
+    odometry_overlay        .reset(new jsk_rviz_plugins::OverlayObject("Odometry"));
+    general_info_overlay    .reset(new jsk_rviz_plugins::OverlayObject("General info"));
+    mavros_state_overlay    .reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
+    topic_rates_overlay     .reset(new jsk_rviz_plugins::OverlayObject("Topic rates"));
+    custom_strings_overlay  .reset(new jsk_rviz_plugins::OverlayObject("Custom strings"));
     rosnode_shitlist_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
-
-
 
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
   }
@@ -39,6 +37,7 @@ namespace mrs_rviz_plugins
     drawGeneralInfo();
     drawMavros();
     drawCustomTopicRates();
+    drawCustomStrings();
   }
 
   void StatusDisplay::drawControlManager() {
@@ -415,7 +414,9 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawCustomTopicRates() {
-    // Mavros overlay
+    // Note: all colors are 100% implemented
+
+    // Topic rate overlay
     topic_rates_overlay->updateTextureSize(230, 183);
     topic_rates_overlay->setPosition(466, 0);
     topic_rates_overlay->show();
@@ -459,6 +460,53 @@ namespace mrs_rviz_plugins
     topic_rates_overlay->setDimensions(topic_rates_overlay->getTextureWidth(), topic_rates_overlay->getTextureHeight());
   }
 
+  void StatusDisplay::drawCustomStrings() {
+    // Custom string overlay
+    custom_strings_overlay->updateTextureSize(230, 183);
+    custom_strings_overlay->setPosition(699, 0);
+    custom_strings_overlay->show();
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = custom_strings_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*custom_strings_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    // Drawing strings
+    for (size_t i = 0; i < custom_topic_vec.size(); i++){
+      int tmp_color = NORMAL;
+      std::string tmp_display_string = custom_string_vec[i];
+
+      // Set color of the string
+      if (tmp_display_string.at(0) == '-') {
+        if (tmp_display_string.at(1) == 'r' || tmp_display_string.at(1) == 'R') {
+          tmp_color = RED;
+        } else if (tmp_display_string.at(1) == 'y' || tmp_display_string.at(1) == 'Y') {
+          tmp_color = YELLOW;
+        } else if (tmp_display_string.at(1) == 'g' || tmp_display_string.at(1) == 'G') {
+          tmp_color = GREEN;
+        }
+        // If color data are present, delete them 
+        if (tmp_color != NORMAL) {
+          tmp_display_string.erase(0, 3);
+        }
+      }
+
+      painter.fillRect(0, 20*i+6, 9*tmp_display_string.length()+1, 13, getColor(tmp_color));
+      painter.drawStaticText(0, 20*i, QStaticText(tmp_display_string.c_str()));
+    }
+
+
+    custom_strings_overlay->setDimensions(custom_strings_overlay->getTextureWidth(), custom_strings_overlay->getTextureHeight());
+  }
+
   void StatusDisplay::reset(){
   }
 
@@ -478,6 +526,7 @@ namespace mrs_rviz_plugins
     processGeneralInfo(msg);
     processMavros(msg);
     processCustomTopics(msg);
+    processCustomStrings(msg);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -624,6 +673,12 @@ namespace mrs_rviz_plugins
     std::vector<mrs_msgs::CustomTopic> new_custom_topic_vec = msg->custom_topics;
 
     topics_update_required |= compareAndUpdate(new_custom_topic_vec, custom_topic_vec);
+  }
+
+  void StatusDisplay::processCustomStrings(const mrs_msgs::UavStatusConstPtr& msg) {
+    std::vector<std::string> new_custom_string_vec = msg->custom_string_outputs;
+
+    topics_update_required |= compareAndUpdate(new_custom_string_vec, custom_string_vec);
   }
 
   void StatusDisplay::nameUpdate(){
