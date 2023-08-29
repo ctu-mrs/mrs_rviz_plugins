@@ -16,6 +16,7 @@
 
 #include "uav_status/overlay_utils.h"
 
+#include <mrs_msgs/NodeCpuLoad.h>
 #include <mrs_msgs/CustomTopic.h>
 #include <mrs_msgs/UavStatus.h>
 #include <mrs_msgs/GainManagerDiagnostics.h>
@@ -67,6 +68,7 @@ private:
   void processMavros(const mrs_msgs::UavStatusConstPtr& msg);
   void processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg);
   void processCustomStrings(const mrs_msgs::UavStatusConstPtr& msg);
+  void processNodeStats(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
@@ -75,6 +77,7 @@ private:
   void drawMavros();
   void drawCustomTopicRates();
   void drawCustomStrings();
+  void drawNodeStats();
   
   // Subscribers
   ros::Subscriber uav_status_sub;
@@ -98,7 +101,7 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr mavros_state_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr topic_rates_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr custom_strings_overlay;
-  jsk_rviz_plugins::OverlayObject::Ptr rosnode_shitlist_overlay;
+  jsk_rviz_plugins::OverlayObject::Ptr rosnode_stats_overlay;
 
   // Controller data:
   double       avg_controller_rate;
@@ -163,6 +166,11 @@ private:
   // Custom string outputs
   std::vector<std::string> custom_string_vec;
   bool string_update_required;
+
+  // Node stats
+  mrs_msgs::NodeCpuLoad node_cpu_load_vec;
+  double cpu_load_total;
+  bool node_stats_update_required;
 
 
   ros::NodeHandle nh;

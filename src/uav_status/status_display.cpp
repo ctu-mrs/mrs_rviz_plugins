@@ -3,7 +3,7 @@
 namespace mrs_rviz_plugins
 {
   StatusDisplay::StatusDisplay(){
-    uav_name_property         = new rviz::StringProperty("Uav name",       "uav7", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
+    uav_name_property         = new rviz::StringProperty("Uav name",       "uav22", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
     contol_manager_property   = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this);
     odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this);
     computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this);
@@ -25,7 +25,7 @@ namespace mrs_rviz_plugins
     mavros_state_overlay    .reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
     topic_rates_overlay     .reset(new jsk_rviz_plugins::OverlayObject("Topic rates"));
     custom_strings_overlay  .reset(new jsk_rviz_plugins::OverlayObject("Custom strings"));
-    rosnode_shitlist_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
+    rosnode_stats_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
 
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
   }
@@ -38,6 +38,7 @@ namespace mrs_rviz_plugins
     drawMavros();
     drawCustomTopicRates();
     drawCustomStrings();
+    drawNodeStats();
   }
 
   void StatusDisplay::drawControlManager() {
@@ -253,7 +254,7 @@ namespace mrs_rviz_plugins
     }
     painter.fillRect(0, 25, 92, 13, cpu_load_color);
     QString cpu_load_str;
-    cpu_load_str.sprintf("CPU: %.1f%", cpu_load);
+    cpu_load_str.sprintf("CPU: %.1f%%", cpu_load);
     painter.drawStaticText(0, 20, QStaticText(cpu_load_str));
 
     // CPU frequency
@@ -461,6 +462,8 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawCustomStrings() {
+    // Note: colors implemeted, but blinking is not
+
     // Custom string overlay
     custom_strings_overlay->updateTextureSize(230, 183);
     custom_strings_overlay->setPosition(699, 0);
@@ -480,7 +483,7 @@ namespace mrs_rviz_plugins
     painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
 
     // Drawing strings
-    for (size_t i = 0; i < custom_topic_vec.size(); i++){
+    for (size_t i = 0; i < custom_string_vec.size(); i++){
       int tmp_color = NORMAL;
       std::string tmp_display_string = custom_string_vec[i];
 
@@ -507,9 +510,54 @@ namespace mrs_rviz_plugins
     custom_strings_overlay->setDimensions(custom_strings_overlay->getTextureWidth(), custom_strings_overlay->getTextureHeight());
   }
 
-  void StatusDisplay::reset(){
+  void StatusDisplay::drawNodeStats(){
+    // Rosnode stats overlay
+    rosnode_stats_overlay->updateTextureSize(394, 183);
+    rosnode_stats_overlay->setPosition(932, 0);
+    rosnode_stats_overlay->show();
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = rosnode_stats_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*rosnode_stats_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    // Main row
+    QString tmp;
+    tmp.sprintf("%.1f", cpu_load_total);
+    painter.drawStaticText(0, 0, QStaticText("ROS Node Shitlist"));
+    painter.drawStaticText(285, 0, QStaticText(tmp));
+    painter.drawStaticText(345, 0, QStaticText("CPU %"));
+
+    // Drawing stats
+    for (size_t i = 0; i < node_cpu_load_vec.node_names.size(); i++){
+      painter.drawStaticText(0, (i+1)*20, QStaticText(node_cpu_load_vec.node_names[i].c_str()));
+
+      QColor tmp_color = getColor(GREEN);
+      if(node_cpu_load_vec.cpu_loads[i] > 99.9){
+        tmp_color = RED_COLOR;
+      }else if(node_cpu_load_vec.cpu_loads[i] > 49.9){
+        tmp_color = YELLOW_COLOR;
+      }
+
+      painter.fillRect(345, 26 + i*20, 46, 13, tmp_color);
+      tmp.sprintf("%5.1f", node_cpu_load_vec.cpu_loads[i]);
+      painter.drawStaticText(345, 20*(i+1), QStaticText(tmp));
+    }
+
+
+    rosnode_stats_overlay->setDimensions(rosnode_stats_overlay->getTextureWidth(), rosnode_stats_overlay->getTextureHeight());
   }
 
+  void StatusDisplay::reset(){
+  }
 
   // Helper function
   template<typename T> bool compareAndUpdate(T& new_value, T& current_value) {
@@ -527,6 +575,7 @@ namespace mrs_rviz_plugins
     processMavros(msg);
     processCustomTopics(msg);
     processCustomStrings(msg);
+    processNodeStats(msg);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -679,6 +728,15 @@ namespace mrs_rviz_plugins
     std::vector<std::string> new_custom_string_vec = msg->custom_string_outputs;
 
     topics_update_required |= compareAndUpdate(new_custom_string_vec, custom_string_vec);
+  }
+
+  void StatusDisplay::processNodeStats(const mrs_msgs::UavStatusConstPtr& msg) {
+    mrs_msgs::NodeCpuLoad new_node_cpu_load_vec = msg->node_cpu_loads ;
+    double                new_cpu_load_total = msg->cpu_load_total;
+
+
+    node_stats_update_required |= compareAndUpdate(new_node_cpu_load_vec, node_cpu_load_vec);
+    node_stats_update_required |= compareAndUpdate(new_cpu_load_total, cpu_load_total);
   }
 
   void StatusDisplay::nameUpdate(){
