@@ -72,22 +72,22 @@ namespace mrs_rviz_plugins
 
     // Controller
     if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 26, 80, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(0, 26, 80, 13, RED);
     }
     QStaticText controller_data_text = QStaticText(QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str()));
     painter.drawStaticText(0, 20, controller_data_text);
     if(!callbacks_enabled){
-      painter.fillRect(169, 26, 48, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(169, 26, 48, 13, RED);
     }
     QStaticText no_callback_text = QStaticText(QString("%1").arg(callbacks_enabled ? "" : "NO_CB"));
     painter.drawStaticText(171, 20, no_callback_text);
 
     // Tracker
     if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 46, 80, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(0, 46, 80, 13, RED);
     }
     if(null_tracker){
-      painter.fillRect(0, 46, 100, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(0, 46, 100, 13, RED);
     }
     QStaticText tracker_data_text = QStaticText(QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str()));
     QStaticText has_goal_text = QStaticText(QString("%1").arg(has_goal ? " FLY" : "IDLE"));
@@ -126,7 +126,7 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(152, 0, control_manager_freq_text);
 
     if(avg_odom_rate == 0.0){
-      painter.fillRect(0, 5, 80, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(0, 5, 80, 13, RED);
       painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
       odometry_overlay->setDimensions(odometry_overlay->getTextureWidth(), odometry_overlay->getTextureHeight());
       return;
@@ -178,35 +178,35 @@ namespace mrs_rviz_plugins
       // TODO: make color 0, 0, 0, 0 if everything is alright
       QColor x_warning_color;
       if (cerr_x < 0.5) {
-        x_warning_color = QColor(0, 0, 0, 0);
+        x_warning_color = NO_COLOR;
       } else if (cerr_x < 1.0) {
-        x_warning_color = QColor(255, 255, 0, 255);
+        x_warning_color = YELLOW;
       } else {
-        x_warning_color = QColor(255, 0, 0, 255);
+        x_warning_color = RED;
       }
       QColor y_warning_color;
       if (cerr_y < 0.5) {
-        y_warning_color = QColor(0, 0, 0, 0);
+        y_warning_color = NO_COLOR;
       } else if (cerr_y < 1.0) {
-        y_warning_color = QColor(255, 255, 0, 255);
+        y_warning_color = YELLOW;
       } else {
-        y_warning_color = QColor(255, 0, 0, 255);
+        y_warning_color = RED;
       }
       QColor z_warning_color;
       if (cerr_z < 0.5) {
-        z_warning_color = QColor(0, 0, 0, 0);
+        z_warning_color = NO_COLOR;
       } else if (cerr_z < 1.0) {
-        z_warning_color = QColor(255, 255, 0, 255);
+        z_warning_color = YELLOW;
       } else {
-        z_warning_color = QColor(255, 0, 0, 255);
+        z_warning_color = RED;
       }
       QColor h_warning_color;
       if (cerr_hdg < 0.5) {
-        h_warning_color = QColor(0, 0, 0, 0);
+        h_warning_color = NO_COLOR;
       } else if (cerr_hdg < 1.0) {
-        h_warning_color = QColor(255, 255, 0, 255);
+        h_warning_color = YELLOW;
       } else {
-        h_warning_color = QColor(255, 0, 0, 255);
+        h_warning_color = RED;
       }
 
       painter.fillRect(45, 105, 27, 13, x_warning_color);
@@ -243,11 +243,11 @@ namespace mrs_rviz_plugins
     painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
  
     // CPU load
-    QColor cpu_load_color = QColor(0, 0, 0, 0);
+    QColor cpu_load_color = NO_COLOR;
     if(cpu_load > 80.0){
-      cpu_load_color = QColor(255, 0, 0, 255);
+      cpu_load_color = RED;
     } else if(cpu_load > 60.0){
-      cpu_load_color = QColor(255, 255, 0, 255);
+      cpu_load_color = YELLOW;
     }
     painter.fillRect(0, 25, 92, 13, cpu_load_color);
     QString cpu_load_str;
@@ -262,11 +262,11 @@ namespace mrs_rviz_plugins
     // Free RAM
     double used_ram = total_ram - ram_free;
     double ram_ratio = used_ram / total_ram;
-    QColor ram_color = QColor(0, 0, 0, 0);
+    QColor ram_color = NO_COLOR;
     if (ram_ratio > 0.7) {
-      ram_color = QColor(255, 0, 0, 255);
+      ram_color = RED;
     } else if (ram_ratio > 0.5) {
-      ram_color = QColor(255, 255, 0, 255);
+      ram_color = YELLOW;
     }
     painter.fillRect(0, 45, 92, 13, ram_color);
     QString ram_free_str;
@@ -274,11 +274,11 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(0, 40, QStaticText(ram_free_str));
 
     // Free disk
-    QColor free_disk_color = QColor(0, 0, 0, 0);
+    QColor free_disk_color = NO_COLOR;
     if(disk_free < 100){
-      free_disk_color = QColor(255, 0, 0, 255);
+      free_disk_color = RED;
     } else if(disk_free < 200){
-      free_disk_color = QColor(255, 255, 0, 255);
+      free_disk_color = YELLOW;
     }
     painter.fillRect(109, 45, 118, 13, free_disk_color);
     QString disk_free_str;
@@ -320,20 +320,20 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(94, 0, mavros_text);
     painter.drawStaticText(152, 0, mavros_freq_text);
     if(mavros_rate == 0){ // No data
-      painter.fillRect(0, 5, 80, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(0, 5, 80, 13, RED);
       painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
     }
 
     // State:
     painter.drawStaticText(0, 20, QStaticText("State:"));
     if(state_rate == 0){
-      painter.fillRect(55, 26, 48, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(55, 26, 48, 13, RED);
       painter.drawStaticText(56, 20, QStaticText("ERROR"));
     } else{
       if(armed){
         painter.drawStaticText(56, 20, QStaticText("ARMED"));
       } else{
-        painter.fillRect(55, 26, 75, 13, QColor(255, 0, 0, 255));
+        painter.fillRect(55, 26, 75, 13, RED);
         painter.drawStaticText(56, 20, QStaticText("DISARMED"));
       }
     }
@@ -341,21 +341,21 @@ namespace mrs_rviz_plugins
     // Mode:
     painter.drawStaticText(0, 40, QStaticText("Mode:"));
     if(mode != "OFFBOARD"){
-      painter.fillRect(45, 46, 57, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(45, 46, 57, 13, RED);
     }
     painter.drawStaticText(46, 40, QStaticText(mode.c_str()));
 
     // Batt:
     painter.drawStaticText(0, 60, QStaticText("Batt:"));
     if(battery_rate == 0){
-      painter.fillRect(45, 66, 48, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(45, 66, 48, 13, RED);
       painter.drawStaticText(46, 60, QStaticText("ERROR"));
     }else{
       double volt_to_show = (battery_volt > 17.0) ? (battery_volt / 6) : (battery_volt / 4);
       if (volt_to_show < 3.6) {
-        painter.fillRect(45, 66, 57, 13, QColor(255, 0, 0, 255));
+        painter.fillRect(45, 66, 57, 13, RED);
       } else if (volt_to_show < 3.7) {
-        painter.fillRect(45, 66, 57, 13, QColor(255, 255, 0, 255));
+        painter.fillRect(45, 66, 57, 13, YELLOW);
       }
       tmp.sprintf("%.2f V  %.2f A", volt_to_show, battery_curr);
       painter.drawStaticText(46, 60, QStaticText(tmp));
@@ -369,25 +369,25 @@ namespace mrs_rviz_plugins
     // Thrst:
     painter.drawStaticText(0, 100, QStaticText("Thrst:"));
     if (thrust > 0.75) {
-      painter.fillRect(56, 106, 37, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(56, 106, 37, 13, RED);
     } else if (thrust > 0.65) {
-      painter.fillRect(56, 106, 37, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(56, 106, 37, 13, RED);
     }
     tmp.sprintf("%.2f", thrust);
     painter.drawStaticText(56, 100, QStaticText(tmp));
 
     // GPS
     if(!mavros_gps_ok){
-      painter.fillRect(159, 26, 56, 13, QColor(255, 0, 0, 255));
+      painter.fillRect(159, 26, 56, 13, RED);
       painter.drawStaticText(160, 20, QStaticText("NO_GPS"));
     } else{
       painter.drawStaticText(160, 20, QStaticText("GPS_OK"));
 
-      QColor gps_qual_color = QColor(255, 0, 0, 255);
+      QColor gps_qual_color = RED;
       if (gps_qual < 5.0) {
-        gps_qual_color = QColor(0, 0, 0, 0);
+        gps_qual_color = NO_COLOR;
       } else if (gps_qual < 10.0) {
-        gps_qual_color = QColor(255, 255, 0, 255);      
+        gps_qual_color = YELLOW;      
       }
       painter.fillRect(186, 46, 29, 13, gps_qual_color);
       tmp.sprintf("Q: %.1f", gps_qual);
@@ -396,11 +396,11 @@ namespace mrs_rviz_plugins
 
     // Mass
     double mass_diff = fabs(mass_estimate - mass_set) / mass_set;
-    QColor mass_color = QColor(0, 0, 0, 0);
+    QColor mass_color = NO_COLOR;
     if (mass_diff > 0.3) {
-      mass_color = QColor(255, 0, 0, 255);
+      mass_color = RED;
     } else if (mass_diff > 0.2) {
-      mass_color = QColor(255, 255, 0, 255);
+      mass_color = YELLOW;
     }
     painter.fillRect(160, 106, 36, 13, mass_color);
     tmp.sprintf("%s%.1f/%s%.1fkg",mass_set >= 10.0 ? "" : " ", mass_set, mass_estimate >= 10.0 ? "" : " ", mass_estimate);

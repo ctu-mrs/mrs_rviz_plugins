@@ -141,9 +141,13 @@ private:
   bool        mavros_update_required;
 
 
-  mrs_msgs::UavStatus last_uav_status;
 
   ros::NodeHandle nh;
+
+  // | --------------------- Default values --------------------- |
+  const QColor RED      = QColor(255, 0, 0, 255);
+  const QColor YELLOW   = QColor(255, 255, 0, 255);
+  const QColor NO_COLOR = QColor(0, 0, 0, 0);
 };
 
 } // namespace mrs_rviz_plugins
