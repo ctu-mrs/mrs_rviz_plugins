@@ -16,12 +16,18 @@
 
 #include "uav_status/overlay_utils.h"
 
+#include <mrs_msgs/CustomTopic.h>
 #include <mrs_msgs/UavStatus.h>
 #include <mrs_msgs/GainManagerDiagnostics.h>
 #include <mrs_msgs/ConstraintManagerDiagnostics.h>
 
-
 #include <rviz/message_filter_display.h>
+
+#define NORMAL 100
+#define FIELD 101
+#define GREEN 102
+#define RED 103
+#define YELLOW 104
 
 namespace mrs_rviz_plugins
 {
@@ -43,8 +49,14 @@ private Q_SLOTS:
   void nameUpdate();
   void tmpUpdate();
 private:
+  // Helper function
+  QColor getColor(int code){
+    if(code == GREEN) return RED_COLOR;
+    if(code == RED)   return RED_COLOR;
+    return YELLOW_COLOR;
+  }
 
-  // Subscriber callbacks
+  // Subscriber callback
   void uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg);
 
   // New message processing methods
@@ -52,14 +64,15 @@ private:
   void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
   void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
   void processMavros(const mrs_msgs::UavStatusConstPtr& msg);
+  void processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
   void drawOdometry();
   void drawGeneralInfo();
   void drawMavros();
+  void drawCustomTopicRates();
   
-
   // Subscribers
   ros::Subscriber uav_status_sub;
   ros::Subscriber gain_manager_sub;
@@ -80,7 +93,7 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr odometry_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr general_info_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr mavros_state_overlay;
-  jsk_rviz_plugins::OverlayObject::Ptr first_unknown_overlay;
+  jsk_rviz_plugins::OverlayObject::Ptr topic_rates_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr second_unknown_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_shitlist_overlay;
 
@@ -140,14 +153,17 @@ private:
   double      mag_norm_rate;
   bool        mavros_update_required;
 
+  // Custom topics
+  std::vector<mrs_msgs::CustomTopic> custom_topic_vec;
+  bool topics_update_required;
 
 
   ros::NodeHandle nh;
 
   // | --------------------- Default values --------------------- |
-  const QColor RED      = QColor(255, 0, 0, 255);
-  const QColor YELLOW   = QColor(255, 255, 0, 255);
-  const QColor NO_COLOR = QColor(0, 0, 0, 0);
+  const QColor RED_COLOR      = QColor(255, 0, 0, 255);
+  const QColor YELLOW_COLOR   = QColor(255, 255, 0, 255);
+  const QColor NO_COLOR       = QColor(0, 0, 0, 0);
 };
 
 } // namespace mrs_rviz_plugins

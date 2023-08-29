@@ -3,7 +3,7 @@
 namespace mrs_rviz_plugins
 {
   StatusDisplay::StatusDisplay(){
-    uav_name_property         = new rviz::StringProperty("Uav name",       "uav1", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
+    uav_name_property         = new rviz::StringProperty("Uav name",       "uav7", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
     contol_manager_property   = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this);
     odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this);
     computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this);
@@ -19,11 +19,11 @@ namespace mrs_rviz_plugins
   
   void StatusDisplay::onInitialize(){
 
-    contol_manager_overlay.reset(new jsk_rviz_plugins::OverlayObject("Control manager overlay"));
-    odometry_overlay.reset(new jsk_rviz_plugins::OverlayObject("Odometry overlay"));
+    contol_manager_overlay.reset(new jsk_rviz_plugins::OverlayObject("Control manager"));
+    odometry_overlay.reset(new jsk_rviz_plugins::OverlayObject("Odometry"));
     general_info_overlay.reset(new jsk_rviz_plugins::OverlayObject("General info"));
     mavros_state_overlay.reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
-    first_unknown_overlay.reset(new jsk_rviz_plugins::OverlayObject("TODO"));
+    topic_rates_overlay.reset(new jsk_rviz_plugins::OverlayObject("Topic rates"));
     second_unknown_overlay.reset(new jsk_rviz_plugins::OverlayObject("TODO 2"));
     rosnode_shitlist_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
 
@@ -38,6 +38,7 @@ namespace mrs_rviz_plugins
     drawOdometry();
     drawGeneralInfo();
     drawMavros();
+    drawCustomTopicRates();
   }
 
   void StatusDisplay::drawControlManager() {
@@ -72,22 +73,22 @@ namespace mrs_rviz_plugins
 
     // Controller
     if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 26, 80, 13, RED);
+      painter.fillRect(0, 26, 80, 13, RED_COLOR);
     }
     QStaticText controller_data_text = QStaticText(QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str()));
     painter.drawStaticText(0, 20, controller_data_text);
     if(!callbacks_enabled){
-      painter.fillRect(169, 26, 48, 13, RED);
+      painter.fillRect(169, 26, 48, 13, RED_COLOR);
     }
     QStaticText no_callback_text = QStaticText(QString("%1").arg(callbacks_enabled ? "" : "NO_CB"));
     painter.drawStaticText(171, 20, no_callback_text);
 
     // Tracker
     if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 46, 80, 13, RED);
+      painter.fillRect(0, 46, 80, 13, RED_COLOR);
     }
     if(null_tracker){
-      painter.fillRect(0, 46, 100, 13, RED);
+      painter.fillRect(0, 46, 100, 13, RED_COLOR);
     }
     QStaticText tracker_data_text = QStaticText(QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str()));
     QStaticText has_goal_text = QStaticText(QString("%1").arg(has_goal ? " FLY" : "IDLE"));
@@ -126,7 +127,7 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(152, 0, control_manager_freq_text);
 
     if(avg_odom_rate == 0.0){
-      painter.fillRect(0, 5, 80, 13, RED);
+      painter.fillRect(0, 5, 80, 13, RED_COLOR);
       painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
       odometry_overlay->setDimensions(odometry_overlay->getTextureWidth(), odometry_overlay->getTextureHeight());
       return;
@@ -180,33 +181,33 @@ namespace mrs_rviz_plugins
       if (cerr_x < 0.5) {
         x_warning_color = NO_COLOR;
       } else if (cerr_x < 1.0) {
-        x_warning_color = YELLOW;
+        x_warning_color = YELLOW_COLOR;
       } else {
-        x_warning_color = RED;
+        x_warning_color = RED_COLOR;
       }
       QColor y_warning_color;
       if (cerr_y < 0.5) {
         y_warning_color = NO_COLOR;
       } else if (cerr_y < 1.0) {
-        y_warning_color = YELLOW;
+        y_warning_color = YELLOW_COLOR;
       } else {
-        y_warning_color = RED;
+        y_warning_color = RED_COLOR;
       }
       QColor z_warning_color;
       if (cerr_z < 0.5) {
         z_warning_color = NO_COLOR;
       } else if (cerr_z < 1.0) {
-        z_warning_color = YELLOW;
+        z_warning_color = YELLOW_COLOR;
       } else {
-        z_warning_color = RED;
+        z_warning_color = RED_COLOR;
       }
       QColor h_warning_color;
       if (cerr_hdg < 0.5) {
         h_warning_color = NO_COLOR;
       } else if (cerr_hdg < 1.0) {
-        h_warning_color = YELLOW;
+        h_warning_color = YELLOW_COLOR;
       } else {
-        h_warning_color = RED;
+        h_warning_color = RED_COLOR;
       }
 
       painter.fillRect(45, 105, 27, 13, x_warning_color);
@@ -224,6 +225,8 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawGeneralInfo(){
+    // Note: colors are 100% implemented
+
     // General info overlay
     general_info_overlay->updateTextureSize(230, 60);
     general_info_overlay->setPosition(233, 0);
@@ -245,9 +248,9 @@ namespace mrs_rviz_plugins
     // CPU load
     QColor cpu_load_color = NO_COLOR;
     if(cpu_load > 80.0){
-      cpu_load_color = RED;
+      cpu_load_color = RED_COLOR;
     } else if(cpu_load > 60.0){
-      cpu_load_color = YELLOW;
+      cpu_load_color = YELLOW_COLOR;
     }
     painter.fillRect(0, 25, 92, 13, cpu_load_color);
     QString cpu_load_str;
@@ -264,9 +267,9 @@ namespace mrs_rviz_plugins
     double ram_ratio = used_ram / total_ram;
     QColor ram_color = NO_COLOR;
     if (ram_ratio > 0.7) {
-      ram_color = RED;
+      ram_color = RED_COLOR;
     } else if (ram_ratio > 0.5) {
-      ram_color = YELLOW;
+      ram_color = YELLOW_COLOR;
     }
     painter.fillRect(0, 45, 92, 13, ram_color);
     QString ram_free_str;
@@ -276,9 +279,9 @@ namespace mrs_rviz_plugins
     // Free disk
     QColor free_disk_color = NO_COLOR;
     if(disk_free < 100){
-      free_disk_color = RED;
+      free_disk_color = RED_COLOR;
     } else if(disk_free < 200){
-      free_disk_color = YELLOW;
+      free_disk_color = YELLOW_COLOR;
     }
     painter.fillRect(109, 45, 118, 13, free_disk_color);
     QString disk_free_str;
@@ -294,6 +297,8 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawMavros(){
+    // Note: colors are 100% implemented
+
     // Mavros overlay
     mavros_state_overlay->updateTextureSize(230, 120);
     mavros_state_overlay->setPosition(233, 63);
@@ -320,20 +325,20 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(94, 0, mavros_text);
     painter.drawStaticText(152, 0, mavros_freq_text);
     if(mavros_rate == 0){ // No data
-      painter.fillRect(0, 5, 80, 13, RED);
+      painter.fillRect(0, 5, 80, 13, RED_COLOR);
       painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
     }
 
     // State:
     painter.drawStaticText(0, 20, QStaticText("State:"));
     if(state_rate == 0){
-      painter.fillRect(55, 26, 48, 13, RED);
+      painter.fillRect(55, 26, 48, 13, RED_COLOR);
       painter.drawStaticText(56, 20, QStaticText("ERROR"));
     } else{
       if(armed){
         painter.drawStaticText(56, 20, QStaticText("ARMED"));
       } else{
-        painter.fillRect(55, 26, 75, 13, RED);
+        painter.fillRect(55, 26, 75, 13, RED_COLOR);
         painter.drawStaticText(56, 20, QStaticText("DISARMED"));
       }
     }
@@ -341,21 +346,21 @@ namespace mrs_rviz_plugins
     // Mode:
     painter.drawStaticText(0, 40, QStaticText("Mode:"));
     if(mode != "OFFBOARD"){
-      painter.fillRect(45, 46, 57, 13, RED);
+      painter.fillRect(45, 46, 57, 13, RED_COLOR);
     }
     painter.drawStaticText(46, 40, QStaticText(mode.c_str()));
 
     // Batt:
     painter.drawStaticText(0, 60, QStaticText("Batt:"));
     if(battery_rate == 0){
-      painter.fillRect(45, 66, 48, 13, RED);
+      painter.fillRect(45, 66, 48, 13, RED_COLOR);
       painter.drawStaticText(46, 60, QStaticText("ERROR"));
     }else{
       double volt_to_show = (battery_volt > 17.0) ? (battery_volt / 6) : (battery_volt / 4);
       if (volt_to_show < 3.6) {
-        painter.fillRect(45, 66, 57, 13, RED);
+        painter.fillRect(45, 66, 57, 13, RED_COLOR);
       } else if (volt_to_show < 3.7) {
-        painter.fillRect(45, 66, 57, 13, YELLOW);
+        painter.fillRect(45, 66, 57, 13, YELLOW_COLOR);
       }
       tmp.sprintf("%.2f V  %.2f A", volt_to_show, battery_curr);
       painter.drawStaticText(46, 60, QStaticText(tmp));
@@ -369,25 +374,25 @@ namespace mrs_rviz_plugins
     // Thrst:
     painter.drawStaticText(0, 100, QStaticText("Thrst:"));
     if (thrust > 0.75) {
-      painter.fillRect(56, 106, 37, 13, RED);
+      painter.fillRect(56, 106, 37, 13, RED_COLOR);
     } else if (thrust > 0.65) {
-      painter.fillRect(56, 106, 37, 13, RED);
+      painter.fillRect(56, 106, 37, 13, RED_COLOR);
     }
     tmp.sprintf("%.2f", thrust);
     painter.drawStaticText(56, 100, QStaticText(tmp));
 
     // GPS
     if(!mavros_gps_ok){
-      painter.fillRect(159, 26, 56, 13, RED);
+      painter.fillRect(159, 26, 56, 13, RED_COLOR);
       painter.drawStaticText(160, 20, QStaticText("NO_GPS"));
     } else{
       painter.drawStaticText(160, 20, QStaticText("GPS_OK"));
 
-      QColor gps_qual_color = RED;
+      QColor gps_qual_color = RED_COLOR;
       if (gps_qual < 5.0) {
         gps_qual_color = NO_COLOR;
       } else if (gps_qual < 10.0) {
-        gps_qual_color = YELLOW;      
+        gps_qual_color = YELLOW_COLOR;      
       }
       painter.fillRect(186, 46, 29, 13, gps_qual_color);
       tmp.sprintf("Q: %.1f", gps_qual);
@@ -398,15 +403,60 @@ namespace mrs_rviz_plugins
     double mass_diff = fabs(mass_estimate - mass_set) / mass_set;
     QColor mass_color = NO_COLOR;
     if (mass_diff > 0.3) {
-      mass_color = RED;
+      mass_color = RED_COLOR;
     } else if (mass_diff > 0.2) {
-      mass_color = YELLOW;
+      mass_color = YELLOW_COLOR;
     }
     painter.fillRect(160, 106, 36, 13, mass_color);
     tmp.sprintf("%s%.1f/%s%.1fkg",mass_set >= 10.0 ? "" : " ", mass_set, mass_estimate >= 10.0 ? "" : " ", mass_estimate);
     painter.drawStaticText(115, 100, QStaticText(tmp));
 
     mavros_state_overlay->setDimensions(mavros_state_overlay->getTextureWidth(), mavros_state_overlay->getTextureHeight());
+  }
+
+  void StatusDisplay::drawCustomTopicRates() {
+    // Mavros overlay
+    topic_rates_overlay->updateTextureSize(230, 183);
+    topic_rates_overlay->setPosition(466, 0);
+    topic_rates_overlay->show();
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = topic_rates_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*topic_rates_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    // Setting the stream up
+    QString frequency;
+    QTextStream ts = QTextStream(&frequency);
+    ts.setRealNumberPrecision(1);
+    ts.setRealNumberNotation(QTextStream::FixedNotation);
+    ts.setFieldAlignment(QTextStream::AlignRight);
+    ts.setFieldWidth(10);
+    ts.setPadChar(' ');
+
+    // Drawing topics
+    for (size_t i = 0; i < custom_topic_vec.size(); i++){
+      frequency = "";
+      ts << custom_topic_vec[i].topic_hz;
+
+      auto spaces = frequency.count(" ");
+      auto width  = 10 - spaces;
+
+      painter.drawStaticText(0, 20*i, QStaticText(custom_topic_vec[i].topic_name.c_str()));
+      painter.fillRect(116 + 9*spaces, 20*i+6, 9*width+1, 13, getColor(custom_topic_vec[i].topic_color));
+      painter.drawStaticText(117, 20*i, QStaticText(frequency));
+      painter.drawStaticText(210, 20*i, QStaticText("Hz"));
+    }
+
+    topic_rates_overlay->setDimensions(topic_rates_overlay->getTextureWidth(), topic_rates_overlay->getTextureHeight());
   }
 
   void StatusDisplay::reset(){
@@ -427,6 +477,7 @@ namespace mrs_rviz_plugins
     processOdometry(msg);
     processGeneralInfo(msg);
     processMavros(msg);
+    processCustomTopics(msg);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -567,6 +618,12 @@ namespace mrs_rviz_plugins
     mavros_update_required |= compareAndUpdate(new_gps_qual, gps_qual);
     // mavros_update_required |= compareAndUpdate(new_mag_norm, mag_norm);
     // mavros_update_required |= compareAndUpdate(new_mag_norm_rate, mag_norm_rate);
+  }
+
+  void StatusDisplay::processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg) {
+    std::vector<mrs_msgs::CustomTopic> new_custom_topic_vec = msg->custom_topics;
+
+    topics_update_required |= compareAndUpdate(new_custom_topic_vec, custom_topic_vec);
   }
 
   void StatusDisplay::nameUpdate(){
