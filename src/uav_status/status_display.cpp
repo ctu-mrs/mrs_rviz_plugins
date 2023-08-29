@@ -37,6 +37,7 @@ namespace mrs_rviz_plugins
     drawControlManager();
     drawOdometry();
     drawGeneralInfo();
+    drawMavros();
   }
 
   void StatusDisplay::drawControlManager() {
@@ -242,7 +243,7 @@ namespace mrs_rviz_plugins
     painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
  
     // CPU load
-    QColor cpu_load_color = QColor(255, 0, 0, 255);
+    QColor cpu_load_color = QColor(0, 0, 0, 0);
     if(cpu_load > 80.0){
       cpu_load_color = QColor(255, 0, 0, 255);
     } else if(cpu_load > 60.0){
@@ -292,6 +293,121 @@ namespace mrs_rviz_plugins
     general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
   }
 
+  void StatusDisplay::drawMavros(){
+    // Mavros overlay
+    mavros_state_overlay->updateTextureSize(230, 120);
+    mavros_state_overlay->setPosition(233, 63);
+    mavros_state_overlay->show();
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*mavros_state_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    // Main row
+    QStaticText mavros_text = QStaticText("Mavros");
+    QString tmp;
+    tmp.sprintf("%s%.1f Hz", mavros_rate >= 100 ? "" : " ", mavros_rate);
+    QStaticText mavros_freq_text = QStaticText(tmp);
+    painter.drawStaticText(94, 0, mavros_text);
+    painter.drawStaticText(152, 0, mavros_freq_text);
+    if(mavros_rate == 0){ // No data
+      painter.fillRect(0, 5, 80, 13, QColor(255, 0, 0, 255));
+      painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
+    }
+
+    // State:
+    painter.drawStaticText(0, 20, QStaticText("State:"));
+    if(state_rate == 0){
+      painter.fillRect(55, 26, 48, 13, QColor(255, 0, 0, 255));
+      painter.drawStaticText(56, 20, QStaticText("ERROR"));
+    } else{
+      if(armed){
+        painter.drawStaticText(56, 20, QStaticText("ARMED"));
+      } else{
+        painter.fillRect(55, 26, 75, 13, QColor(255, 0, 0, 255));
+        painter.drawStaticText(56, 20, QStaticText("DISARMED"));
+      }
+    }
+
+    // Mode:
+    painter.drawStaticText(0, 40, QStaticText("Mode:"));
+    if(mode != "OFFBOARD"){
+      painter.fillRect(45, 46, 57, 13, QColor(255, 0, 0, 255));
+    }
+    painter.drawStaticText(46, 40, QStaticText(mode.c_str()));
+
+    // Batt:
+    painter.drawStaticText(0, 60, QStaticText("Batt:"));
+    if(battery_rate == 0){
+      painter.fillRect(45, 66, 48, 13, QColor(255, 0, 0, 255));
+      painter.drawStaticText(46, 60, QStaticText("ERROR"));
+    }else{
+      double volt_to_show = (battery_volt > 17.0) ? (battery_volt / 6) : (battery_volt / 4);
+      if (volt_to_show < 3.6) {
+        painter.fillRect(45, 66, 57, 13, QColor(255, 0, 0, 255));
+      } else if (volt_to_show < 3.7) {
+        painter.fillRect(45, 66, 57, 13, QColor(255, 255, 0, 255));
+      }
+      tmp.sprintf("%.2f V  %.2f A", volt_to_show, battery_curr);
+      painter.drawStaticText(46, 60, QStaticText(tmp));
+    }
+
+    // Drained:
+    painter.drawStaticText(0, 80, QStaticText("Drained:"));
+    tmp.sprintf("%.1f Wh", battery_wh_drained);
+    painter.drawStaticText(72, 80, QStaticText(tmp));
+
+    // Thrst:
+    painter.drawStaticText(0, 100, QStaticText("Thrst:"));
+    if (thrust > 0.75) {
+      painter.fillRect(56, 106, 37, 13, QColor(255, 0, 0, 255));
+    } else if (thrust > 0.65) {
+      painter.fillRect(56, 106, 37, 13, QColor(255, 0, 0, 255));
+    }
+    tmp.sprintf("%.2f", thrust);
+    painter.drawStaticText(56, 100, QStaticText(tmp));
+
+    // GPS
+    if(!mavros_gps_ok){
+      painter.fillRect(159, 26, 56, 13, QColor(255, 0, 0, 255));
+      painter.drawStaticText(160, 20, QStaticText("NO_GPS"));
+    } else{
+      painter.drawStaticText(160, 20, QStaticText("GPS_OK"));
+
+      QColor gps_qual_color = QColor(255, 0, 0, 255);
+      if (gps_qual < 5.0) {
+        gps_qual_color = QColor(0, 0, 0, 0);
+      } else if (gps_qual < 10.0) {
+        gps_qual_color = QColor(255, 255, 0, 255);      
+      }
+      painter.fillRect(186, 46, 29, 13, gps_qual_color);
+      tmp.sprintf("Q: %.1f", gps_qual);
+      painter.drawStaticText(160, 40, QStaticText(tmp));
+    }
+
+    // Mass
+    double mass_diff = fabs(mass_estimate - mass_set) / mass_set;
+    QColor mass_color = QColor(0, 0, 0, 0);
+    if (mass_diff > 0.3) {
+      mass_color = QColor(255, 0, 0, 255);
+    } else if (mass_diff > 0.2) {
+      mass_color = QColor(255, 255, 0, 255);
+    }
+    painter.fillRect(160, 106, 36, 13, mass_color);
+    tmp.sprintf("%s%.1f/%s%.1fkg",mass_set >= 10.0 ? "" : " ", mass_set, mass_estimate >= 10.0 ? "" : " ", mass_estimate);
+    painter.drawStaticText(115, 100, QStaticText(tmp));
+
+    mavros_state_overlay->setDimensions(mavros_state_overlay->getTextureWidth(), mavros_state_overlay->getTextureHeight());
+  }
 
   void StatusDisplay::reset(){
   }
@@ -310,6 +426,7 @@ namespace mrs_rviz_plugins
     processControlManager(msg);
     processOdometry(msg);
     processGeneralInfo(msg);
+    processMavros(msg);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -411,6 +528,45 @@ namespace mrs_rviz_plugins
     comp_state_update_required |= compareAndUpdate(new_ram_free, ram_free);
     comp_state_update_required |= compareAndUpdate(new_total_ram, total_ram);
     comp_state_update_required |= compareAndUpdate(new_disk_free, disk_free);
+  }
+
+  void StatusDisplay::processMavros(const mrs_msgs::UavStatusConstPtr& msg){
+    double      new_mavros_rate         = msg->mavros_hz;
+    double      new_state_rate          = msg->mavros_state_hz;
+    double      new_cmd_rate            = msg->mavros_cmd_hz;
+    double      new_battery_rate        = msg->mavros_battery_hz;
+    bool        new_mavros_gps_ok       = msg->mavros_gps_ok;
+    bool        new_armed               = msg->mavros_armed;
+    std::string new_mode                = msg->mavros_mode;
+    double      new_battery_volt        = msg->battery_volt;
+    double      new_battery_curr        = msg->battery_curr;
+    double      new_battery_wh_drained  = msg->battery_wh_drained;
+    double      new_thrust              = msg->thrust;
+    double      new_mass_estimate       = msg->mass_estimate;
+    double      new_mass_set            = msg->mass_set;
+    double      new_gps_qual            = msg->mavros_gps_qual;
+    // double      new_mag_norm;
+    // double      new_mag_norm_rate;
+
+    // mag_norm           = msg->mag_norm;
+    // mag_norm_rate      = msg->mag_norm_hz;
+
+    mavros_update_required |= compareAndUpdate(new_mavros_rate, mavros_rate);
+    mavros_update_required |= compareAndUpdate(new_state_rate, state_rate);
+    mavros_update_required |= compareAndUpdate(new_cmd_rate, cmd_rate);
+    mavros_update_required |= compareAndUpdate(new_battery_rate, battery_rate);
+    mavros_update_required |= compareAndUpdate(new_mavros_gps_ok, mavros_gps_ok);
+    mavros_update_required |= compareAndUpdate(new_armed, armed);
+    mavros_update_required |= compareAndUpdate(new_mode, mode);
+    mavros_update_required |= compareAndUpdate(new_battery_volt, battery_volt);
+    mavros_update_required |= compareAndUpdate(new_battery_curr, battery_curr);
+    mavros_update_required |= compareAndUpdate(new_battery_wh_drained, battery_wh_drained);
+    mavros_update_required |= compareAndUpdate(new_thrust, thrust);
+    mavros_update_required |= compareAndUpdate(new_mass_estimate, mass_estimate);
+    mavros_update_required |= compareAndUpdate(new_mass_set, mass_set);
+    mavros_update_required |= compareAndUpdate(new_gps_qual, gps_qual);
+    // mavros_update_required |= compareAndUpdate(new_mag_norm, mag_norm);
+    // mavros_update_required |= compareAndUpdate(new_mag_norm_rate, mag_norm_rate);
   }
 
   void StatusDisplay::nameUpdate(){

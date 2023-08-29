@@ -51,11 +51,13 @@ private:
   void processControlManager(const mrs_msgs::UavStatusConstPtr& msg);
   void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
   void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
+  void processMavros(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
   void drawControlManager();
   void drawOdometry();
   void drawGeneralInfo();
+  void drawMavros();
   
 
   // Subscribers
@@ -118,6 +120,25 @@ private:
   double total_ram;
   double disk_free;
   bool comp_state_update_required = true;
+
+  // Mavros
+  double      mavros_rate = 0;
+  double      state_rate;
+  double      cmd_rate;
+  double      battery_rate;
+  bool        mavros_gps_ok;
+  bool        armed;
+  std::string mode;
+  double      battery_volt;
+  double      battery_curr;
+  double      battery_wh_drained;
+  double      thrust;
+  double      mass_estimate;
+  double      mass_set;
+  double      gps_qual;
+  double      mag_norm;
+  double      mag_norm_rate;
+  bool        mavros_update_required;
 
 
   mrs_msgs::UavStatus last_uav_status;
