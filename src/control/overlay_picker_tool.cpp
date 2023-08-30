@@ -85,7 +85,6 @@ namespace jsk_rviz_plugins
 
   bool OverlayPickerTool::handleDisplayClick(rviz::Property* property, rviz::ViewportMouseEvent& event)
   {
-    ROS_INFO("handle display click:");
     if (isPropertyType<rviz::DisplayGroup>(property)) {
       rviz::DisplayGroup* group_property = isPropertyType<rviz::DisplayGroup>(property);
       for (int i = 0; i < group_property->numChildren(); i++) {
@@ -104,24 +103,18 @@ namespace jsk_rviz_plugins
 
   void OverlayPickerTool::onClicked(rviz::ViewportMouseEvent& event)
   {
-    ROS_INFO("onClicked");
     is_moving_ = true;
-    ROS_INFO("clicked: (%d, %d)", event.x, event.y);
     // check the active overlay plugin
 
     if(!context_){
-      ROS_INFO("context is NULL");
     }
     rviz::DisplayGroup* display_group = context_->getRootDisplayGroup();
     
-    ROS_INFO("display group is %p", display_group);
     handleDisplayClick(display_group, event);
   }
 
   void OverlayPickerTool::onMove(rviz::ViewportMouseEvent& event)
   {
-    ROS_INFO("onMove");
-    ROS_INFO("moving: (%d, %d)", event.x, event.y);
     if (target_property_) {
       if (target_property_type_ == "status_display") {
         movePosition<StatusDisplay>(event);
@@ -131,9 +124,7 @@ namespace jsk_rviz_plugins
   
   void OverlayPickerTool::onRelease(rviz::ViewportMouseEvent& event)
   {
-    ROS_INFO("onRelease");
     is_moving_ = false;
-    ROS_INFO("released: (%d, %d)", event.x, event.y);
     if (target_property_) {
       if (target_property_type_ == "status_display") {
         setPosition<StatusDisplay>(event);

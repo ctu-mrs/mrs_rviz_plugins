@@ -66,7 +66,6 @@ namespace jsk_rviz_plugins
     bool startMovement(rviz::Property* property,
                        rviz::ViewportMouseEvent& event, const std::string& type)
     {
-      ROS_INFO("started movement");
       if (isPropertyType<T>(property)) {
         bool res = isPropertyType<T>(property)->isInRegion(event.x, event.y);
         if (res) {

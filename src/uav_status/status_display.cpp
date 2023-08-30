@@ -17,10 +17,6 @@ namespace mrs_rviz_plugins
     custom_str_property       = new rviz::BoolProperty("Custom strings",    true,  "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
     node_stats_property       = new rviz::BoolProperty("Node stats list",   false, "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
     
-    
-    debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
-
-
     nh = ros::NodeHandle();
   }
   
@@ -74,8 +70,7 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
-    // if(top_line_update_required   || global_update_required) 
-    drawTopLine();
+    if(top_line_update_required   || global_update_required) drawTopLine();
     if(cm_update_required         || global_update_required) drawControlManager();
     if(odom_update_required       || global_update_required) drawOdometry();
     if(comp_state_update_required || global_update_required) drawGeneralInfo();
@@ -321,8 +316,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawGeneralInfo(){
-    // Note: colors are 100% implemented
-
     // General info overlay
     general_info_overlay->updateTextureSize(230, 60);
     general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y + gen_info_pos_y);
@@ -396,8 +389,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawMavros(){
-    // Note: colors are 100% implemented
-
     // Mavros overlay
     mavros_state_overlay->updateTextureSize(230, 120);
     mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
@@ -518,8 +509,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawCustomTopicRates() {
-    // Note: all colors are 100% implemented
-
     // Topic rate overlay
     topic_rates_overlay->updateTextureSize(230, 183);
     topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y + topic_rate_pos_y);
@@ -569,8 +558,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawCustomStrings() {
-    // Note: colors implemeted, but blinking is not
-
     // Custom string overlay
     custom_strings_overlay->updateTextureSize(230, custom_str_height);
     custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y + custom_str_pos_y);
@@ -621,8 +608,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawNodeStats(){
-    // Note: colors are 100% implemented
-
     // Rosnode stats overlay
     rosnode_stats_overlay->updateTextureSize(394, node_stats_height);
     rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y + node_stats_pos_y);
@@ -715,25 +700,19 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
-    bool         new_null_tracker;
-    double       new_rate;
+    bool         new_null_tracker      = msg->null_tracker;
+    double       new_rate              = msg->control_manager_diag_hz;
+    bool         new_callbacks_enabled = msg->callbacks_enabled;
+    bool         new_has_goal          = msg->have_goal;
     std::string  new_controller;
     std::string  new_tracker;
     std::string  new_gains;
     std::string  new_constraints;
-    bool         new_callbacks_enabled;
-    bool         new_has_goal;
-
-    new_rate  = msg->control_manager_diag_hz;
 
     msg->controllers.empty() ? new_controller = "NONE"  : new_controller = msg->controllers[0];
     msg->trackers.empty()    ? new_tracker = "NONE"     : new_tracker = msg->trackers[0];
     msg->gains.empty()       ? new_gains = "NONE"       : new_gains = msg->gains[0];
     msg->constraints.empty() ? new_constraints = "NONE" : new_constraints = msg->constraints[0];
-
-    new_callbacks_enabled = msg->callbacks_enabled;
-    new_has_goal          = msg->have_goal;
-    new_null_tracker      = msg->null_tracker;
 
     if(new_null_tracker){
       new_tracker = "NullTracker";
@@ -750,40 +729,26 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::processOdometry(const mrs_msgs::UavStatusConstPtr& msg) {
-    double new_avg_odom_rate;
-    double new_color;
-    double new_heading;
-    double new_state_x;
-    double new_state_y;
-    double new_state_z;
-    double new_cmd_x;
-    double new_cmd_y;
-    double new_cmd_z;
-    double new_cmd_hdg;
-    std::string new_odom_frame;
+    double new_avg_odom_rate = msg->odom_hz;
+    double new_color         = msg->odom_color;
+    double new_heading       = msg->odom_hdg;
+    double new_state_x       = msg->odom_x;
+    double new_state_y       = msg->odom_y;
+    double new_state_z       = msg->odom_z;
+    double new_cmd_x         = msg->cmd_x;
+    double new_cmd_y         = msg->cmd_y;
+    double new_cmd_z         = msg->cmd_z;
+    double new_cmd_hdg       = msg->cmd_hdg;
+    std::string new_odom_frame = msg->odom_frame;
     std::string new_curr_estimator_hori;
     std::string new_curr_estimator_vert;
     std::string new_curr_estimator_hdg;
-
-    new_avg_odom_rate   = msg->odom_hz;
-    new_color           = msg->odom_color;
-    new_heading         = msg->odom_hdg;
-    new_state_x         = msg->odom_x;
-    new_state_y         = msg->odom_y;
-    new_state_z         = msg->odom_z;
-    new_odom_frame      = msg->odom_frame;
-
-    new_cmd_x   = msg->cmd_x;
-    new_cmd_y   = msg->cmd_y;
-    new_cmd_z   = msg->cmd_z;
-    new_cmd_hdg = msg->cmd_hdg;
 
     new_odom_frame = new_odom_frame.substr(new_odom_frame.find("/") + 1);
 
     msg->odom_estimators_hori.empty() ? new_curr_estimator_hori = "NONE" : new_curr_estimator_hori = msg->odom_estimators_hori[0];
     msg->odom_estimators_vert.empty() ? new_curr_estimator_vert = "NONE" : new_curr_estimator_vert = msg->odom_estimators_vert[0];
     msg->odom_estimators_hdg.empty() ? new_curr_estimator_hdg = "NONE" : new_curr_estimator_hdg = msg->odom_estimators_hdg[0];
-
 
     odom_update_required |= compareAndUpdate(new_avg_odom_rate, avg_odom_rate);
     odom_update_required |= compareAndUpdate(new_color, color);
@@ -830,11 +795,6 @@ namespace mrs_rviz_plugins
     double      new_mass_estimate       = msg->mass_estimate;
     double      new_mass_set            = msg->mass_set;
     double      new_gps_qual            = msg->mavros_gps_qual;
-    // double      new_mag_norm;
-    // double      new_mag_norm_rate;
-
-    // mag_norm           = msg->mag_norm;
-    // mag_norm_rate      = msg->mag_norm_hz;
 
     mavros_update_required |= compareAndUpdate(new_mavros_rate, mavros_rate);
     mavros_update_required |= compareAndUpdate(new_state_rate, state_rate);
@@ -850,8 +810,6 @@ namespace mrs_rviz_plugins
     mavros_update_required |= compareAndUpdate(new_mass_estimate, mass_estimate);
     mavros_update_required |= compareAndUpdate(new_mass_set, mass_set);
     mavros_update_required |= compareAndUpdate(new_gps_qual, gps_qual);
-    // mavros_update_required |= compareAndUpdate(new_mag_norm, mag_norm);
-    // mavros_update_required |= compareAndUpdate(new_mag_norm_rate, mag_norm_rate);
   }
 
   void StatusDisplay::processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -876,8 +834,9 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::nameUpdate(){
-    // Controller
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
+    
+    // Controller
     curr_controller  = "!NO DATA!";
     curr_tracker     = "!NO DATA!";
     curr_gains       = "";
@@ -1104,9 +1063,7 @@ namespace mrs_rviz_plugins
     global_update_required = true;
   }
 
-
 }// namespace mrs_rviz_plugins
-
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(mrs_rviz_plugins::StatusDisplay, rviz::Display)

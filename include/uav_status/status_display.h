@@ -54,15 +54,15 @@ public:
   void reset() override;
   void update(float wall_dt, float ros_dt) override;
 
+  // Methods for OverlayPickerTool
   void setPosition(int x, int y);
   bool isInRegion(int x, int y);
   void movePosition(int x, int y);
   int getX() { return  display_pos_x; }
   int getY() { return  display_pos_y; }
 
-  rviz::BoolProperty* rosnode_shitlist_property;
-
 private Q_SLOTS:
+  // Property change callbacks
   void nameUpdate();
   void topLineUpdate();
   void controlManagerUpdate();
@@ -73,7 +73,6 @@ private Q_SLOTS:
   void customStrUpdate();
   void nodeStatsUpdate();
 
-  void tmpUpdate();
 private:
   // Helper function
   QColor getColor(int code){
@@ -106,11 +105,6 @@ private:
   void drawCustomStrings();
   void drawNodeStats();
   
-  // Subscribers
-  ros::Subscriber uav_status_sub;
-  ros::Subscriber gain_manager_sub;
-  ros::Subscriber constraint_manager_sub;
-  
   // Properties
   rviz::EditableEnumProperty* uav_name_property;
   rviz::BoolProperty* top_line_property;
@@ -121,7 +115,6 @@ private:
   rviz::BoolProperty* topic_rates_property;
   rviz::BoolProperty* custom_str_property;
   rviz::BoolProperty* node_stats_property;
-  rviz::IntProperty*  debug_property;
 
   // Individual overlays
   jsk_rviz_plugins::OverlayObject::Ptr top_line_overlay;
@@ -133,88 +126,90 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr custom_strings_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_stats_overlay;
 
+  // | --------------------- UavStatus data --------------------- |
   // Top line data:
-  std::string uav_name;
-  std::string uav_type;
-  std::string nato_name;
-  bool collision_avoidance_enabled;
-  bool avoiding_collision;
-  bool automatic_start_can_takeoff;
-  int num_other_uavs;
-  int secs_flown;
-  bool top_line_update_required = true;
+  std::string uav_name             = "";
+  std::string uav_type             = "";
+  std::string nato_name            = "";
+  bool collision_avoidance_enabled = false;
+  bool avoiding_collision          = false;
+  bool automatic_start_can_takeoff = false;
+  int num_other_uavs               = 0;
+  int secs_flown                   = 0;
+  bool top_line_update_required    = true;
 
   // Controller data:
-  double       avg_controller_rate;
-  bool         null_tracker;
-  double       controller_rate = 0;
-  std::string  curr_controller  = "!NO DATA!";
-  std::string  curr_tracker     = "!NO DATA!";
-  std::string  curr_gains;
-  std::string  curr_constraints;
-  bool         callbacks_enabled;
-  bool         has_goal;
-  bool         cm_update_required = true;
+  double       avg_controller_rate = 0;
+  bool         null_tracker        = true;
+  double       controller_rate     = 0;
+  std::string  curr_controller     = "!NO DATA!";
+  std::string  curr_tracker        = "!NO DATA!";
+  std::string  curr_gains          = "";
+  std::string  curr_constraints    = "";
+  bool         callbacks_enabled   = false;
+  bool         has_goal            = false;
+  bool         cm_update_required  = true;
 
   // Odometry data
-  double avg_odom_rate;
-  double color;
-  double heading;
-  double state_x;
-  double state_y;
-  double state_z;
-  double cmd_x;
-  double cmd_y;
-  double cmd_z;
-  double cmd_hdg;
-  std::string odom_frame = "!NO DATA!";
+  double avg_odom_rate  = 0;
+  double color          = 0;
+  double heading        = 0;
+  double state_x        = 0;
+  double state_y        = 0;
+  double state_z        = 0;
+  double cmd_x          = 0;
+  double cmd_y          = 0;
+  double cmd_z          = 0;
+  double cmd_hdg        = 0;
+  std::string odom_frame          = "!NO DATA!";
   std::string curr_estimator_hori = "!NO DATA!";
   std::string curr_estimator_vert = "!NO DATA!";
-  std::string curr_estimator_hdg = "!NO DATA!";
+  std::string curr_estimator_hdg  = "!NO DATA!";
   bool odom_update_required = true;
 
   // General info
-  double cpu_load;
-  double cpu_freq;
-  double ram_free;
-  double total_ram;
-  double disk_free;
+  double cpu_load   = 0;
+  double cpu_freq   = 0;
+  double ram_free   = 0;
+  double total_ram  = 0;
+  double disk_free  = 0;
   bool comp_state_update_required = true;
 
   // Mavros
-  double      mavros_rate = 0;
-  double      state_rate;
-  double      cmd_rate;
-  double      battery_rate;
-  bool        mavros_gps_ok;
-  bool        armed;
-  std::string mode;
-  double      battery_volt;
-  double      battery_curr;
-  double      battery_wh_drained;
-  double      thrust;
-  double      mass_estimate;
-  double      mass_set;
-  double      gps_qual;
-  double      mag_norm;
-  double      mag_norm_rate;
-  bool        mavros_update_required;
+  double      mavros_rate        = 0;
+  double      state_rate         = 0;
+  double      cmd_rate           = 0;
+  double      battery_rate       = 0;
+  bool        mavros_gps_ok      = false;
+  bool        armed              = false;
+  std::string mode               = "";
+  double      battery_volt       = 0;
+  double      battery_curr       = 0;
+  double      battery_wh_drained = 0;
+  double      thrust             = 0;
+  double      mass_estimate      = 0;
+  double      mass_set           = 0;
+  double      gps_qual           = 0;
+  double      mag_norm           = 0;
+  double      mag_norm_rate      = 0;
+  bool        mavros_update_required = true;
 
   // Custom topics
   std::vector<mrs_msgs::CustomTopic> custom_topic_vec;
-  bool topics_update_required;
+  bool topics_update_required = true;
 
   // Custom string outputs
   std::vector<std::string> custom_string_vec;
-  bool string_update_required;
+  bool string_update_required = true;
 
   // Node stats
   mrs_msgs::NodeCpuLoad node_cpu_load_vec;
-  double cpu_load_total;
-  bool node_stats_update_required;
+  double cpu_load_total = 0;
+  bool node_stats_update_required = true;
 
-
+  // | ----------------------- Attributes ----------------------- |
   ros::NodeHandle nh;
+  ros::Subscriber uav_status_sub;
   static int display_number;
   int id; 
 
@@ -241,7 +236,6 @@ private:
   int node_stats_pos_x  = 932;
   int node_stats_pos_y  = 0;
   int node_stats_height = 206;
-
   bool global_update_required = true;
 };
 
