@@ -1,19 +1,23 @@
 #include "uav_status/status_display.h"
+#include <string>
 
 namespace mrs_rviz_plugins
 {
+  int StatusDisplay::display_number = 1;
+
   StatusDisplay::StatusDisplay(){
+    id = display_number++;
     uav_name_property         = new rviz::StringProperty("Uav name",       "uav22", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
-    control_manager_property   = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
+    control_manager_property  = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
     odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this,  SLOT(odometryUpdate()), this);
     computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
-    mavros_state_property     = new rviz::BoolProperty("Mavros state",      false, "Show mavros state data",           this,  SLOT(mavrosStateUpdate()), this);
-    topic_rates_property      = new rviz::BoolProperty("Topic rates",       false, "Show somethin, idk anythin 1",     this,  SLOT(topicRatesUpdate()), this);
-    custom_str_property       = new rviz::BoolProperty("Custom strings",    false, "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
+    mavros_state_property     = new rviz::BoolProperty("Mavros state",      true,  "Show mavros state data",           this,  SLOT(mavrosStateUpdate()), this);
+    topic_rates_property      = new rviz::BoolProperty("Topic rates",       true,  "Show somethin, idk anythin 1",     this,  SLOT(topicRatesUpdate()), this);
+    custom_str_property       = new rviz::BoolProperty("Custom strings",    true,  "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
     node_stats_property       = new rviz::BoolProperty("Node stats list",   false, "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
     
     
-    debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
+    // debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
 
 
     nh = ros::NodeHandle();
@@ -21,13 +25,13 @@ namespace mrs_rviz_plugins
   
   void StatusDisplay::onInitialize(){
 
-    contol_manager_overlay  .reset(new jsk_rviz_plugins::OverlayObject("Control manager"));
-    odometry_overlay        .reset(new jsk_rviz_plugins::OverlayObject("Odometry"));
-    general_info_overlay    .reset(new jsk_rviz_plugins::OverlayObject("General info"));
-    mavros_state_overlay    .reset(new jsk_rviz_plugins::OverlayObject("Mavros state"));
-    topic_rates_overlay     .reset(new jsk_rviz_plugins::OverlayObject("Topic rates"));
-    custom_strings_overlay  .reset(new jsk_rviz_plugins::OverlayObject("Custom strings"));
-    rosnode_stats_overlay.reset(new jsk_rviz_plugins::OverlayObject("Rosnode shitlist"));
+    contol_manager_overlay  .reset(new jsk_rviz_plugins::OverlayObject(std::string("Control manager") + std::to_string(id)));
+    odometry_overlay        .reset(new jsk_rviz_plugins::OverlayObject(std::string("Odometry") + std::to_string(id)));
+    general_info_overlay    .reset(new jsk_rviz_plugins::OverlayObject(std::string("General info") + std::to_string(id)));
+    mavros_state_overlay    .reset(new jsk_rviz_plugins::OverlayObject(std::string("Mavros state") + std::to_string(id)));
+    topic_rates_overlay     .reset(new jsk_rviz_plugins::OverlayObject(std::string("Topic rates") + std::to_string(id)));
+    custom_strings_overlay  .reset(new jsk_rviz_plugins::OverlayObject(std::string("Custom strings") + std::to_string(id)));
+    rosnode_stats_overlay   .reset(new jsk_rviz_plugins::OverlayObject(std::string("Rosnode shitlist") + std::to_string(id)));
 
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
   }
@@ -46,8 +50,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawControlManager() {
-    ROS_INFO("updateing cm...");
-
     // TODO: if controller_rate == 0 show NO_CONTROLLER and NO_TRACKER
 
 
@@ -918,6 +920,18 @@ namespace mrs_rviz_plugins
 
   void StatusDisplay::movePosition(int x, int y){
     setPosition(x, y);
+  }
+
+  void StatusDisplay::setPosition(int x, int y){
+    display_pos_x = x;
+    display_pos_y = y;
+    contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
+    odometry_overlay->setPosition(display_pos_x,display_pos_y + odom_pos_y);
+    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y);
+    mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
+    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y);
+    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y);
+    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);
   }
 
   bool StatusDisplay::isInRegion(int x, int y){

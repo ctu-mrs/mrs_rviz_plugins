@@ -34,18 +34,18 @@
   </class>
 </library>
 
-<library path="lib/libMrsControlTool">
-  <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
+<library path="lib/libMrsControlPlugin">
+  <class name="mrs_rviz_plugins/StatusDisplay" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
     <description>
-      Uav control tool. Implements mrs_uav_status functionality.
+      Shows all the information that mrs_uav_status provides.
     </description>
   </class>
 </library>
 
-<library path="lib/libMrsStatusDisplay">
-  <class name="mrs_rviz_plugins/StatusDisplay" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
+<library path="lib/libMrsControlPlugin">
+  <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
     <description>
-      Shows all the information, that mrs_uav_status provide.
+      Uav control tool. Implements mrs_uav_status functionality.
     </description>
   </class>
 </library>

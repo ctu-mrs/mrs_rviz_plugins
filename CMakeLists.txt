@@ -39,7 +39,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsControlTool MrsStatusDisplay
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsControlPlugin
   )
 
 catkin_package(
@@ -182,28 +182,11 @@ target_link_libraries(MrsNamedGoalTool
   ${catkin_LIBRARIES}
   )
 
-## STATUS DISPLAY
+## STATUS DISPLAY and CONTOL TOOL
 
-add_library(MrsStatusDisplay
+add_library(MrsControlPlugin
   include/uav_status/status_display.h
   include/uav_status/overlay_utils.h
-  src/uav_status/status_display.cpp
-  src/uav_status/overlay_utils.cpp
-  )
-
-add_dependencies(MrsStatusDisplay
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-  )
-
-target_link_libraries(MrsStatusDisplay
-  ${QT_LIBRARIES}
-  ${catkin_LIBRARIES}
-  )
-  
-## CONTROL TOOL
-
-add_library(MrsControlTool
   include/control/im_server.h
   include/control/control.h
   include/control/drone_entity.h
@@ -212,18 +195,42 @@ add_library(MrsControlTool
   src/control/control.cpp
   src/control/drone_entity.cpp
   src/control/overlay_picker_tool.cpp
+  src/uav_status/status_display.cpp
+  src/uav_status/overlay_utils.cpp
   )
 
-add_dependencies(MrsControlTool
+add_dependencies(MrsControlPlugin
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   )
 
-target_link_libraries(MrsControlTool
-  MrsStatusDisplay
+target_link_libraries(MrsControlPlugin
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
+  
+## CONTROL TOOL
+
+# add_library(MrsControlTool
+#   include/control/im_server.h
+#   include/control/control.h
+#   include/control/drone_entity.h
+#   include/control/overlay_picker_tool.h
+#   src/control/im_server.cpp
+#   src/control/control.cpp
+#   src/control/drone_entity.cpp
+#   src/control/overlay_picker_tool.cpp
+#   )
+
+# add_dependencies(MrsControlTool
+#   ${${PROJECT_NAME}_EXPORTED_TARGETS}
+#   ${catkin_EXPORTED_TARGETS}
+#   )
+
+# target_link_libraries(MrsControlTool
+#   ${QT_LIBRARIES}
+#   ${catkin_LIBRARIES}
+#   )
 
 ## --------------------------------------------------------------
 ## |                           Install                          |
