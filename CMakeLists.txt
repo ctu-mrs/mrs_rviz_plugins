@@ -39,7 +39,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsStatusDisplay
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsControlTool MrsStatusDisplay
   )
 
 catkin_package(
@@ -182,27 +182,6 @@ target_link_libraries(MrsNamedGoalTool
   ${catkin_LIBRARIES}
   )
 
-## CONTROL TOOL
-
-add_library(MrsControlTool
-  include/control/im_server.h
-  include/control/control.h
-  include/control/drone_entity.h
-  src/control/im_server.cpp
-  src/control/control.cpp
-  src/control/drone_entity.cpp
-  )
-
-add_dependencies(MrsControlTool
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-  )
-
-target_link_libraries(MrsControlTool
-  ${QT_LIBRARIES}
-  ${catkin_LIBRARIES}
-  )
-
 ## STATUS DISPLAY
 
 add_library(MrsStatusDisplay
@@ -218,6 +197,30 @@ add_dependencies(MrsStatusDisplay
   )
 
 target_link_libraries(MrsStatusDisplay
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+  
+## CONTROL TOOL
+
+add_library(MrsControlTool
+  include/control/im_server.h
+  include/control/control.h
+  include/control/drone_entity.h
+  include/control/overlay_picker_tool.h
+  src/control/im_server.cpp
+  src/control/control.cpp
+  src/control/drone_entity.cpp
+  src/control/overlay_picker_tool.cpp
+  )
+
+add_dependencies(MrsControlTool
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsControlTool
+  MrsStatusDisplay
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )

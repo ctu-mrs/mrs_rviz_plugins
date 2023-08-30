@@ -14,6 +14,7 @@
 namespace mrs_rviz_plugins{
 
 ControlTool::ControlTool() : rviz::SelectionTool(){
+  overlay_picker_tool = new jsk_rviz_plugins::OverlayPickerTool();
   shortcut_key_ = 'c';
   server = new ImServer();
 }
@@ -25,10 +26,14 @@ ControlTool::~ControlTool(){
   if(dis != nullptr){
     delete dis;
   }
+  if(overlay_picker_tool != nullptr){
+    delete overlay_picker_tool;
+  }
 }
 
 void ControlTool::onInitialize(){
   rviz::SelectionTool::onInitialize();
+  overlay_picker_tool->initialize(context_);
 
   dis = new rviz::InteractiveMarkerDisplay();
   dynamic_cast<rviz::VisualizationManager*>(context_)->addDisplay(dis, true);
@@ -42,8 +47,6 @@ void ControlTool::activate(){
   setStatus(DEFAULT_MODE_MESSAGE);
 }
 
-// TODO: what to write here?
-// The method is taken from interaction_tool.cpp  
 void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {
   rviz::M_Picked results;
   // Pick exactly 1 pixel
@@ -84,7 +87,7 @@ void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {
       event_copy.type = QEvent::FocusOut;
       old_obj->handleMouseEvent(event_copy);
     }
-
+ 
     if (new_obj)
     {
       event_copy.type = QEvent::FocusIn;
@@ -97,10 +100,11 @@ void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {
 
 
 int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
-  int flags = rviz::SelectionTool::processMouseEvent(event);
+  int flags;
+  if(!event.shift()){
+    flags = rviz::SelectionTool::processMouseEvent(event);
+  }
 
-  // TODO: what to write here?
-  // The method is taken from interaction_tool.cpp
   if (event.panel->contextMenuVisible())
   {
     return flags;
@@ -126,6 +130,13 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   // If alt is pressed, interaction is disabled
   if(event.alt()){
     return flags;
+  }
+
+  // This only processes left mouse key, so the action does not 
+  // interfere with following actions (unless interactive marker 
+  // has an action binded to left mouse key)
+  if(event.shift()){
+    overlay_picker_tool->processMouseEvent(event);
   }
 
   setStatus(remote_mode_on ? REMOTE_MODE_MESSAGE : DEFAULT_MODE_MESSAGE);

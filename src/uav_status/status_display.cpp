@@ -46,12 +46,14 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawControlManager() {
+    ROS_INFO("updateing cm...");
+
     // TODO: if controller_rate == 0 show NO_CONTROLLER and NO_TRACKER
 
 
     // Control manager overlay
     contol_manager_overlay->updateTextureSize(230, 60);
-    contol_manager_overlay->setPosition(0, 0);
+    contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
     contol_manager_overlay->show(control_manager_property->getBool());
     if(!control_manager_property->getBool()){
       return;
@@ -109,7 +111,7 @@ namespace mrs_rviz_plugins
   void StatusDisplay::drawOdometry(){
     // Odometry overlay
     odometry_overlay->updateTextureSize(230, 120);
-    odometry_overlay->setPosition(0, odom_pos_y);
+    odometry_overlay->setPosition(display_pos_x,display_pos_y + odom_pos_y);
     odometry_overlay->show(odometry_property->getBool());
     if(!odometry_property->getBool()){
       return;
@@ -239,7 +241,7 @@ namespace mrs_rviz_plugins
 
     // General info overlay
     general_info_overlay->updateTextureSize(230, 60);
-    general_info_overlay->setPosition(gen_info_pos_x, 0);
+    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y);
     general_info_overlay->show(computer_load_property->getBool());
     if(!computer_load_property->getBool()){
       return;
@@ -314,7 +316,7 @@ namespace mrs_rviz_plugins
 
     // Mavros overlay
     mavros_state_overlay->updateTextureSize(230, 120);
-    mavros_state_overlay->setPosition(mavros_pos_x, mavros_pos_y);
+    mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
     mavros_state_overlay->show(mavros_state_property->getBool());
     if(!mavros_state_property->getBool()){
       return;
@@ -436,7 +438,7 @@ namespace mrs_rviz_plugins
 
     // Topic rate overlay
     topic_rates_overlay->updateTextureSize(230, 183);
-    topic_rates_overlay->setPosition(topic_rate_pos_x, 0);
+    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y);
     topic_rates_overlay->show(topic_rates_property->getBool());
     if(!topic_rates_property->getBool()){
       return;
@@ -487,7 +489,7 @@ namespace mrs_rviz_plugins
 
     // Custom string overlay
     custom_strings_overlay->updateTextureSize(230, 183);
-    custom_strings_overlay->setPosition(custom_str_pos_x, 0);
+    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y);
     custom_strings_overlay->show(custom_str_property->getBool());
     if(!custom_str_property->getBool()){
       return;
@@ -537,7 +539,7 @@ namespace mrs_rviz_plugins
   void StatusDisplay::drawNodeStats(){
     // Rosnode stats overlay
     rosnode_stats_overlay->updateTextureSize(394, 183);
-    rosnode_stats_overlay->setPosition(node_stats_pos_x, 0);
+    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);
     rosnode_stats_overlay->show(node_stats_property->getBool());
     if(!node_stats_property->getBool()){
       return;
@@ -914,7 +916,17 @@ namespace mrs_rviz_plugins
     cm_update_required = true;
   }
 
+  void StatusDisplay::movePosition(int x, int y){
+    setPosition(x, y);
+  }
 
+  bool StatusDisplay::isInRegion(int x, int y){
+    ROS_INFO("isInRegion called. res: %d", (display_pos_y < y && display_pos_y + 183 > y && 
+            display_pos_x < x && display_pos_x + 932 + 394 > x));
+
+    return (display_pos_y < y && display_pos_y + 183 > y && 
+            display_pos_x < x && display_pos_x + 932 + 394 > x);
+  }
 
 }// namespace mrs_rviz_plugins
 

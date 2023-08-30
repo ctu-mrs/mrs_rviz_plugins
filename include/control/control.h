@@ -24,7 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/pointer_cast.hpp>
 
-
+#include "control/overlay_picker_tool.h"
 #include "control/im_server.h"
 
 namespace mrs_rviz_plugins{
@@ -57,7 +57,7 @@ protected:
   // | ----------------------- Attributes ----------------------- |
   ImServer* server = nullptr;
   rviz::InteractiveMarkerDisplay* dis = nullptr;
-
+  jsk_rviz_plugins::OverlayPickerTool* overlay_picker_tool = nullptr;
   bool remote_mode_on = false;
 
   // | --------------------- Default values --------------------- |

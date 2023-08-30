@@ -52,6 +52,23 @@ public:
   void reset() override;
   void update(float wall_dt, float ros_dt) override;
 
+  void setPosition(int x, int y){
+    display_pos_x = x;
+    display_pos_y = y;
+    contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
+    odometry_overlay->setPosition(display_pos_x,display_pos_y + odom_pos_y);
+    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y);
+    mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
+    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y);
+    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y);
+    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);
+  }
+
+  bool isInRegion(int x, int y);
+  void movePosition(int x, int y);
+  int getX() { return  display_pos_x; }
+  int getY() { return  display_pos_y; }
+
   rviz::BoolProperty* rosnode_shitlist_property;
 
 private Q_SLOTS:
@@ -199,6 +216,8 @@ private:
 
   // | ---------------------- Layout data ----------------------- |
   std::vector<bool> present_columns{true, true, false, false, false};
+  int display_pos_x    = 0;
+  int display_pos_y    = 0;
   int odom_pos_y       = 63;
   int gen_info_pos_x   = 233;
   int mavros_pos_x     = 233;
