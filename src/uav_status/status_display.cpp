@@ -835,7 +835,7 @@ namespace mrs_rviz_plugins
 
   void StatusDisplay::nameUpdate(){
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
-    
+
     // Controller
     curr_controller  = "!NO DATA!";
     curr_tracker     = "!NO DATA!";
@@ -1003,10 +1003,6 @@ namespace mrs_rviz_plugins
       node_stats_height = top_line_property->getBool() ? 206 : 183;
     }
 
-  }
-
-  void StatusDisplay::tmpUpdate(){
-    cm_update_required = true;
   }
 
   void StatusDisplay::movePosition(int x, int y){
