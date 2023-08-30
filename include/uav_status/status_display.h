@@ -47,6 +47,8 @@ Q_OBJECT
 public:
   StatusDisplay();
   void onInitialize() override;
+  void onDisable() override;
+  void onEnable() override;
 
   // A helper to clear this display back to the initial state.
   void reset() override;
@@ -62,6 +64,7 @@ public:
 
 private Q_SLOTS:
   void nameUpdate();
+  void topLineUpdate();
   void controlManagerUpdate();
   void odometryUpdate();
   void computerLoadUpdate();
@@ -84,6 +87,7 @@ private:
   void uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg);
 
   // New message processing methods
+  void processTopLine(const mrs_msgs::UavStatusConstPtr& msg);
   void processControlManager(const mrs_msgs::UavStatusConstPtr& msg);
   void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
   void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
@@ -93,6 +97,7 @@ private:
   void processNodeStats(const mrs_msgs::UavStatusConstPtr& msg);
 
   // Drawing methods
+  void drawTopLine();
   void drawControlManager();
   void drawOdometry();
   void drawGeneralInfo();
@@ -108,6 +113,7 @@ private:
   
   // Properties
   rviz::EditableEnumProperty* uav_name_property;
+  rviz::BoolProperty* top_line_property;
   rviz::BoolProperty* control_manager_property;
   rviz::BoolProperty* odometry_property;
   rviz::BoolProperty* computer_load_property;
@@ -118,6 +124,7 @@ private:
   rviz::IntProperty*  debug_property;
 
   // Individual overlays
+  jsk_rviz_plugins::OverlayObject::Ptr top_line_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr contol_manager_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr odometry_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr general_info_overlay;
@@ -125,6 +132,17 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr topic_rates_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr custom_strings_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_stats_overlay;
+
+  // Top line data:
+  std::string uav_name;
+  std::string uav_type;
+  std::string nato_name;
+  bool collision_avoidance_enabled;
+  bool avoiding_collision;
+  bool automatic_start_can_takeoff;
+  int num_other_uavs;
+  int secs_flown;
+  bool top_line_update_required = true;
 
   // Controller data:
   double       avg_controller_rate;
@@ -207,15 +225,22 @@ private:
 
   // | ---------------------- Layout data ----------------------- |
   std::vector<bool> present_columns{true, true, true, true, false};
-  int display_pos_x    = 0;
-  int display_pos_y    = 0;
-  int odom_pos_y       = 63;
-  int gen_info_pos_x   = 233;
-  int mavros_pos_x     = 233;
-  int mavros_pos_y     = 63;
-  int topic_rate_pos_x = 466;
-  int custom_str_pos_x = 699;
-  int node_stats_pos_x = 932;
+  int display_pos_x     = 0;
+  int display_pos_y     = 0;
+  int cm_pos_y          = 23;
+  int odom_pos_y        = 86;
+  int gen_info_pos_x    = 233;
+  int gen_info_pos_y    = 23;
+  int mavros_pos_x      = 233;
+  int mavros_pos_y      = 86;
+  int topic_rate_pos_x  = 466;
+  int topic_rate_pos_y  = 23;
+  int custom_str_pos_x  = 699;
+  int custom_str_pos_y  = 0;
+  int custom_str_height = 206;
+  int node_stats_pos_x  = 932;
+  int node_stats_pos_y  = 0;
+  int node_stats_height = 206;
 
   bool global_update_required = true;
 };

@@ -8,6 +8,7 @@ namespace mrs_rviz_plugins
   StatusDisplay::StatusDisplay(){
     id = display_number++;
     uav_name_property         = new rviz::EditableEnumProperty("Uav name", "uav1", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
+    top_line_property         = new rviz::BoolProperty("Top Line",          true,  "Show general data",                this,  SLOT(topLineUpdate()), this);
     control_manager_property  = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
     odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this,  SLOT(odometryUpdate()), this);
     computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
@@ -17,14 +18,14 @@ namespace mrs_rviz_plugins
     node_stats_property       = new rviz::BoolProperty("Node stats list",   false, "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
     
     
-    // debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
+    debug_property            = new rviz::IntProperty("number", 10, "hehe", this, SLOT(tmpUpdate()), this);
 
 
     nh = ros::NodeHandle();
   }
   
   void StatusDisplay::onInitialize(){
-
+    top_line_overlay        .reset(new jsk_rviz_plugins::OverlayObject(std::string("Top line") + std::to_string(id)));
     contol_manager_overlay  .reset(new jsk_rviz_plugins::OverlayObject(std::string("Control manager") + std::to_string(id)));
     odometry_overlay        .reset(new jsk_rviz_plugins::OverlayObject(std::string("Odometry") + std::to_string(id)));
     general_info_overlay    .reset(new jsk_rviz_plugins::OverlayObject(std::string("General info") + std::to_string(id)));
@@ -35,7 +36,6 @@ namespace mrs_rviz_plugins
 
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
   
-
     // Preparing for searching the drone's name
     XmlRpc::XmlRpcValue      req = "/node";
     XmlRpc::XmlRpcValue      res;
@@ -74,7 +74,8 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
-
+    // if(top_line_update_required   || global_update_required) 
+    drawTopLine();
     if(cm_update_required         || global_update_required) drawControlManager();
     if(odom_update_required       || global_update_required) drawOdometry();
     if(comp_state_update_required || global_update_required) drawGeneralInfo();
@@ -86,10 +87,48 @@ namespace mrs_rviz_plugins
     global_update_required = false;
   }
 
+  void StatusDisplay::drawTopLine(){
+    // Control manager overlay
+    top_line_overlay->updateTextureSize(581, 20);
+    top_line_overlay->setPosition(display_pos_x, display_pos_y);
+    top_line_overlay->show(top_line_property->getBool());
+    if(!top_line_property->getBool()){
+      return;
+    }
+
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = top_line_overlay->getBuffer();
+    QColor bg_color_ = QColor(0,  0,   0,   100);
+    QColor fg_color_ = QColor(25, 255, 240, 255);
+
+    // Setting the painter up
+    QImage hud = buffer.getQImage(*top_line_overlay, bg_color_);
+    QFont font = QFont("Courier");
+    font.setBold(true);
+    QPainter painter(&hud);
+    painter.setFont(font);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+
+    QString tmp;
+    std::string avoiding_text;
+    if(collision_avoidance_enabled && avoiding_collision){
+      avoiding_text = "!! AVOIDING COLLISION !!";
+    }else if(collision_avoidance_enabled && !avoiding_collision){
+      avoiding_text = "COL AVOID ENABLED";
+    }else {
+      avoiding_text = "COL AVOID DISABLED";
+    }
+    tmp.sprintf("ToF: %3d:%02d %s %s %s   %s  UAVs:%d", secs_flown/60, secs_flown%60, uav_name.c_str(), uav_type.c_str(), nato_name.c_str(), avoiding_text.c_str(), num_other_uavs);
+    painter.drawStaticText(0, 0, QStaticText(tmp));
+
+    top_line_overlay->setDimensions(top_line_overlay->getTextureWidth(), top_line_overlay->getTextureHeight());
+    top_line_update_required = false;
+  }
+
   void StatusDisplay::drawControlManager() {
     // Control manager overlay
     contol_manager_overlay->updateTextureSize(230, 60);
-    contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
+    contol_manager_overlay->setPosition(display_pos_x, display_pos_y + cm_pos_y);
     contol_manager_overlay->show(control_manager_property->getBool());
     if(!control_manager_property->getBool()){
       return;
@@ -157,7 +196,7 @@ namespace mrs_rviz_plugins
   void StatusDisplay::drawOdometry(){
     // Odometry overlay
     odometry_overlay->updateTextureSize(230, 120);
-    odometry_overlay->setPosition(display_pos_x,display_pos_y + odom_pos_y);
+    odometry_overlay->setPosition(display_pos_x, display_pos_y + odom_pos_y);
     odometry_overlay->show(odometry_property->getBool());
     if(!odometry_property->getBool()){
       return;
@@ -286,7 +325,7 @@ namespace mrs_rviz_plugins
 
     // General info overlay
     general_info_overlay->updateTextureSize(230, 60);
-    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y);
+    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y + gen_info_pos_y);
     general_info_overlay->show(computer_load_property->getBool());
     if(!computer_load_property->getBool()){
       return;
@@ -483,7 +522,7 @@ namespace mrs_rviz_plugins
 
     // Topic rate overlay
     topic_rates_overlay->updateTextureSize(230, 183);
-    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y);
+    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y + topic_rate_pos_y);
     topic_rates_overlay->show(topic_rates_property->getBool());
     if(!topic_rates_property->getBool()){
       return;
@@ -533,8 +572,8 @@ namespace mrs_rviz_plugins
     // Note: colors implemeted, but blinking is not
 
     // Custom string overlay
-    custom_strings_overlay->updateTextureSize(230, 183);
-    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y);
+    custom_strings_overlay->updateTextureSize(230, custom_str_height);
+    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y + custom_str_pos_y);
     custom_strings_overlay->show(custom_str_property->getBool());
     if(!custom_str_property->getBool()){
       return;
@@ -585,8 +624,8 @@ namespace mrs_rviz_plugins
     // Note: colors are 100% implemented
 
     // Rosnode stats overlay
-    rosnode_stats_overlay->updateTextureSize(394, 183);
-    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);
+    rosnode_stats_overlay->updateTextureSize(394, node_stats_height);
+    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y + node_stats_pos_y);
     rosnode_stats_overlay->show(node_stats_property->getBool());
     if(!node_stats_property->getBool()){
       return;
@@ -645,6 +684,7 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg) {
+    processTopLine(msg);
     processControlManager(msg);
     processOdometry(msg);
     processGeneralInfo(msg);
@@ -652,6 +692,26 @@ namespace mrs_rviz_plugins
     processCustomTopics(msg);
     processCustomStrings(msg);
     processNodeStats(msg);
+  }
+
+  void StatusDisplay::processTopLine(const mrs_msgs::UavStatusConstPtr& msg) {
+    std::string new_uav_name             = msg->uav_name;
+    std::string new_uav_type             = msg->uav_type;
+    std::string new_nato_name            = msg->nato_name;
+    bool new_collision_avoidance_enabled = msg->collision_avoidance_enabled;
+    bool new_avoiding_collision          = msg->avoiding_collision;
+    bool new_automatic_start_can_takeoff = msg->automatic_start_can_takeoff;
+    int new_num_other_uavs               = msg->num_other_uavs;
+    int new_secs_flown                   = msg->secs_flown;
+
+    top_line_update_required |= compareAndUpdate(new_uav_name, uav_name);
+    top_line_update_required |= compareAndUpdate(new_uav_type, uav_type);
+    top_line_update_required |= compareAndUpdate(new_nato_name, nato_name);
+    top_line_update_required |= compareAndUpdate(new_collision_avoidance_enabled, collision_avoidance_enabled);
+    top_line_update_required |= compareAndUpdate(new_avoiding_collision, avoiding_collision);
+    top_line_update_required |= compareAndUpdate(new_automatic_start_can_takeoff, automatic_start_can_takeoff);
+    top_line_update_required |= compareAndUpdate(new_num_other_uavs, num_other_uavs);
+    top_line_update_required |= compareAndUpdate(new_secs_flown, secs_flown);
   }
 
   void StatusDisplay::processControlManager(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -803,7 +863,7 @@ namespace mrs_rviz_plugins
   void StatusDisplay::processCustomStrings(const mrs_msgs::UavStatusConstPtr& msg) {
     std::vector<std::string> new_custom_string_vec = msg->custom_string_outputs;
 
-    topics_update_required |= compareAndUpdate(new_custom_string_vec, custom_string_vec);
+    string_update_required |= compareAndUpdate(new_custom_string_vec, custom_string_vec);
   }
 
   void StatusDisplay::processNodeStats(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -837,9 +897,15 @@ namespace mrs_rviz_plugins
     comp_state_update_required = true;
   }
 
+  void StatusDisplay::topLineUpdate() {
+    top_line_update_required = true;
+    controlManagerUpdate();
+  }
+
   void StatusDisplay::controlManagerUpdate() {
     cm_update_required = true;
     present_columns[CM_INDEX] = control_manager_property->getBool() || odometry_property->getBool();
+    cm_pos_y = top_line_property->getBool() ? 23 : 0;
     odometryUpdate();
     computerLoadUpdate();
     return;
@@ -857,11 +923,9 @@ namespace mrs_rviz_plugins
 
     present_columns[ODOM_INDEX] = true;
 
-    if(control_manager_property->getBool()){
-      odom_pos_y = 63;
-    } else {
-      odom_pos_y = 0;
-    }
+    odom_pos_y = 0;
+    odom_pos_y += top_line_property->getBool() ? 23 : 0;
+    odom_pos_y += control_manager_property->getBool() ? 63 : 0;
     computerLoadUpdate();
   }
 
@@ -882,6 +946,7 @@ namespace mrs_rviz_plugins
     for(int i=0; i<GEN_INFO_INDEX; ++i){
       gen_info_pos_x += present_columns[i] ? 233 : 0;
     }
+    gen_info_pos_y = top_line_property->getBool() ? 23 : 0;
     mavrosStateUpdate();
   }
 
@@ -902,11 +967,9 @@ namespace mrs_rviz_plugins
       mavros_pos_x += present_columns[i] ? 233 : 0;
     }
 
-    if(computer_load_property->getBool()){
-      mavros_pos_y = 63;
-    } else {
-      mavros_pos_y = 0;
-    }
+    mavros_pos_y = 0;
+    mavros_pos_y += top_line_property->getBool() ? 23 : 0;
+    mavros_pos_y += computer_load_property->getBool() ? 63 : 0;
     topicRatesUpdate();
   }
 
@@ -921,9 +984,11 @@ namespace mrs_rviz_plugins
     present_columns[TOPIC_RATE_INDEX] = true;
 
     topic_rate_pos_x = 0;
+    topic_rate_pos_y = top_line_property->getBool() ? 23 : 0;
     for(int i=0; i<TOPIC_RATE_INDEX; ++i){
       topic_rate_pos_x += present_columns[i] ? 233 : 0;
     }
+
     customStrUpdate();
   }
 
@@ -937,10 +1002,21 @@ namespace mrs_rviz_plugins
 
     present_columns[CUSTOM_STR_INDEX] = true;
 
+    int col_num = 0;
     custom_str_pos_x = 0;
     for(int i=0; i<CUSTOM_STR_INDEX; ++i){
       custom_str_pos_x += present_columns[i] ? 233 : 0;
+      col_num += present_columns[i] ? 1 : 0;
     }
+
+    if(col_num < CUSTOM_STR_INDEX){
+      custom_str_pos_y = top_line_property->getBool() ? 23 : 0;
+      custom_str_height = 183;
+    } else {
+      custom_str_pos_y = 0;
+      custom_str_height = top_line_property->getBool() ? 206 : 183;
+    }
+
     nodeStatsUpdate();
   }
 
@@ -953,10 +1029,21 @@ namespace mrs_rviz_plugins
 
     present_columns[NODE_STATS_INDEX] = true;
 
+    int col_num = 1;
     node_stats_pos_x = 0;
     for(int i=0; i<NODE_STATS_INDEX; ++i){
       node_stats_pos_x += present_columns[i] ? 233 : 0;
+      col_num += present_columns[i] ? 1 : 0;
     }
+
+    if(col_num < NODE_STATS_INDEX){
+      node_stats_pos_y = top_line_property->getBool() ? 23 : 0;
+      node_stats_height = 183;
+    } else {
+      node_stats_pos_y = 0;
+      node_stats_height = top_line_property->getBool() ? 206 : 183;
+    }
+
   }
 
   void StatusDisplay::tmpUpdate(){
@@ -970,22 +1057,53 @@ namespace mrs_rviz_plugins
   void StatusDisplay::setPosition(int x, int y){
     display_pos_x = x;
     display_pos_y = y;
-    contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
-    odometry_overlay->setPosition(display_pos_x,display_pos_y + odom_pos_y);
-    general_info_overlay->setPosition(display_pos_x + gen_info_pos_x, display_pos_y);
-    mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
-    topic_rates_overlay->setPosition(display_pos_x + topic_rate_pos_x, display_pos_y);
-    custom_strings_overlay->setPosition(display_pos_x + custom_str_pos_x, display_pos_y);
-    rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);
+    topLineUpdate();
   }
 
   bool StatusDisplay::isInRegion(int x, int y){
-    ROS_INFO("isInRegion called. res: %d", (display_pos_y < y && display_pos_y + 183 > y && 
-            display_pos_x < x && display_pos_x + 932 + 394 > x));
+    if(!isEnabled()){
+      return false;
+    }
+    int right = 0;
+    int bottom = 0;
+    for(int i=0; i<=NODE_STATS_INDEX; ++i){
+      right += present_columns[i] ? 233 : 0;
+    }
+    bottom += top_line_property->getBool() ? 23 : 0;
+    bottom += right > 0 ? 186 : 23;
+    right += node_stats_property->getBool() ? 394 : 0;
+    if(right == 0 && top_line_property->getBool()){
+      right = 581;
+    }
 
-    return (display_pos_y < y && display_pos_y + 183 > y && 
-            display_pos_x < x && display_pos_x + 932 + 394 > x);
+    return (display_pos_y < y && display_pos_y + bottom > y && 
+            display_pos_x < x && display_pos_x + right > x);
   }
+
+  void StatusDisplay::onEnable(){
+    top_line_overlay->show();
+    contol_manager_overlay->show();
+    odometry_overlay->show();
+    general_info_overlay->show();
+    mavros_state_overlay->show();
+    topic_rates_overlay->show();
+    custom_strings_overlay->show();
+    rosnode_stats_overlay->show();
+    global_update_required = true;
+  }
+
+  void StatusDisplay::onDisable(){
+    top_line_overlay->hide();
+    contol_manager_overlay->hide();
+    odometry_overlay->hide();
+    general_info_overlay->hide();
+    mavros_state_overlay->hide();
+    topic_rates_overlay->hide();
+    custom_strings_overlay->hide();
+    rosnode_stats_overlay->hide();
+    global_update_required = true;
+  }
+
 
 }// namespace mrs_rviz_plugins
 
