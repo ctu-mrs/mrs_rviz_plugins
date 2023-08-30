@@ -3,11 +3,11 @@
 
 namespace mrs_rviz_plugins
 {
-  int StatusDisplay::display_number = 1;
+  int StatusDisplay::display_number = 0;
 
   StatusDisplay::StatusDisplay(){
     id = display_number++;
-    uav_name_property         = new rviz::StringProperty("Uav name",       "uav22", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
+    uav_name_property         = new rviz::EditableEnumProperty("Uav name", "uav1", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
     control_manager_property  = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
     odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this,  SLOT(odometryUpdate()), this);
     computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
@@ -34,6 +34,43 @@ namespace mrs_rviz_plugins
     rosnode_stats_overlay   .reset(new jsk_rviz_plugins::OverlayObject(std::string("Rosnode shitlist") + std::to_string(id)));
 
     uav_status_sub = nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
+  
+
+    // Preparing for searching the drone's name
+    XmlRpc::XmlRpcValue      req = "/node";
+    XmlRpc::XmlRpcValue      res;
+    XmlRpc::XmlRpcValue      pay;
+    std::vector<std::string> drone_names;
+    ros::master::execute("getSystemState", req, res, pay, true);
+
+    // Search for the drone's name
+    std::string state[res[2][2].size()];
+    for (int x = 0; x < res[2][2].size(); x++) {
+      std::string name = res[2][2][x][0].toXml().c_str();
+      if (name.find("trajectory_generation/path") == std::string::npos) {
+        continue;
+      }
+      ROS_INFO("[Control tool]: %s found", name.c_str());
+
+      std::size_t index = name.find("/", 0, 1);
+      if (index != std::string::npos) {
+        name = name.erase(0, index + 1);
+      }
+
+      index = name.find("/", 1, 1);
+      if (index != std::string::npos) {
+        name = name.erase(index);
+      }
+
+      drone_names.push_back(name);
+      uav_name_property->addOptionStd(name);
+      ROS_INFO("[Control tool]: %s was added to drone names", name.c_str());
+      state[x] = name;
+    }
+
+    if(drone_names.size() > id){
+      uav_name_property->setStdString(drone_names[id]);
+    }
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
@@ -50,9 +87,6 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawControlManager() {
-    // TODO: if controller_rate == 0 show NO_CONTROLLER and NO_TRACKER
-
-
     // Control manager overlay
     contol_manager_overlay->updateTextureSize(230, 60);
     contol_manager_overlay->setPosition(display_pos_x, display_pos_y);
@@ -83,11 +117,16 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(152, 0, control_manager_freq_text);
 
     // Controller
-    if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 26, 80, 13, RED_COLOR);
+    if(controller_rate == 0){
+      painter.fillRect(0, 26, 110, 13, RED_COLOR);
+      painter.drawStaticText(0, 20, QStaticText("NO_COTROLLER"));
+    }else {
+      if(curr_controller.find("!NO DATA!") != std::string::npos){
+        painter.fillRect(0, 26, 80, 13, RED_COLOR);
+      }
+      QStaticText controller_data_text = QStaticText(QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str()));
+      painter.drawStaticText(0, 20, controller_data_text);
     }
-    QStaticText controller_data_text = QStaticText(QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str()));
-    painter.drawStaticText(0, 20, controller_data_text);
     if(!callbacks_enabled){
       painter.fillRect(169, 26, 48, 13, RED_COLOR);
     }
@@ -95,15 +134,20 @@ namespace mrs_rviz_plugins
     painter.drawStaticText(171, 20, no_callback_text);
 
     // Tracker
-    if(curr_controller.find("!NO DATA!") != std::string::npos){
-      painter.fillRect(0, 46, 80, 13, RED_COLOR);
+    if(controller_rate == 0){
+      painter.fillRect(0, 46, 92, 13, RED_COLOR);
+      painter.drawStaticText(0, 40, QStaticText("NO_TRACKER"));
+    }else {
+      if(curr_controller.find("!NO DATA!") != std::string::npos){
+        painter.fillRect(0, 46, 80, 13, RED_COLOR);
+      }
+      if(null_tracker){
+        painter.fillRect(0, 46, 100, 13, RED_COLOR);
+      }
+      QStaticText tracker_data_text = QStaticText(QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str()));
+      painter.drawStaticText(0, 40, tracker_data_text);
     }
-    if(null_tracker){
-      painter.fillRect(0, 46, 100, 13, RED_COLOR);
-    }
-    QStaticText tracker_data_text = QStaticText(QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str()));
     QStaticText has_goal_text = QStaticText(QString("%1").arg(has_goal ? " FLY" : "IDLE"));
-    painter.drawStaticText(0, 40, tracker_data_text);
     painter.drawStaticText(180, 40, has_goal_text);
 
     contol_manager_overlay->setDimensions(contol_manager_overlay->getTextureWidth(), contol_manager_overlay->getTextureHeight());
@@ -190,7 +234,6 @@ namespace mrs_rviz_plugins
       double cerr_z   = std::fabs(state_z - cmd_z);
       double cerr_hdg = std::fabs(heading - cmd_hdg);
 
-      // TODO: make color 0, 0, 0, 0 if everything is alright
       QColor x_warning_color;
       if (cerr_x < 0.5) {
         x_warning_color = NO_COLOR;
@@ -539,6 +582,8 @@ namespace mrs_rviz_plugins
   }
 
   void StatusDisplay::drawNodeStats(){
+    // Note: colors are 100% implemented
+
     // Rosnode stats overlay
     rosnode_stats_overlay->updateTextureSize(394, 183);
     rosnode_stats_overlay->setPosition(display_pos_x + node_stats_pos_x, display_pos_y);

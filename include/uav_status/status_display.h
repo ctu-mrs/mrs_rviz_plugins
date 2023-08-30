@@ -107,7 +107,7 @@ private:
   ros::Subscriber constraint_manager_sub;
   
   // Properties
-  rviz::StringProperty* uav_name_property;
+  rviz::EditableEnumProperty* uav_name_property;
   rviz::BoolProperty* control_manager_property;
   rviz::BoolProperty* odometry_property;
   rviz::BoolProperty* computer_load_property;
@@ -129,7 +129,7 @@ private:
   // Controller data:
   double       avg_controller_rate;
   bool         null_tracker;
-  double       controller_rate;
+  double       controller_rate = 0;
   std::string  curr_controller  = "!NO DATA!";
   std::string  curr_tracker     = "!NO DATA!";
   std::string  curr_gains;
@@ -206,7 +206,7 @@ private:
   const QColor NO_COLOR       = QColor(0, 0, 0, 0);
 
   // | ---------------------- Layout data ----------------------- |
-  std::vector<bool> present_columns{true, true, false, false, false};
+  std::vector<bool> present_columns{true, true, true, true, false};
   int display_pos_x    = 0;
   int display_pos_y    = 0;
   int odom_pos_y       = 63;
