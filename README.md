@@ -19,6 +19,11 @@ Integrates seamlessly.
 
 Integrates seamlessly.
 
+#### mrs_msgs/UavStatus vizualization
+
+Displays useful information about the UAV state and sensors, integrates seamlessly.
+Use `mrs_rviz_plugins/StatusDisplay` display type.
+
 #### NamedSetGoal
 
 RViz goal tool with modifiable label.
@@ -33,6 +38,7 @@ Shortcut key for the tool is 'c'.
 |        Mouse event        |            Action            |
 |:-------------------------:|:----------------------------:|
 |       Click and drag      | Select objects on the screen |
+|   Shift + Click and drag  |      Move Status Display     |
 |   Right-click (on drone)  |  Show services to be called  |
 |      Alt + Left-click     |            Rotate            |
 |     Alt + Middle-click    |           Move X/Y           |
