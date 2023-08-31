@@ -233,20 +233,21 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
     }
   }
 
-
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
   if (shape_property->getOptionInt() == 1) {
+
     rviz::Arrow* arrow = new rviz::Arrow(scene_manager_, node);
     arrow->setDirection(Ogre::Vector3(1, 0, 0));
     arrow->setColor(1, 0.1, 0, 1);
     arrow->set(2, 0.2, 0.6, 0.4);
     arrows.push_back(arrow);
+
   } else if (shape_property->getOptionInt() == 0) {
+
     axes.push_back(new rviz::Axes(scene_manager_, node));
   }
-
 
   const Ogre::Vector3 position = Ogre::Vector3(x, y, pose.position.z);
 
