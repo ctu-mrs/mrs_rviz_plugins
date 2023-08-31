@@ -224,8 +224,8 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
   } else {
     const auto& point_transformed = transformer.transform(pose, tf.value());
     if (!point_transformed) {
-      setStatus("[Waypoint planner]: Unable to transform cmd reference from body to current frame => z-axis component of visual entity set to null.");
-      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f => z-axis component of visual entity set to null.",
+      setStatus("[Waypoint planner]: Unable to transform cmd reference from body to current frame. Z component of visual entity set to null.");
+      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f. Z component of visual entity set to null.",
                source_frame.c_str(), context_->getFrameManager()->getFixedFrame().c_str(), ros::Time::now().toSec());
       return;
     } else {
@@ -265,7 +265,7 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event) {
-  const int res = PoseTool::processMouseEvent(event);
+  int res = PoseTool::processMouseEvent(event);
   return res & (~Finished);
 }
 
