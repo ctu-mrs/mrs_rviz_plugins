@@ -18,8 +18,8 @@
 #include <rviz/display.h>
 #include <rviz/display_group.h>
 #include <rviz/properties/property.h>
-#include <rviz/properties/property_tree_model.h>
 #include <rviz/properties/bool_property.h>
+#include <rviz/properties/color_property.h>
 #include <rviz/message_filter_display.h>
 
 #include "uav_status/overlay_utils.h"
@@ -71,6 +71,7 @@ public:
 private Q_SLOTS:
   // Property change callbacks
   void nameUpdate();
+  void colorUpdate();
   void topLineUpdate();
   void controlManagerUpdate();
   void odometryUpdate();
@@ -117,6 +118,7 @@ private:
   
   // Properties
   rviz::EditableEnumProperty* uav_name_property;
+  rviz::ColorProperty* text_color_property;
   rviz::BoolProperty* top_line_property;
   rviz::BoolProperty* control_manager_property;
   rviz::BoolProperty* odometry_property;
@@ -222,6 +224,8 @@ private:
   ros::Subscriber uav_status_sub;
   bool is_inited = false;
   static int display_number;
+  QColor bg_color = QColor(0,  0,   0,   100);
+  QColor fg_color = QColor(25, 255, 240, 255);
   int id; 
 
   // | --------------------- Default values --------------------- |

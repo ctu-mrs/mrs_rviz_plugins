@@ -22,7 +22,7 @@ Integrates seamlessly.
 #### mrs_msgs/UavStatus vizualization
 
 Displays useful information about the UAV state and sensors, integrates seamlessly.
-Use `mrs_rviz_plugins/StatusDisplay` display type.
+Use `mrs_rviz_plugins/UAV Status` display type.
 
 #### NamedSetGoal
 

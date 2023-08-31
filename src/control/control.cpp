@@ -26,9 +26,6 @@ ControlTool::~ControlTool(){
   if(dis != nullptr){
     delete dis;
   }
-  if(overlay_picker_tool != nullptr){
-    delete overlay_picker_tool;
-  }
 }
 
 void ControlTool::onInitialize(){

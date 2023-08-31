@@ -15,11 +15,10 @@
 #include <OGRE/OgreSceneManager.h>
 
 #include <rviz/render_panel.h>
-#include <rviz/default_plugin/interactive_marker_display.h>
-#include <rviz/default_plugin/tools/selection_tool.h>
-
 #include <rviz/selection/selection_handler.h>
 #include <rviz/selection/selection_manager.h>
+#include <rviz/default_plugin/tools/selection_tool.h>
+#include <rviz/default_plugin/interactive_marker_display.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/pointer_cast.hpp>

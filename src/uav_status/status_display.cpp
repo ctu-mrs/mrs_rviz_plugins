@@ -7,15 +7,17 @@ namespace mrs_rviz_plugins
 
   StatusDisplay::StatusDisplay(){
     id = display_number++;
-    uav_name_property         = new rviz::EditableEnumProperty("Uav name", "uav1", "Uav name to show status data",     this, SLOT(nameUpdate()), this);
-    top_line_property         = new rviz::BoolProperty("Top Line",          true,  "Show general data",                this,  SLOT(topLineUpdate()), this);
-    control_manager_property  = new rviz::BoolProperty("Control manager",   true,  "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
-    odometry_property         = new rviz::BoolProperty("Odometry",          true,  "Show odometry data",               this,  SLOT(odometryUpdate()), this);
-    computer_load_property    = new rviz::BoolProperty("Computer load",     true,  "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
-    mavros_state_property     = new rviz::BoolProperty("Mavros state",      true,  "Show mavros state data",           this,  SLOT(mavrosStateUpdate()), this);
-    topic_rates_property      = new rviz::BoolProperty("Topic rates",       true,  "Show somethin, idk anythin 1",     this,  SLOT(topicRatesUpdate()), this);
-    custom_str_property       = new rviz::BoolProperty("Custom strings",    true,  "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
-    node_stats_property       = new rviz::BoolProperty("Node stats list",   false, "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
+
+    text_color_property       = new rviz::ColorProperty("Text color",      fg_color, "Color of displayed text",          this,  SLOT(colorUpdate()), this);
+    uav_name_property         = new rviz::EditableEnumProperty("Uav name", "uav1",   "Uav name to show status data",     this,  SLOT(nameUpdate()), this);
+    top_line_property         = new rviz::BoolProperty("Top Line",          true,    "Show general data",                this,  SLOT(topLineUpdate()), this);
+    control_manager_property  = new rviz::BoolProperty("Control manager",   true,    "Show control manager data",        this,  SLOT(controlManagerUpdate()), this);
+    odometry_property         = new rviz::BoolProperty("Odometry",          true,    "Show odometry data",               this,  SLOT(odometryUpdate()), this);
+    computer_load_property    = new rviz::BoolProperty("Computer load",     true,    "Show computer load data",          this,  SLOT(computerLoadUpdate()), this);
+    mavros_state_property     = new rviz::BoolProperty("Mavros state",      true,    "Show mavros state data",           this,  SLOT(mavrosStateUpdate()), this);
+    topic_rates_property      = new rviz::BoolProperty("Topic rates",       true,    "Show somethin, idk anythin 1",     this,  SLOT(topicRatesUpdate()), this);
+    custom_str_property       = new rviz::BoolProperty("Custom strings",    true,    "Show somethin, idk anythin 2",     this,  SLOT(customStrUpdate()), this);
+    node_stats_property       = new rviz::BoolProperty("Node stats list",   false,   "Show rosnodes and their workload", this,  SLOT(nodeStatsUpdate()), this);
     
     nh = ros::NodeHandle();
   }
@@ -134,18 +136,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = top_line_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*top_line_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = top_line_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*top_line_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     QString tmp;
     std::string avoiding_text;
@@ -172,18 +171,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = contol_manager_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*contol_manager_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = contol_manager_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*contol_manager_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Main row
     QStaticText control_manager_text = QStaticText("Control manager");
@@ -240,18 +236,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = odometry_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*odometry_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = odometry_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*odometry_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Main row
     QStaticText odometry_text = QStaticText("Odom");
@@ -367,18 +360,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = general_info_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*general_info_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = general_info_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*general_info_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
  
     // CPU load
     QColor cpu_load_color = NO_COLOR;
@@ -440,18 +430,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*mavros_state_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*mavros_state_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Main row
     QStaticText mavros_text = QStaticText("Mavros");
@@ -560,18 +547,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = topic_rates_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*topic_rates_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = topic_rates_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*topic_rates_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Setting the stream up
     QString frequency;
@@ -609,18 +593,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = custom_strings_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*custom_strings_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = custom_strings_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*custom_strings_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Drawing strings
     for (size_t i = 0; i < custom_string_vec.size(); i++){
@@ -659,18 +640,15 @@ namespace mrs_rviz_plugins
       return;
     }
 
-    jsk_rviz_plugins::ScopedPixelBuffer buffer = rosnode_stats_overlay->getBuffer();
-    QColor bg_color_ = QColor(0,  0,   0,   100);
-    QColor fg_color_ = QColor(25, 255, 240, 255);
-
     // Setting the painter up
-    QImage hud = buffer.getQImage(*rosnode_stats_overlay, bg_color_);
+    jsk_rviz_plugins::ScopedPixelBuffer buffer = rosnode_stats_overlay->getBuffer();
+    QImage hud = buffer.getQImage(*rosnode_stats_overlay, bg_color);
     QFont font = QFont("Courier");
     font.setBold(true);
     QPainter painter(&hud);
     painter.setFont(font);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(fg_color_, 2, Qt::SolidLine));
+    painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
     // Main row
     QString tmp;
@@ -871,7 +849,6 @@ namespace mrs_rviz_plugins
     mrs_msgs::NodeCpuLoad new_node_cpu_load_vec = msg->node_cpu_loads ;
     double                new_cpu_load_total = msg->cpu_load_total;
 
-
     node_stats_update_required |= compareAndUpdate(new_node_cpu_load_vec, node_cpu_load_vec);
     node_stats_update_required |= compareAndUpdate(new_cpu_load_total, cpu_load_total);
   }
@@ -897,6 +874,11 @@ namespace mrs_rviz_plugins
 
     // General info
     comp_state_update_required = true;
+  }
+
+  void StatusDisplay::colorUpdate() {
+    fg_color = text_color_property->getColor();
+    global_update_required = true;
   }
 
   void StatusDisplay::topLineUpdate() {
