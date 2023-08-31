@@ -104,10 +104,7 @@ namespace jsk_rviz_plugins
   void OverlayPickerTool::onClicked(rviz::ViewportMouseEvent& event)
   {
     is_moving_ = true;
-    // check the active overlay plugin
 
-    if(!context_){
-    }
     rviz::DisplayGroup* display_group = context_->getRootDisplayGroup();
     
     handleDisplayClick(display_group, event);

@@ -67,9 +67,52 @@ namespace mrs_rviz_plugins
     if(drone_names.size() > id){
       uav_name_property->setStdString(drone_names[id]);
     }
+
+    // Searching for initial coordinates
+    rviz::DisplayGroup* display_group = context_->getRootDisplayGroup();
+    std::pair<int, int> point = getSpawnCoordinates(dynamic_cast<rviz::Property*>(display_group));
+    display_pos_x = point.first;
+    display_pos_y = point.second;
+
+    is_inited = true;
+  }
+
+  std::pair<int, int> StatusDisplay::getSpawnCoordinates(rviz::Property* property) {
+    rviz::DisplayGroup* display_group = nullptr;
+    StatusDisplay* status_display = nullptr;
+    try {
+      display_group = dynamic_cast<rviz::DisplayGroup*>(property);
+    }
+    catch (const std::bad_cast& e) {
+      display_group = nullptr;
+    }
+    try {
+      status_display = dynamic_cast<StatusDisplay*>(property);
+    }
+    catch (const std::bad_cast& e) {
+      status_display = nullptr;
+    }
+
+    if(display_group){
+      std::pair<int, int> res = std::make_pair(0, 0);
+      for (int i = 0; i < display_group->numChildren(); i++) {
+        std::pair<int, int> current = getSpawnCoordinates(display_group->childAt(i));
+        // Taking the biggest from both pairs:
+        res = std::make_pair(std::max(current.first, res.first), std::max(current.second, res.second));
+      }
+      return res;
+    }
+    if(status_display && status_display->getIsInited()){
+      return status_display->getBottomLine();
+    }
+    return std::make_pair(0, 0);
   }
 
   void StatusDisplay::update(float wall_dt, float ros_dt){
+    if(!isEnabled()) {
+      return;
+    }
+
     if(top_line_update_required   || global_update_required) drawTopLine();
     if(cm_update_required         || global_update_required) drawControlManager();
     if(odom_update_required       || global_update_required) drawOdometry();
@@ -1013,6 +1056,22 @@ namespace mrs_rviz_plugins
     display_pos_x = x;
     display_pos_y = y;
     topLineUpdate();
+  }
+
+  std::pair<int, int> StatusDisplay::getBottomLine() {
+    if(!isEnabled() || !is_inited){
+      return std::make_pair(0,0);
+    }
+    int right = 0;
+    int bottom = 0;
+    for(int i=0; i<=NODE_STATS_INDEX; ++i){
+      right += present_columns[i] ? 233 : 0;
+    }
+    bottom += top_line_property->getBool() ? 23 : 0;
+    bottom += right > 0 ? 186 : 23;
+    right += node_stats_property->getBool() ? 394 : 0;
+
+    return std::make_pair(display_pos_x, display_pos_y + bottom + 3);
   }
 
   bool StatusDisplay::isInRegion(int x, int y){

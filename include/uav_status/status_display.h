@@ -7,22 +7,29 @@
 #include <ros/ros.h>
 #endif
 
+#include <utility>
+#include <algorithm>
+
+#include <QTextStream>
 #include <QStaticText>
 #include <QPainter>
 #include <QColor>
-#include <QTextStream>
 
+#include <rviz/display.h>
+#include <rviz/display_group.h>
+#include <rviz/properties/property.h>
+#include <rviz/properties/property_tree_model.h>
 #include <rviz/properties/bool_property.h>
+#include <rviz/message_filter_display.h>
 
 #include "uav_status/overlay_utils.h"
 
+#include <mrs_msgs/ConstraintManagerDiagnostics.h>
+#include <mrs_msgs/GainManagerDiagnostics.h>
 #include <mrs_msgs/NodeCpuLoad.h>
 #include <mrs_msgs/CustomTopic.h>
 #include <mrs_msgs/UavStatus.h>
-#include <mrs_msgs/GainManagerDiagnostics.h>
-#include <mrs_msgs/ConstraintManagerDiagnostics.h>
 
-#include <rviz/message_filter_display.h>
 
 #define NORMAL 100
 #define FIELD 101
@@ -74,7 +81,10 @@ private Q_SLOTS:
   void nodeStatsUpdate();
 
 private:
-  // Helper function
+  // Helper functions
+  std::pair<int, int> getSpawnCoordinates(rviz::Property* property);
+  std::pair<int, int> getBottomLine();
+  bool getIsInited(){ return is_inited; }
   QColor getColor(int code){
     if(code == NORMAL) return NO_COLOR;
     if(code == GREEN) return NO_COLOR;
@@ -210,12 +220,14 @@ private:
   // | ----------------------- Attributes ----------------------- |
   ros::NodeHandle nh;
   ros::Subscriber uav_status_sub;
+  bool is_inited = false;
   static int display_number;
   int id; 
 
   // | --------------------- Default values --------------------- |
   const QColor RED_COLOR      = QColor(255, 0, 0, 255);
   const QColor YELLOW_COLOR   = QColor(255, 255, 0, 255);
+  const QColor GREEN_COLOR    = QColor(0, 255, 0, 255);
   const QColor NO_COLOR       = QColor(0, 0, 0, 0);
 
   // | ---------------------- Layout data ----------------------- |
