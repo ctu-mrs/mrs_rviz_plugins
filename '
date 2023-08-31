@@ -224,8 +224,8 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
   } else {
     const auto& point_transformed = transformer.transform(pose, tf.value());
     if (!point_transformed) {
-      setStatus("[Waypoint planner]: Unable to transform cmd reference from body to current frame => z-axis component of visual entity set to null.");
-      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f => z-axis component of visual entity set to null.",
+      setStatus("[Waypoint planner]: Unable to transform cmd reference from body to current frame. Z component of visual entity set to null.");
+      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f. Z component of visual entity set to null.",
                source_frame.c_str(), context_->getFrameManager()->getFixedFrame().c_str(), ros::Time::now().toSec());
       return;
     } else {
@@ -233,21 +233,20 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
     }
   }
 
+
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
   if (shape_property->getOptionInt() == 1) {
-
     rviz::Arrow* arrow = new rviz::Arrow(scene_manager_, node);
     arrow->setDirection(Ogre::Vector3(1, 0, 0));
     arrow->setColor(1, 0.1, 0, 1);
     arrow->set(2, 0.2, 0.6, 0.4);
     arrows.push_back(arrow);
-
   } else if (shape_property->getOptionInt() == 0) {
-
     axes.push_back(new rviz::Axes(scene_manager_, node));
   }
+
 
   const Ogre::Vector3 position = Ogre::Vector3(x, y, pose.position.z);
 
@@ -266,7 +265,7 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event) {
-  const int res = PoseTool::processMouseEvent(event);
+  int res = PoseTool::processMouseEvent(event);
   return res & (~Finished);
 }
 
