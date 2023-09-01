@@ -224,27 +224,27 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   return menu;
 }
 
-void ImServer::flyForwardSelected(){
+void ImServer::flyForwardSelected(bool global_mode_on){
   for(const auto& drone : selected_drones){
-    drone->flyForward();
+    drone->flyForward(global_mode_on);
   }
 }
 
-void ImServer::flyBackwardSelected(){
+void ImServer::flyBackwardSelected(bool global_mode_on){
   for(const auto& drone : selected_drones){
-    drone->flyBackward();
+    drone->flyBackward(global_mode_on);
   }
 }
 
-void ImServer::flyRightSelected(){
+void ImServer::flyRightSelected(bool global_mode_on){
   for(const auto& drone : selected_drones){
-    drone->flyRight();
+    drone->flyRight(global_mode_on);
   }
 }
 
-void ImServer::flyLeftSelected(){
+void ImServer::flyLeftSelected(bool global_mode_on){
   for(const auto& drone : selected_drones){
-    drone->flyLeft();
+    drone->flyLeft(global_mode_on);
   }
 }
 

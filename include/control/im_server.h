@@ -43,10 +43,10 @@ public:
   ~ImServer();
 
   void addDrone(const std::string& name);
-  void flyForwardSelected();
-  void flyBackwardSelected();
-  void flyRightSelected();
-  void flyLeftSelected();
+  void flyForwardSelected(bool global_mode_on);
+  void flyBackwardSelected(bool global_mode_on);
+  void flyRightSelected(bool global_mode_on);
+  void flyLeftSelected(bool global_mode_on);
   void flyUpSelected();
   void flyDownSelected();
   void rotateClockwiseSelected();

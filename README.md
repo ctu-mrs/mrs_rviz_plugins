@@ -49,6 +49,7 @@ Shortcut key for the tool is 'c'.
 ##### Controlling the UAV through RVIZ  
 
 Press the 'R' key to enter the "remote" mode. While in this mode, you can fly the UAV with your keyboard.  
+While in remote mode, press 'G' to switch to global frame.  
 Only one key at a time is registered, multiple key inputs are not supported.
 
 |        Key       |        Action        |

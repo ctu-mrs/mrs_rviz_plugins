@@ -58,6 +58,7 @@ protected:
   rviz::InteractiveMarkerDisplay* dis = nullptr;
   jsk_rviz_plugins::OverlayPickerTool* overlay_picker_tool = nullptr;
   bool remote_mode_on = false;
+  bool global_mode_on = false;
 
   // | --------------------- Default values --------------------- |
   const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off";
@@ -73,6 +74,7 @@ protected:
   const int KEY_K = 75;
   const int KEY_L = 76;
   const int KEY_R = 82;
+  const int KEY_G = 71;
   const int KEY_F = 70;
   const int KEY_Q = 81;
   const int KEY_E = 69;

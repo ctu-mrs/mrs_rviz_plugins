@@ -9,6 +9,7 @@ DroneEntity::DroneEntity(const std::string& name_){
   nh = ros::NodeHandle(name);
   status_subscriber = nh.subscribe("mrs_uav_status/uav_status", 1, &DroneEntity::statusCallback, this, ros::TransportHints().tcpNoDelay());
   custom_services_subsrciber = nh.subscribe("mrs_uav_status/set_trigger_service", 5, &DroneEntity::newSeviceCallback, this, ros::TransportHints().tcpNoDelay());
+  position_cmd_subscriber = nh.subscribe("control_manager/position_cmd", 5, &DroneEntity::positionCmdCallback, this, ros::TransportHints().tcpNoDelay());
 
   server = new interactive_markers::InteractiveMarkerServer("control", name.c_str(), true);
 
@@ -226,6 +227,10 @@ void DroneEntity::newSeviceCallback(const std_msgs::StringConstPtr& msg) {
   ROS_INFO("[Control tool] %s: new service \"%s\" has been added.", name.c_str(), service_name.c_str());
 }
 
+void DroneEntity::positionCmdCallback(const mrs_msgs::PositionCommandConstPtr& msg) {
+  last_position = *msg;
+}
+
 // Menu callbacks
 void DroneEntity::land(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   land();
@@ -374,50 +379,82 @@ bool DroneEntity::setHdgEstimator(const std::string& value) {
   return service.response.success; 
 }
 
-bool DroneEntity::flyForward() {
+bool DroneEntity::flyForward(bool global_mode_on) {
   mrs_msgs::ReferenceStampedSrv reference;
-  reference.request.header.frame_id = name + "/fcu_untilted";
-  reference.request.header.stamp = ros::Time::now();
-  reference.request.reference.position.x = 2.0;
-  reference.request.reference.position.y = 0.0;
-  reference.request.reference.position.z = 0.0;
-  reference.request.reference.heading = 0.0;
+  if(global_mode_on){
+    reference.request.header.frame_id = last_position.header.frame_id;
+    reference.request.reference.position.x = last_position.position.x + 2.0;
+    reference.request.reference.position.y = last_position.position.y;
+    reference.request.reference.position.z = last_position.position.z;
+    reference.request.reference.heading = last_position.heading;
+  } else {
+    reference.request.header.frame_id = name + "/fcu_untilted";
+    reference.request.header.stamp = ros::Time::now();
+    reference.request.reference.position.x = 2.0;
+    reference.request.reference.position.y = 0.0;
+    reference.request.reference.position.z = 0.0;
+    reference.request.reference.heading = 0.0;
+  }
   service_goto_reference.call(reference);
   return reference.response.success;
 }
 
-bool DroneEntity::flyBackward() {
+bool DroneEntity::flyBackward(bool global_mode_on) {
   mrs_msgs::ReferenceStampedSrv reference;
-  reference.request.header.frame_id = name + "/fcu_untilted";
-  reference.request.header.stamp = ros::Time::now();
-  reference.request.reference.position.x = -2.0;
-  reference.request.reference.position.y = 0.0;
-  reference.request.reference.position.z = 0.0;
-  reference.request.reference.heading = 0.0;
+  if(global_mode_on){
+    reference.request.header.frame_id = last_position.header.frame_id;
+    reference.request.reference.position.x = last_position.position.x - 2.0;
+    reference.request.reference.position.y = last_position.position.y;
+    reference.request.reference.position.z = last_position.position.z;
+    reference.request.reference.heading = last_position.heading;
+  } else {
+    reference.request.header.frame_id = name + "/fcu_untilted";
+    reference.request.header.stamp = ros::Time::now();
+    reference.request.reference.position.x = -2.0;
+    reference.request.reference.position.y = 0.0;
+    reference.request.reference.position.z = 0.0;
+    reference.request.reference.heading = 0.0;
+  }
   service_goto_reference.call(reference);
   return reference.response.success;
 }
 
-bool DroneEntity::flyRight() {
+bool DroneEntity::flyRight(bool global_mode_on) {
   mrs_msgs::ReferenceStampedSrv reference;
-  reference.request.header.frame_id = name + "/fcu_untilted";
-  reference.request.header.stamp = ros::Time::now();
-  reference.request.reference.position.x = 0.0;
-  reference.request.reference.position.y = -2.0;
-  reference.request.reference.position.z = 0.0;
-  reference.request.reference.heading = 0.0;
+  if(global_mode_on){
+    reference.request.header.frame_id = last_position.header.frame_id;
+    reference.request.reference.position.x = last_position.position.x;
+    reference.request.reference.position.y = last_position.position.y - 2.0;
+    reference.request.reference.position.z = last_position.position.z;
+    reference.request.reference.heading = last_position.heading;
+  } else {
+    reference.request.header.frame_id = name + "/fcu_untilted";
+    reference.request.header.stamp = ros::Time::now();
+    reference.request.reference.position.x = 0.0;
+    reference.request.reference.position.y = -2.0;
+    reference.request.reference.position.z = 0.0;
+    reference.request.reference.heading = 0.0;
+  }
   service_goto_reference.call(reference);
   return reference.response.success;
 }
 
-bool DroneEntity::flyLeft() {
+bool DroneEntity::flyLeft(bool global_mode_on) {
   mrs_msgs::ReferenceStampedSrv reference;
-  reference.request.header.frame_id = name + "/fcu_untilted";
-  reference.request.header.stamp = ros::Time::now();
-  reference.request.reference.position.x = 0.0;
-  reference.request.reference.position.y = 2.0;
-  reference.request.reference.position.z = 0.0;
-  reference.request.reference.heading = 0.0;
+  if(global_mode_on){
+    reference.request.header.frame_id = last_position.header.frame_id;
+    reference.request.reference.position.x = last_position.position.x;
+    reference.request.reference.position.y = last_position.position.y + 2.0;
+    reference.request.reference.position.z = last_position.position.z;
+    reference.request.reference.heading = last_position.heading;
+  } else {
+    reference.request.header.frame_id = name + "/fcu_untilted";
+    reference.request.header.stamp = ros::Time::now();
+    reference.request.reference.position.x = 0.0;
+    reference.request.reference.position.y = 2.0;
+    reference.request.reference.position.z = 0.0;
+    reference.request.reference.heading = 0.0;
+  }
   service_goto_reference.call(reference);
   return reference.response.success;
 }

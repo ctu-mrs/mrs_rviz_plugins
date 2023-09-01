@@ -13,6 +13,7 @@
 
 #include <mrs_msgs/TrajectoryReferenceSrv.h>
 #include <mrs_msgs/ReferenceStampedSrv.h>
+#include <mrs_msgs/PositionCommand.h>
 #include <mrs_msgs/UavStatus.h>
 #include <mrs_msgs/String.h>
 
@@ -74,10 +75,10 @@ public:
   bool setLatEstimator(const std::string& value);
   bool setAltEstimator(const std::string& value);
   bool setHdgEstimator(const std::string& value);
-  bool flyForward();
-  bool flyBackward();
-  bool flyRight();
-  bool flyLeft();
+  bool flyForward     (bool global_mode_on);
+  bool flyBackward    (bool global_mode_on);
+  bool flyRight       (bool global_mode_on);
+  bool flyLeft        (bool global_mode_on);
   bool flyUp();
   bool flyDown();
   bool rotateClockwise();
@@ -110,6 +111,7 @@ protected:
   // | --------------------- State Callbacks -------------------- |
   void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
   void newSeviceCallback(const std_msgs::StringConstPtr& msg);
+  void positionCmdCallback(const mrs_msgs::PositionCommandConstPtr& msg);
 
   // | ------------------------ Services ------------------------ |
   mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
@@ -140,8 +142,9 @@ protected:
 
 
   // | ----------------------- Attributes ----------------------- |
-  std::string name;
-  bool null_tracker; // Responsible for showing Land vs Takeoff
+  std::string               name;
+  bool                      null_tracker; // Responsible for showing Land vs Takeoff
+  mrs_msgs::PositionCommand last_position;
 
   // No method to get entries from menu handler, so we have to save them on inserting
   typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
@@ -153,6 +156,7 @@ protected:
   ros::NodeHandle nh;
   ros::Subscriber status_subscriber;
   ros::Subscriber custom_services_subsrciber;
+  ros::Subscriber position_cmd_subscriber;
   
 };//class DroneEntity
 

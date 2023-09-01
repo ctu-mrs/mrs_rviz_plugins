@@ -213,24 +213,30 @@ int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
     return res;
   }
 
+  if(remote_mode_on && event->key() == KEY_G && event->modifiers() == Qt::ShiftModifier){
+    global_mode_on = !global_mode_on;
+    ROS_INFO("[Control tool] Global mode switched: %s", global_mode_on ? "on" : "off");
+    return res;
+  }
+
   if(!remote_mode_on){
     return res;
   }
 
   if(event->key() == KEY_W || event->key() == KEY_H){
-    server->flyForwardSelected();
+    server->flyForwardSelected(global_mode_on);
   }
 
   if(event->key() == KEY_A || event->key() == KEY_J){
-    server->flyLeftSelected();
+    server->flyLeftSelected(global_mode_on);
   }
 
   if(event->key() == KEY_S || event->key() == KEY_K){
-    server->flyBackwardSelected();
+    server->flyBackwardSelected(global_mode_on);
   }
 
   if(event->key() == KEY_D || event->key() == KEY_L){
-    server->flyRightSelected();
+    server->flyRightSelected(global_mode_on);
   }
 
   if(event->key() == KEY_R){
