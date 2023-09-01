@@ -18,6 +18,7 @@
 #include <rviz/display.h>
 #include <rviz/display_group.h>
 #include <rviz/properties/property.h>
+#include <rviz/properties/color_property.h>
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/color_property.h>
 #include <rviz/message_filter_display.h>
@@ -76,7 +77,8 @@ public:
 private Q_SLOTS:
   // Property change callbacks
   void nameUpdate();
-  void colorUpdate();
+  void colorFgUpdate();
+  void colorBgUpdate();
   void topLineUpdate();
   void controlManagerUpdate();
   void odometryUpdate();
@@ -90,6 +92,8 @@ private:
   // Helper functions
   std::pair<int, int> getSpawnCoordinates(rviz::Property* property);
   std::pair<int, int> getBottomLine();
+  // Meant to take "Global Options" property only!
+  void                setTextColor(rviz::Property* property);
   bool                getIsInited() {
     return is_inited;
   }
@@ -129,6 +133,7 @@ private:
   // Properties
   rviz::EditableEnumProperty* uav_name_property;
   rviz::ColorProperty*        text_color_property;
+  rviz::ColorProperty*        bg_color_property;
   rviz::BoolProperty*         top_line_property;
   rviz::BoolProperty*         control_manager_property;
   rviz::BoolProperty*         odometry_property;

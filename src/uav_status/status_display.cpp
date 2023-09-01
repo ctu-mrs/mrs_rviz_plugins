@@ -1,8 +1,6 @@
 #include "uav_status/status_display.h"
 #include <string>
 
-// Notes: the size of rectangle of the text can be found through size() method
-
 namespace mrs_rviz_plugins
 {
 int StatusDisplay::display_number = 0;
@@ -10,7 +8,6 @@ int StatusDisplay::display_number = 0;
 StatusDisplay::StatusDisplay() {
   id = display_number++;
 
-  text_color_property      = new rviz::ColorProperty("Text color", fg_color, "Color of displayed text", this, SLOT(colorUpdate()), this);
   uav_name_property        = new rviz::EditableEnumProperty("UAV name", "uav1", "Uav name to show status data", this, SLOT(nameUpdate()), this);
   top_line_property        = new rviz::BoolProperty("Top Line", true, "Show general data", this, SLOT(topLineUpdate()), this);
   control_manager_property = new rviz::BoolProperty("Control manager", true, "Show control manager data", this, SLOT(controlManagerUpdate()), this);
@@ -20,6 +17,8 @@ StatusDisplay::StatusDisplay() {
   topic_rates_property     = new rviz::BoolProperty("Topic rates", true, "Show somethin, idk anythin 1", this, SLOT(topicRatesUpdate()), this);
   custom_str_property      = new rviz::BoolProperty("Custom strings", true, "Show somethin, idk anythin 2", this, SLOT(customStrUpdate()), this);
   node_stats_property      = new rviz::BoolProperty("Node stats list", false, "Show rosnodes and their workload", this, SLOT(nodeStatsUpdate()), this);
+  text_color_property      = new rviz::ColorProperty("Text color", fg_color, "Color of displayed text", this, SLOT(colorFgUpdate()), this);
+  bg_color_property        = new rviz::ColorProperty("Background color", bg_color, "Color of background of the text", this, SLOT(colorBgUpdate()), this);
 
   nh = ros::NodeHandle();
 }
@@ -82,9 +81,40 @@ void StatusDisplay::onInitialize() {
   is_inited = true;
 }
 
+// Meant to take "Global Options" property only!
+void StatusDisplay::setTextColor(rviz::Property* property){
+  rviz::ColorProperty* color_property = nullptr;
+  try {
+    color_property = dynamic_cast<rviz::ColorProperty*>(property);
+  }catch (const std::bad_cast& e) {
+    color_property = nullptr;
+  }
+
+  if(color_property){
+    int curr_r;
+    int curr_g;
+    int curr_b;
+    color_property->getColor().getRgb(&curr_r, &curr_g, &curr_b);
+    int grayscale = (255 - curr_r + 255 - curr_g + 255 - curr_b) / 3;
+
+    text_color_property->setColor(QColor(255 - curr_r, 255 - curr_g, 255 - curr_b, 255));
+    bg_color_property->setColor(QColor(grayscale, grayscale, grayscale, 100));
+  } else {
+    for (int i = 0; i < property->numChildren(); i++) {
+      setTextColor(property->childAt(i));
+    }
+  }
+}
+
 std::pair<int, int> StatusDisplay::getSpawnCoordinates(rviz::Property* property) {
   rviz::DisplayGroup* display_group  = nullptr;
   StatusDisplay*      status_display = nullptr;
+
+  if(property->getNameStd() == "Global Options") {
+    for (int i = 0; i < property->numChildren(); i++) {
+      setTextColor(property->childAt(i));
+    }
+  }
 
   try {
     display_group = dynamic_cast<rviz::DisplayGroup*>(property);
@@ -989,9 +1019,15 @@ void StatusDisplay::nameUpdate() {
   comp_state_update_required = true;
 }
 
-void StatusDisplay::colorUpdate() {
+void StatusDisplay::colorFgUpdate() {
   fg_color               = text_color_property->getColor();
   global_update_required = true;
+}
+
+void StatusDisplay::colorBgUpdate() {
+  bg_color               = bg_color_property->getColor();
+  global_update_required = true;
+  bg_color.setAlpha(100);
 }
 
 void StatusDisplay::topLineUpdate() {
