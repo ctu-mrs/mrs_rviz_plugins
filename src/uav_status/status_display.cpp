@@ -156,7 +156,7 @@ void StatusDisplay::drawTopLine() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = top_line_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*top_line_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -194,8 +194,7 @@ void StatusDisplay::drawControlManager() {
   // Setting the painter up
   jsk_rviz_plugins::ScopedPixelBuffer buffer = contol_manager_overlay->getBuffer();
   QImage                              hud    = buffer.getQImage(*contol_manager_overlay, bg_color);
-  QFont                               font   = QFont("Courier");
-  // QFont                               font   = QFont("DejaVu Sans Mono");
+  QFont                               font   = QFont("DejaVu Sans Mono");
   font.setBold(true);
   QPainter painter(&hud);
   painter.setFont(font);
@@ -237,32 +236,21 @@ void StatusDisplay::drawControlManager() {
   painter.fillRect(callback_rect, callbacks_color);
   painter.drawText(callback_rect, Qt::AlignLeft, callbacks_text);
 
-  // QStaticText no_callback_text = QStaticText(QString("%1").arg(callbacks_enabled ? "" : "NO_CB"));
-  // painter.drawStaticText(171, 20, no_callback_text);
-
   // Tracker
   QColor  tracker_color = NO_COLOR;
   QString tracker_text;
   if (controller_rate == 0) {
+
     tracker_color = RED_COLOR;
     tracker_text = "NO_TRACKER";
-    // painter.fillRect(0, 46, 92, 13, RED_COLOR);
-    // painter.drawStaticText(0, 40, QStaticText("NO_TRACKER"));
-
+  
   } else {
 
     if (curr_controller.find("!NO DATA!") != std::string::npos || null_tracker) {
       tracker_color = RED_COLOR;
-      // painter.fillRect(0, 46, 80, 13, RED_COLOR);
     }
 
-    // if (null_tracker) {
-    //   tracker_color = RED_COLOR;
-    //   // painter.fillRect(0, 46, 100, 13, RED_COLOR);
-    // }
-
     tracker_text = QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str());
-    // painter.drawStaticText(0, 40, tracker_data_text);
   }
   QRect tracker_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, tracker_text);
   painter.fillRect(tracker_rect, tracker_color);
@@ -289,7 +277,7 @@ void StatusDisplay::drawOdometry() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = odometry_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*odometry_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -307,13 +295,14 @@ void StatusDisplay::drawOdometry() {
   painter.drawStaticText(152, 0, control_manager_freq_text);
 
   if (avg_odom_rate == 0.0) {
-    painter.fillRect(0, 5, 80, 13, RED_COLOR);
-    painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
+    QRect no_data_rect = painter.boundingRect(0, 0, 0, 0, Qt::AlignLeft, "!NO DATA!");
+    painter.fillRect(no_data_rect, RED_COLOR);
+    painter.drawText(no_data_rect, Qt::AlignLeft, "!NO DATA!");
     odometry_overlay->setDimensions(odometry_overlay->getTextureWidth(), odometry_overlay->getTextureHeight());
     return;
   }
 
-  // XYZ and hdg column
+  // XYZ and hdg column 
   painter.drawStaticText(0, 20, QStaticText("X"));
   painter.drawStaticText(0, 40, QStaticText("Y"));
   painter.drawStaticText(0, 60, QStaticText("Z"));
@@ -392,14 +381,33 @@ void StatusDisplay::drawOdometry() {
       h_warning_color = RED_COLOR;
     }
 
-    painter.fillRect(45, 105, 27, 13, x_warning_color);
-    painter.fillRect(90, 105, 27, 13, x_warning_color);
-    painter.fillRect(135, 105, 27, 13, x_warning_color);
-    painter.fillRect(180, 105, 27, 13, x_warning_color);
+    QString x_err_str;
+    QString y_err_str;
+    QString z_err_str;
+    QString h_err_str;
+    x_err_str.sprintf("%.1f", cerr_x);
+    y_err_str.sprintf("%.1f", cerr_y);
+    z_err_str.sprintf("%.1f", cerr_z);
+    h_err_str.sprintf("%.1f", cerr_hdg);
 
-    QString error;
-    error.sprintf("C/E X%.1f Y%.1f Z%.1f H%.1f", cerr_x, cerr_y, cerr_z, cerr_hdg);
-    painter.drawStaticText(0, 100, QStaticText(error));
+    QRect tmp_rect   = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "C/E X");
+    QRect x_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, x_err_str);
+          tmp_rect   = painter.boundingRect(x_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Y");
+    QRect y_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, y_err_str);
+          tmp_rect   = painter.boundingRect(y_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Z");
+    QRect z_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, z_err_str);
+          tmp_rect   = painter.boundingRect(z_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " H");
+    QRect h_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, h_err_str);
+
+    painter.fillRect(x_err_rect, x_warning_color);
+    painter.fillRect(y_err_rect, y_warning_color);
+    painter.fillRect(z_err_rect, z_warning_color);
+    painter.fillRect(h_err_rect, h_warning_color);
+
+    painter.drawText(x_err_rect, Qt::AlignLeft, x_err_str);
+    painter.drawText(y_err_rect, Qt::AlignLeft, y_err_str);
+    painter.drawText(z_err_rect, Qt::AlignLeft, z_err_str);
+    painter.drawText(h_err_rect, Qt::AlignLeft, h_err_str);
   }
 
   odom_update_required = false;
@@ -420,7 +428,7 @@ void StatusDisplay::drawGeneralInfo() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = general_info_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*general_info_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -435,11 +443,11 @@ void StatusDisplay::drawGeneralInfo() {
   } else if (cpu_load > 60.0) {
     cpu_load_color = YELLOW_COLOR;
   }
-
-  painter.fillRect(0, 25, 92, 13, cpu_load_color);
   QString cpu_load_str;
   cpu_load_str.sprintf("CPU: %.1f%%", cpu_load);
-  painter.drawStaticText(0, 20, QStaticText(cpu_load_str));
+  QRect cpu_load_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, cpu_load_str);
+  painter.fillRect(cpu_load_rect, cpu_load_color);
+  painter.drawText(cpu_load_rect, Qt::AlignLeft, cpu_load_str);
 
   // CPU frequency
   QString cpu_freq_str;
@@ -455,10 +463,11 @@ void StatusDisplay::drawGeneralInfo() {
   } else if (ram_ratio > 0.5) {
     ram_color = YELLOW_COLOR;
   }
-  painter.fillRect(0, 45, 92, 13, ram_color);
   QString ram_free_str;
   ram_free_str.sprintf("RAM: %.1f G", ram_free);
-  painter.drawStaticText(0, 40, QStaticText(ram_free_str));
+  QRect ram_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, ram_free_str);
+  painter.fillRect(ram_rect, ram_color);
+  painter.drawText(ram_rect, ram_free_str);
 
   // Free disk
   QColor free_disk_color = NO_COLOR;
@@ -467,14 +476,15 @@ void StatusDisplay::drawGeneralInfo() {
   } else if (disk_free < 200) {
     free_disk_color = YELLOW_COLOR;
   }
-  painter.fillRect(109, 45, 118, 13, free_disk_color);
   QString disk_free_str;
   if (disk_free < 10000) {
     disk_free_str.sprintf("HDD: %.1f G", disk_free / 10);
   } else {
     disk_free_str.sprintf("HDD: %.1f G", disk_free / 10000);
   }
-  painter.drawStaticText(110, 40, QStaticText(disk_free_str));
+  QRect disk_free_rect = painter.boundingRect(110, 40, 0, 0, Qt::AlignLeft, disk_free_str);
+  painter.fillRect(disk_free_rect, free_disk_color);
+  painter.drawText(disk_free_rect, disk_free_str);
 
   comp_state_update_required = false;
   general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
@@ -493,7 +503,7 @@ void StatusDisplay::drawMavros() {
   // Setting the painter up
   jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
   QImage                              hud    = buffer.getQImage(*mavros_state_overlay, bg_color);
-  QFont                               font   = QFont("Courier");
+  QFont                               font   = QFont("DejaVu Sans Mono");
   font.setBold(true);
   QPainter painter(&hud);
   painter.setFont(font);
@@ -509,79 +519,90 @@ void StatusDisplay::drawMavros() {
   painter.drawStaticText(152, 0, mavros_freq_text);
 
   if (mavros_rate == 0) {  // No data
-    painter.fillRect(0, 5, 80, 13, RED_COLOR);
-    painter.drawStaticText(0, 0, QStaticText("!NO DATA!"));
+    QRect no_data_rect = painter.boundingRect(0, 0, 0, 0, Qt::AlignLeft, "!NO DATA!");
+    painter.fillRect(no_data_rect, RED_COLOR);
+    painter.drawText(no_data_rect, "!NO DATA!");
   }
 
   // State:
+  QRect state_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, "State:");
   painter.drawStaticText(0, 20, QStaticText("State:"));
   if (state_rate == 0) {
-
-    painter.fillRect(55, 26, 48, 13, RED_COLOR);
-    painter.drawStaticText(56, 20, QStaticText("ERROR"));
+    QRect error_rect = painter.boundingRect(state_rect.right(), 20, 0, 0, Qt::AlignLeft, "ERROR");
+    painter.fillRect(error_rect, RED_COLOR);
+    painter.drawText(error_rect, "ERROR");
 
   } else {
-
     if (armed) {
-      painter.drawStaticText(56, 20, QStaticText("ARMED"));
+      painter.drawStaticText(state_rect.right(), 20, QStaticText("ARMED"));
     } else {
-      painter.fillRect(55, 26, 75, 13, RED_COLOR);
-      painter.drawStaticText(56, 20, QStaticText("DISARMED"));
+      QRect error_rect = painter.boundingRect(state_rect.right(), 20, 0, 0, Qt::AlignLeft, "DISARMED");
+      painter.fillRect(error_rect, RED_COLOR);
+      painter.drawText(error_rect, "DISARMED");
     }
   }
 
   // Mode:
+  QRect mode_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, "Mode:");
   painter.drawStaticText(0, 40, QStaticText("Mode:"));
   if (mode != "OFFBOARD") {
-    painter.fillRect(45, 46, 57, 13, RED_COLOR);
+    painter.fillRect(painter.boundingRect(state_rect.right(), 40, 0, 0, Qt::AlignLeft, QString(mode.c_str())), RED_COLOR);
   }
-  painter.drawStaticText(46, 40, QStaticText(mode.c_str()));
+  painter.drawStaticText(state_rect.right(), 40, QStaticText(mode.c_str()));
 
   // Batt:
+  QRect batt_rect = painter.boundingRect(0, 60, 0, 0, Qt::AlignLeft, "Batt:");
   painter.drawStaticText(0, 60, QStaticText("Batt:"));
   if (battery_rate == 0) {
 
-    painter.fillRect(45, 66, 48, 13, RED_COLOR);
-    painter.drawStaticText(46, 60, QStaticText("ERROR"));
+    QRect error_rect = painter.boundingRect(batt_rect.right(), 60, 0, 0, Qt::AlignLeft, "ERROR");
+    painter.fillRect(error_rect, RED_COLOR);
+    painter.drawStaticText(batt_rect.right(), 60, QStaticText("ERROR"));
 
   } else {
 
     const double volt_to_show = (battery_volt > 17.0) ? (battery_volt / 6) : (battery_volt / 4);
 
+    QString volt_str;
+    QString curr_str;
+    volt_str.sprintf("%.2f V", volt_to_show);
+    curr_str.sprintf("  %.2f A", battery_curr);
+
     if (volt_to_show < 3.6) {
-      painter.fillRect(45, 66, 57, 13, RED_COLOR);
+      painter.fillRect(painter.boundingRect(batt_rect.right(), 60, 0, 0, Qt::AlignLeft, volt_str), RED_COLOR);
     } else if (volt_to_show < 3.7) {
-      painter.fillRect(45, 66, 57, 13, YELLOW_COLOR);
+      painter.fillRect(painter.boundingRect(batt_rect.right(), 60, 0, 0, Qt::AlignLeft, volt_str), YELLOW_COLOR);
     }
 
     tmp.sprintf("%.2f V  %.2f A", volt_to_show, battery_curr);
-    painter.drawStaticText(46, 60, QStaticText(tmp));
+    painter.drawStaticText(batt_rect.right(), 60, QStaticText(tmp));
   }
 
   // Drained:
+  QRect drained_rect = painter.boundingRect(0, 80, 0, 0, Qt::AlignLeft, "Drained:");
   painter.drawStaticText(0, 80, QStaticText("Drained:"));
   tmp.sprintf("%.1f Wh", battery_wh_drained);
-  painter.drawStaticText(72, 80, QStaticText(tmp));
+  painter.drawStaticText(drained_rect.right(), 80, QStaticText(tmp));
 
   // Thrst:
+  QRect thrst_rect = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "Thrst:");
   painter.drawStaticText(0, 100, QStaticText("Thrst:"));
-  if (thrust > 0.75) {
-    painter.fillRect(56, 106, 37, 13, RED_COLOR);
-  } else if (thrust > 0.65) {
-    painter.fillRect(56, 106, 37, 13, RED_COLOR);
-  }
-
   tmp.sprintf("%.2f", thrust);
-  painter.drawStaticText(56, 100, QStaticText(tmp));
+  QRect thrst_value_rect = painter.boundingRect(thrst_rect.right(), 100, 0, 0, Qt::AlignLeft, tmp);
+  if (thrust > 0.75) {
+    painter.fillRect(thrst_value_rect, RED_COLOR);
+  } else if (thrust > 0.65) {
+    painter.fillRect(thrst_value_rect, YELLOW_COLOR);
+  }
+  painter.drawStaticText(thrst_rect.right(), 100, QStaticText(tmp));
 
   // GPS
   if (!mavros_gps_ok) {
-
-    painter.fillRect(159, 26, 56, 13, RED_COLOR);
-    painter.drawStaticText(160, 20, QStaticText("NO_GPS"));
+    QRect error_rect = painter.boundingRect(160, 20, 0, 0, Qt::AlignLeft, "NO_GPS");
+    painter.fillRect(error_rect, RED_COLOR);
+    painter.drawText(error_rect, Qt::AlignLeft, "NO_GPS");
 
   } else {
-
     painter.drawStaticText(160, 20, QStaticText("GPS_OK"));
 
     QColor gps_qual_color = RED_COLOR;
@@ -590,10 +611,11 @@ void StatusDisplay::drawMavros() {
     } else if (gps_qual < 10.0) {
       gps_qual_color = YELLOW_COLOR;
     }
-
-    painter.fillRect(186, 46, 29, 13, gps_qual_color);
+    
     tmp.sprintf("Q: %.1f", gps_qual);
-    painter.drawStaticText(160, 40, QStaticText(tmp));
+    QRect qual_rect = painter.boundingRect(160, 40, 0, 0, Qt::AlignLeft, tmp);
+    painter.fillRect(qual_rect, gps_qual_color);
+    painter.drawText(qual_rect, Qt::AlignLeft, tmp);
   }
 
   // Mass
@@ -604,9 +626,15 @@ void StatusDisplay::drawMavros() {
   } else if (mass_diff > 0.2) {
     mass_color = YELLOW_COLOR;
   }
-  painter.fillRect(160, 106, 36, 13, mass_color);
-  tmp.sprintf("%s%.1f/%s%.1fkg", mass_set >= 10.0 ? "" : " ", mass_set, mass_estimate >= 10.0 ? "" : " ", mass_estimate);
-  painter.drawStaticText(115, 100, QStaticText(tmp));
+  tmp.sprintf("%.1f/", mass_set);
+  QRect mass_set_rect = painter.boundingRect(115, 100, 0, 0, Qt::AlignLeft, tmp);
+  painter.drawText(mass_set_rect, Qt::AlignLeft, tmp);
+
+  tmp.sprintf("%.1f", mass_estimate);
+  QRect mass_estim_rect = painter.boundingRect(mass_set_rect.right(), 100, 0, 0, Qt::AlignLeft, tmp);
+  painter.fillRect(mass_estim_rect, mass_color);
+  painter.drawText(mass_estim_rect, Qt::AlignLeft, tmp);
+  painter.drawStaticText(mass_estim_rect.right(), 100, QStaticText("kg"));
 
   mavros_update_required = false;
   mavros_state_overlay->setDimensions(mavros_state_overlay->getTextureWidth(), mavros_state_overlay->getTextureHeight());
@@ -626,7 +654,7 @@ void StatusDisplay::drawCustomTopicRates() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = topic_rates_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*topic_rates_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -634,27 +662,16 @@ void StatusDisplay::drawCustomTopicRates() {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
-  // Setting the stream up
-  QString     frequency;
-  QTextStream ts = QTextStream(&frequency);
-  ts.setRealNumberPrecision(1);
-  ts.setRealNumberNotation(QTextStream::FixedNotation);
-  ts.setFieldAlignment(QTextStream::AlignRight);
-  ts.setFieldWidth(10);
-  ts.setPadChar(' ');
-
   // Drawing topics
+  QString     frequency;
   for (size_t i = 0; i < custom_topic_vec.size(); i++) {
-    frequency = "";
-    ts << custom_topic_vec[i].topic_hz;
-
-    const auto spaces = frequency.count(" ");
-    const auto width  = 10 - spaces;
+    frequency.sprintf("%.1f Hz", custom_topic_vec[i].topic_hz);
 
     painter.drawStaticText(0, 20 * i, QStaticText(custom_topic_vec[i].topic_name.c_str()));
-    painter.fillRect(116 + 9 * spaces, 20 * i + 6, 9 * width + 1, 13, getColor(custom_topic_vec[i].topic_color));
-    painter.drawStaticText(117, 20 * i, QStaticText(frequency));
-    painter.drawStaticText(210, 20 * i, QStaticText("Hz"));
+
+    QRect freq_rect = painter.boundingRect(225, 20*i, 0, 0, Qt::AlignRight, frequency);
+    painter.fillRect(freq_rect, getColor(custom_topic_vec[i].topic_color));
+    painter.drawText(freq_rect, Qt::AlignRight, frequency);
   }
 
   topics_update_required = false;
@@ -675,7 +692,7 @@ void StatusDisplay::drawCustomStrings() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = custom_strings_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*custom_strings_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -705,8 +722,9 @@ void StatusDisplay::drawCustomStrings() {
       }
     }
 
-    painter.fillRect(0, 20 * i + 6, 9 * tmp_display_string.length() + 1, 13, getColor(tmp_color));
-    painter.drawStaticText(0, 20 * i, QStaticText(tmp_display_string.c_str()));
+    QRect rect = painter.boundingRect(0, 20 * i, 0, 0, Qt::AlignLeft, tmp_display_string.c_str());
+    painter.fillRect(rect, getColor(tmp_color));
+    painter.drawText(rect, tmp_display_string.c_str());
   }
 
   string_update_required = false;
@@ -727,7 +745,7 @@ void StatusDisplay::drawNodeStats() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = rosnode_stats_overlay->getBuffer();
 
   QImage hud  = buffer.getQImage(*rosnode_stats_overlay, bg_color);
-  QFont  font = QFont("Courier");
+  QFont  font = QFont("DejaVu Sans Mono");
 
   font.setBold(true);
   QPainter painter(&hud);
@@ -753,9 +771,15 @@ void StatusDisplay::drawNodeStats() {
       tmp_color = YELLOW_COLOR;
     }
 
-    painter.fillRect(345, 26 + i * 20, 46, 13, tmp_color);
-    tmp.sprintf("%5.1f", node_cpu_load_vec.cpu_loads[i]);
-    painter.drawStaticText(345, 20 * (i + 1), QStaticText(tmp));
+    QString load_text;
+    load_text.sprintf("%3.1f", node_cpu_load_vec.cpu_loads[i]);
+    QRect load_rect = painter.boundingRect(390, (i+1)*20, 0, 0, Qt::AlignRight, load_text);
+    painter.fillRect(load_rect, tmp_color);
+    painter.drawText(load_rect, Qt::AlignRight, load_text);
+    
+
+    // tmp.sprintf("%5.1f", node_cpu_load_vec.cpu_loads[i]);
+    // painter.drawStaticText(345, 20 * (i + 1), QStaticText(tmp));
   }
 
   node_stats_update_required = false;
