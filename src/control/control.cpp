@@ -23,8 +23,8 @@ ControlTool::~ControlTool(){
   if(server != nullptr){
     delete server;
   }
-  if(dis != nullptr){
-    delete dis;
+  if(overlay_picker_tool != nullptr){
+    delete overlay_picker_tool;
   }
 }
 
@@ -42,6 +42,11 @@ void ControlTool::onInitialize(){
 void ControlTool::activate(){
   rviz::SelectionTool::activate();
   setStatus(DEFAULT_MODE_MESSAGE);
+}
+
+void ControlTool::deactivate(){
+  rviz::M_Picked selection = context_->getSelectionManager()->getSelection();
+  context_->getSelectionManager()->removeSelection(selection);
 }
 
 void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {

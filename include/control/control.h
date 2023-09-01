@@ -36,6 +36,7 @@ public:
   ~ControlTool() override;
   void onInitialize() override;
   void activate() override;
+  void deactivate() override;
   int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
 
