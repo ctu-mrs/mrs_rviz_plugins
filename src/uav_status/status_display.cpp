@@ -1,6 +1,8 @@
 #include "uav_status/status_display.h"
 #include <string>
 
+// Notes: the size of rectangle of the text can be found through size() method
+
 namespace mrs_rviz_plugins
 {
 int StatusDisplay::display_number = 0;
@@ -193,6 +195,7 @@ void StatusDisplay::drawControlManager() {
   jsk_rviz_plugins::ScopedPixelBuffer buffer = contol_manager_overlay->getBuffer();
   QImage                              hud    = buffer.getQImage(*contol_manager_overlay, bg_color);
   QFont                               font   = QFont("Courier");
+  // QFont                               font   = QFont("DejaVu Sans Mono");
   font.setBold(true);
   QPainter painter(&hud);
   painter.setFont(font);
@@ -209,46 +212,61 @@ void StatusDisplay::drawControlManager() {
   painter.drawStaticText(152, 0, control_manager_freq_text);
 
   // Controller
+  QColor  controller_color = NO_COLOR;
+  QString controller_text;
   if (controller_rate == 0) {
-    painter.fillRect(0, 26, 110, 13, RED_COLOR);
-    painter.drawStaticText(0, 20, QStaticText("NO_COTROLLER"));
-
+    controller_color = RED_COLOR;
+    controller_text = "NO CONTROLLER";
   } else {
-
     if (curr_controller.find("!NO DATA!") != std::string::npos) {
-      painter.fillRect(0, 26, 80, 13, RED_COLOR);
+      controller_color = RED_COLOR;
     }
-
-    const QStaticText controller_data_text = QStaticText(QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str()));
-    painter.drawStaticText(0, 20, controller_data_text);
+    controller_text = QString("%1/%2").arg(curr_controller.c_str(), curr_gains.c_str());
   }
+  QRect controller_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, controller_text);
+  painter.fillRect(controller_rect, controller_color);
+  painter.drawText(controller_rect, Qt::AlignLeft, controller_text);
 
+  QColor  callbacks_color = NO_COLOR;
+  QString callbacks_text  = "";
   if (!callbacks_enabled) {
-    painter.fillRect(169, 26, 48, 13, RED_COLOR);
+    callbacks_color = RED_COLOR;
+    callbacks_text  = "NO_CB";
   }
+  QRect callback_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, callbacks_text);
+  painter.fillRect(callback_rect, callbacks_color);
+  painter.drawText(callback_rect, Qt::AlignLeft, callbacks_text);
 
-  QStaticText no_callback_text = QStaticText(QString("%1").arg(callbacks_enabled ? "" : "NO_CB"));
-  painter.drawStaticText(171, 20, no_callback_text);
+  // QStaticText no_callback_text = QStaticText(QString("%1").arg(callbacks_enabled ? "" : "NO_CB"));
+  // painter.drawStaticText(171, 20, no_callback_text);
 
   // Tracker
+  QColor  tracker_color = NO_COLOR;
+  QString tracker_text;
   if (controller_rate == 0) {
-
-    painter.fillRect(0, 46, 92, 13, RED_COLOR);
-    painter.drawStaticText(0, 40, QStaticText("NO_TRACKER"));
+    tracker_color = RED_COLOR;
+    tracker_text = "NO_TRACKER";
+    // painter.fillRect(0, 46, 92, 13, RED_COLOR);
+    // painter.drawStaticText(0, 40, QStaticText("NO_TRACKER"));
 
   } else {
 
-    if (curr_controller.find("!NO DATA!") != std::string::npos) {
-      painter.fillRect(0, 46, 80, 13, RED_COLOR);
+    if (curr_controller.find("!NO DATA!") != std::string::npos || null_tracker) {
+      tracker_color = RED_COLOR;
+      // painter.fillRect(0, 46, 80, 13, RED_COLOR);
     }
 
-    if (null_tracker) {
-      painter.fillRect(0, 46, 100, 13, RED_COLOR);
-    }
+    // if (null_tracker) {
+    //   tracker_color = RED_COLOR;
+    //   // painter.fillRect(0, 46, 100, 13, RED_COLOR);
+    // }
 
-    const QStaticText tracker_data_text = QStaticText(QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str()));
-    painter.drawStaticText(0, 40, tracker_data_text);
+    tracker_text = QString("%1/%2").arg(curr_tracker.c_str(), curr_constraints.c_str());
+    // painter.drawStaticText(0, 40, tracker_data_text);
   }
+  QRect tracker_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, tracker_text);
+  painter.fillRect(tracker_rect, tracker_color);
+  painter.drawText(tracker_rect, Qt::AlignLeft, tracker_text);
 
   const QStaticText has_goal_text = QStaticText(QString("%1").arg(has_goal ? " FLY" : "IDLE"));
   painter.drawStaticText(180, 40, has_goal_text);
