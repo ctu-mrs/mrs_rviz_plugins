@@ -9,6 +9,7 @@
 
 #include <utility>
 #include <algorithm>
+#include <unordered_map>
 
 #include <QTextStream>
 #include <QStaticText>
@@ -54,6 +55,7 @@ class StatusDisplay : public rviz::Display {
 
 public:
   StatusDisplay();
+  ~StatusDisplay();
   void onInitialize() override;
   void onDisable() override;
   void onEnable() override;
@@ -237,11 +239,13 @@ private:
   // | ----------------------- Attributes ----------------------- |
   ros::NodeHandle nh;
   ros::Subscriber uav_status_sub;
-  bool            is_inited = false;
-  static int      display_number;
   QColor          bg_color = QColor(0, 0, 0, 100);
   QColor          fg_color = QColor(25, 255, 240, 255);
+  bool            is_inited = false;
+  static int      display_number;
   int             id;
+  std::string     last_uav_name;
+  static std::unordered_map<std::string, bool> taken_uavs;
 
   // | --------------------- Default values --------------------- |
   const QColor RED_COLOR    = QColor(255, 0, 0, 255);

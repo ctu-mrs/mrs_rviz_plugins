@@ -140,8 +140,7 @@ int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   if(event.shift()){
     overlay_picker_tool->processMouseEvent(event);
   }
-
-  setStatus(remote_mode_on ? REMOTE_MODE_MESSAGE : DEFAULT_MODE_MESSAGE);
+  setStatus(remote_mode_on ? (global_mode_on ? GLOBAL_MODE_MESSAGE : REMOTE_MODE_MESSAGE) : DEFAULT_MODE_MESSAGE);
 
   {
     rviz::InteractiveObjectPtr focused_object = focused_object_.lock();
@@ -214,13 +213,14 @@ int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   if(event->key() == KEY_R && event->modifiers() == Qt::ShiftModifier){
     remote_mode_on = !remote_mode_on;
     ROS_INFO("[Control tool] Remote mode switched: %s", remote_mode_on ? "on" : "off");
-    setStatus(remote_mode_on ? REMOTE_MODE_MESSAGE : DEFAULT_MODE_MESSAGE);
+    setStatus(remote_mode_on ? (global_mode_on ? GLOBAL_MODE_MESSAGE : REMOTE_MODE_MESSAGE) : DEFAULT_MODE_MESSAGE);
     return res;
   }
 
   if(remote_mode_on && event->key() == KEY_G && event->modifiers() == Qt::ShiftModifier){
     global_mode_on = !global_mode_on;
     ROS_INFO("[Control tool] Global mode switched: %s", global_mode_on ? "on" : "off");
+    setStatus(remote_mode_on ? (global_mode_on ? GLOBAL_MODE_MESSAGE : REMOTE_MODE_MESSAGE) : DEFAULT_MODE_MESSAGE);
     return res;
   }
 

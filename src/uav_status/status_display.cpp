@@ -4,9 +4,11 @@
 namespace mrs_rviz_plugins
 {
 int StatusDisplay::display_number = 0;
+std::unordered_map<std::string, bool> StatusDisplay::taken_uavs;
 
 StatusDisplay::StatusDisplay() {
   id = display_number++;
+  last_uav_name = "uav1";
 
   uav_name_property        = new rviz::EditableEnumProperty("UAV name", "uav1", "Uav name to show status data", this, SLOT(nameUpdate()), this);
   top_line_property        = new rviz::BoolProperty("Top Line", true, "Show general data", this, SLOT(topLineUpdate()), this);
@@ -21,6 +23,10 @@ StatusDisplay::StatusDisplay() {
   bg_color_property        = new rviz::ColorProperty("Background color", bg_color, "Color of background of the text", this, SLOT(colorBgUpdate()), this);
 
   nh = ros::NodeHandle();
+}
+
+StatusDisplay::~StatusDisplay() {
+  taken_uavs[uav_name_property->getStdString()] = false;
 }
 
 void StatusDisplay::onInitialize() {
@@ -50,7 +56,7 @@ void StatusDisplay::onInitialize() {
     if (name.find("trajectory_generation/path") == std::string::npos) {
       continue;
     }
-    ROS_INFO("[Control tool]: %s found", name.c_str());
+    ROS_INFO("[UAV Status]: %s found", name.c_str());
 
     std::size_t index = name.find("/", 0, 1);
     if (index != std::string::npos) {
@@ -64,12 +70,30 @@ void StatusDisplay::onInitialize() {
 
     drone_names.push_back(name);
     uav_name_property->addOptionStd(name);
-    ROS_INFO("[Control tool]: %s was added to drone names", name.c_str());
+    if(taken_uavs.find(name) == taken_uavs.end()) {
+      taken_uavs[name] = false;
+      ROS_INFO("[UAV Status]: %s was added to global drone names", name.c_str());
+    }
+    ROS_INFO("[UAV Status]: %s was added to drone names", name.c_str());
     state[x] = name;
   }
 
-  if (drone_names.size() > id) {
-    uav_name_property->setStdString(drone_names[id]);
+  // Find the first occurrence of a false value
+  std::string first_available_uav;
+  bool found = false;
+
+  for (const auto& pair : taken_uavs) {
+    if (!pair.second) {
+      first_available_uav = pair.first;
+      found = true;
+      break;
+    }
+  }
+
+  ROS_INFO("Available uav was %sfound", found ? "" : "not ");
+  if(found){
+    uav_name_property->setStdString(first_available_uav);
+    taken_uavs[first_available_uav] = true;
   }
 
   // Searching for initial coordinates
@@ -420,15 +444,24 @@ void StatusDisplay::drawOdometry() {
     z_err_str.sprintf("%.1f", cerr_z);
     h_err_str.sprintf("%.1f", cerr_hdg);
 
+    // Printing constant string and saving coordinates for changeable data
     QRect tmp_rect   = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "C/E X");
+    painter.drawText(tmp_rect, Qt::AlignLeft, "C/E X");
     QRect x_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, x_err_str);
-          tmp_rect   = painter.boundingRect(x_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Y");
+
+    tmp_rect   = painter.boundingRect(x_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Y");
+    painter.drawText(tmp_rect, Qt::AlignLeft, " Y");
     QRect y_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, y_err_str);
-          tmp_rect   = painter.boundingRect(y_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Z");
+
+    tmp_rect   = painter.boundingRect(y_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Z");
+    painter.drawText(tmp_rect, Qt::AlignLeft, " Z");
     QRect z_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, z_err_str);
-          tmp_rect   = painter.boundingRect(z_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " H");
+
+    tmp_rect   = painter.boundingRect(z_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " H");
+    painter.drawText(tmp_rect, Qt::AlignLeft, " H");
     QRect h_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, h_err_str);
 
+    // Printing changeable data
     painter.fillRect(x_err_rect, x_warning_color);
     painter.fillRect(y_err_rect, y_warning_color);
     painter.fillRect(z_err_rect, z_warning_color);
@@ -555,8 +588,8 @@ void StatusDisplay::drawMavros() {
   }
 
   // State:
-  QRect state_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, "State:");
-  painter.drawStaticText(0, 20, QStaticText("State:"));
+  QRect state_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, "State: ");
+  painter.drawStaticText(0, 20, QStaticText("State: "));
   if (state_rate == 0) {
     QRect error_rect = painter.boundingRect(state_rect.right(), 20, 0, 0, Qt::AlignLeft, "ERROR");
     painter.fillRect(error_rect, RED_COLOR);
@@ -573,16 +606,16 @@ void StatusDisplay::drawMavros() {
   }
 
   // Mode:
-  QRect mode_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, "Mode:");
-  painter.drawStaticText(0, 40, QStaticText("Mode:"));
+  QRect mode_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, "Mode: ");
+  painter.drawStaticText(0, 40, QStaticText("Mode: "));
   if (mode != "OFFBOARD") {
-    painter.fillRect(painter.boundingRect(state_rect.right(), 40, 0, 0, Qt::AlignLeft, QString(mode.c_str())), RED_COLOR);
+    painter.fillRect(painter.boundingRect(mode_rect.right(), 40, 0, 0, Qt::AlignLeft, QString(mode.c_str())), RED_COLOR);
   }
-  painter.drawStaticText(state_rect.right(), 40, QStaticText(mode.c_str()));
+  painter.drawStaticText(mode_rect.right(), 40, QStaticText(mode.c_str()));
 
   // Batt:
-  QRect batt_rect = painter.boundingRect(0, 60, 0, 0, Qt::AlignLeft, "Batt:");
-  painter.drawStaticText(0, 60, QStaticText("Batt:"));
+  QRect batt_rect = painter.boundingRect(0, 60, 0, 0, Qt::AlignLeft, "Batt: ");
+  painter.drawStaticText(0, 60, QStaticText("Batt: "));
   if (battery_rate == 0) {
 
     QRect error_rect = painter.boundingRect(batt_rect.right(), 60, 0, 0, Qt::AlignLeft, "ERROR");
@@ -609,14 +642,14 @@ void StatusDisplay::drawMavros() {
   }
 
   // Drained:
-  QRect drained_rect = painter.boundingRect(0, 80, 0, 0, Qt::AlignLeft, "Drained:");
-  painter.drawStaticText(0, 80, QStaticText("Drained:"));
+  QRect drained_rect = painter.boundingRect(0, 80, 0, 0, Qt::AlignLeft, "Drained: ");
+  painter.drawStaticText(0, 80, QStaticText("Drained: "));
   tmp.sprintf("%.1f Wh", battery_wh_drained);
   painter.drawStaticText(drained_rect.right(), 80, QStaticText(tmp));
 
   // Thrst:
-  QRect thrst_rect = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "Thrst:");
-  painter.drawStaticText(0, 100, QStaticText("Thrst:"));
+  QRect thrst_rect = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "Thrst: ");
+  painter.drawStaticText(0, 100, QStaticText("Thrst: "));
   tmp.sprintf("%.2f", thrust);
   QRect thrst_value_rect = painter.boundingRect(thrst_rect.right(), 100, 0, 0, Qt::AlignLeft, tmp);
   if (thrust > 0.75) {
@@ -996,6 +1029,14 @@ void StatusDisplay::processNodeStats(const mrs_msgs::UavStatusConstPtr& msg) {
 }
 
 void StatusDisplay::nameUpdate() {
+  if(taken_uavs.find(last_uav_name) != taken_uavs.end()){
+    taken_uavs[last_uav_name] = false;
+  }
+  if(taken_uavs.find(uav_name_property->getStdString()) != taken_uavs.end()){
+    taken_uavs[last_uav_name] = true;
+  }
+  last_uav_name = uav_name_property->getStdString();
+
   uav_status_sub =
       nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
 

@@ -62,7 +62,8 @@ protected:
   bool global_mode_on = false;
 
   // | --------------------- Default values --------------------- |
-  const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off";
+  const QString GLOBAL_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off <b>'G':</b> turn global mode off";
+  const QString REMOTE_MODE_MESSAGE = "<b>'wasd' or 'hjkl'</b>: fly laterally. <b>'qe':</b> change heading. <b>'rf':</b> up and down. <b>'R':</b> remote mode off <b>'G':</b> turn global mode on";
   const QString DEFAULT_MODE_MESSAGE = "<b>Click and drag</b> to select objects on the screen. <b>Right-click</b> on drone to show services. <b>'R':</b> remote mode";
 
   const int KEY_M = 77;
