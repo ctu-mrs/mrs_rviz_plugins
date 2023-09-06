@@ -76,7 +76,6 @@ You can add your own services to drone's menu.
 
 Press the 'm' key (as menu) to show services on selected drones. Custom services will not be shown, only the default ones.
 
-=======
 #### WaypointPlanner
 
 Allows sending a sequence of waypoints to drone.
@@ -90,7 +89,7 @@ The click-and-pull input supplies a 2D position with heading (a waypoint). Tool 
 
 
 ![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
->>>>>>> master
+
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal
