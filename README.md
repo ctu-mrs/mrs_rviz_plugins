@@ -24,6 +24,11 @@ Integrates seamlessly.
 Displays useful information about the UAV state and sensors, integrates seamlessly.
 Use `mrs_rviz_plugins/UAV Status` display type.
 
+#### nav_msgs/Odometry vizualization
+
+Includes visualization of velocity and its covariance, integrates seamlessly.
+Use `mrs_rviz_plugins/OdometryWithVelocity` display type.
+
 #### NamedSetGoal
 
 RViz goal tool with modifiable label.
@@ -48,8 +53,8 @@ Shortcut key for the tool is 'c'.
 
 ##### Controlling the UAV through RVIZ  
 
-Press the 'R' key to enter the "remote" mode. While in this mode, you can fly the UAV with your keyboard.  
-While in remote mode, press 'G' to switch to global frame.  
+Press the 'R' key to enter the "remote" mode. While in this mode, you can fly the UAV with your keyboard.
+While in remote mode, press 'G' to switch to global frame.
 Only one key at a time is registered, multiple key inputs are not supported.
 
 |        Key       |        Action        |
@@ -71,6 +76,21 @@ You can add your own services to drone's menu.
 
 Press the 'm' key (as menu) to show services on selected drones. Custom services will not be shown, only the default ones.
 
+=======
+#### WaypointPlanner
+
+Allows sending a sequence of waypoints to drone.
+The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, fly now, loop, use heading).  
+
+|  Key  |         Action         |
+|:-----:|:----------------------:|
+|   w   | Turn the plugin on/off |
+|  del  |  Delete last waypoint  |
+| enter |   Trigger behaviour    |
+
+
+![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
+>>>>>>> master
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal

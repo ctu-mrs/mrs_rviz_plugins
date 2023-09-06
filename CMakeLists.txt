@@ -39,8 +39,8 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsControlPlugin
-  )
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsOdomViz MrsWaypointPlanner MrsControlPlugin
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -181,6 +181,42 @@ target_link_libraries(MrsNamedGoalTool
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   )
+
+## ODOM ViZ
+
+add_library(MrsOdomViz
+  include/odom_viz/odom_viz.h
+  include/odom_viz/visual_entity.h
+  src/odom_viz/odom_viz.cpp
+  src/odom_viz/visual_entity.cpp
+)
+
+add_dependencies(MrsOdomViz
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsOdomViz
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
+## WAYPOINT PLANNER
+
+add_library(MrsWaypointPlanner
+  include/waypoint_planner/waypoint_planner.h
+  src/waypoint_planner/waypoint_planner.cpp
+)
+
+add_dependencies(MrsWaypointPlanner
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsWaypointPlanner
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
 
 ## STATUS DISPLAY and CONTOL TOOL
 
