@@ -42,14 +42,14 @@ Shortcut key for the tool is 'c'.
 
 |        Mouse event        |            Action            |
 |:-------------------------:|:----------------------------:|
-|       Click and drag      | Select objects on the screen |
-|   Shift + Click and drag  |      Move Status Display     |
-|   Right-click (on drone)  |  Show services to be called  |
-|      Alt + Left-click     |            Rotate            |
-|     Alt + Middle-click    |           Move X/Y           |
-|  Alt + Shift + Left-click |           Move X/Y           |
+|      Click and drag       | Select objects on the screen |
+|  Shift + Click and drag   |  Move 'UAV Status' display   |
+|  Right-click (on drone)   |  Show services to be called  |
+|     Alt + Left-click      |            Rotate            |
+|    Alt + Middle-click     |           Move X/Y           |
+| Alt + Shift + Left-click  |           Move X/Y           |
 |     Alt + Right-click     |            Move Z            |
-| Alt + Shift + Right-click |            Move Z            |  
+| Alt + Shift + Right-click |            Move Z            |
 
 ##### Controlling the UAV through RVIZ  
 
