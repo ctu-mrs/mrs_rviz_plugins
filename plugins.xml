@@ -49,3 +49,19 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsControlPlugin">
+  <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
+    <description>
+      UAV control tool with mrs_uav_status functionality (including visualization).
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsControlPlugin">
+  <class name="mrs_rviz_plugins/UAV Status" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
+    <description>
+      RVIZ visualization copying the mrs_uav_status functionality.
+    </description>
+  </class>
+</library>

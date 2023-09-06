@@ -39,7 +39,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions("-Wno-register")
 
 set(LIBRARIES
-  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsOdomViz MrsWaypointPlanner
+  MrsBumperRviz MrsCovarianceRviz MrsRvizNavGoal MrsRvizPoseEstimate MrsSphereRviz MrsPoseWithCovarianceArrayRviz MrsTrackArrayRviz MrsNamedGoalTool MrsOdomViz MrsWaypointPlanner MrsControlPlugin
 )
 
 catkin_package(
@@ -217,6 +217,33 @@ target_link_libraries(MrsWaypointPlanner
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
 )
+
+## STATUS DISPLAY and CONTOL TOOL
+
+add_library(MrsControlPlugin
+  include/uav_status/status_display.h
+  include/uav_status/overlay_utils.h
+  include/control/im_server.h
+  include/control/control.h
+  include/control/drone_entity.h
+  include/control/overlay_picker_tool.h
+  src/control/im_server.cpp
+  src/control/control.cpp
+  src/control/drone_entity.cpp
+  src/control/overlay_picker_tool.cpp
+  src/uav_status/status_display.cpp
+  src/uav_status/overlay_utils.cpp
+  )
+
+add_dependencies(MrsControlPlugin
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsControlPlugin
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
 
 ## --------------------------------------------------------------
 ## |                           Install                          |
