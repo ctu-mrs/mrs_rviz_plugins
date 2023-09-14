@@ -210,6 +210,29 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
     return;
   }
 
+  // Finding height of the drone:
+  geometry_msgs::Pose pose;
+  pose.position.x = 0;
+  pose.position.y = 0;
+  pose.position.z = 0;
+
+  const std::string source_frame = drone_name_property->getStdString() + "/fcu";
+  const auto&       tf           = transformer.getTransform(source_frame, context_->getFrameManager()->getFixedFrame());
+  if (!tf) {
+    setStatus("[Waypoint planner]: No transformation from body frame to current frame found. Z component of visual entity is set to null");
+    ROS_INFO("[Waypoint planner]: No transformation found. Z component of visual entity is set to null");
+  } else {
+    const auto& point_transformed = transformer.transform(pose, tf.value());
+    if (!point_transformed) {
+      setStatus("[Waypoint planner]: Unable to transform cmd reference from body to current frame => z-axis component of visual entity set to null.");
+      ROS_INFO("[Waypoint planner]: Unable to transform cmd reference from %s to %s at time %.6f => z-axis component of visual entity set to null.",
+               source_frame.c_str(), context_->getFrameManager()->getFixedFrame().c_str(), ros::Time::now().toSec());
+      return;
+    } else {
+      pose = point_transformed.value();
+    }
+  }
+
   arrow_->getSceneNode()->setVisible(false);
   Ogre::SceneNode* node = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
@@ -222,10 +245,11 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
     arrows.push_back(arrow);
 
   } else if (shape_property->getOptionInt() == 0) {
+
     axes.push_back(new rviz::Axes(scene_manager_, node));
   }
 
-  const Ogre::Vector3 position = Ogre::Vector3(x, y, 0);
+  const Ogre::Vector3 position = Ogre::Vector3(x, y, pose.position.z);
 
   tf2::Quaternion quat;
   quat.setRPY(0, 0, theta);
@@ -242,7 +266,7 @@ void WaypointPlanner::onPoseSet(double x, double y, double theta) {
 }
 
 int WaypointPlanner::processMouseEvent(rviz::ViewportMouseEvent& event) {
-  int res = PoseTool::processMouseEvent(event);
+  const int res = PoseTool::processMouseEvent(event);
   return res & (~Finished);
 }
 

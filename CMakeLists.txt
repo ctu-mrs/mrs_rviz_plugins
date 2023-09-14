@@ -31,8 +31,6 @@ else()
   set(QT_LIBRARIES Qt5::Widgets)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -53,8 +51,9 @@ set(LIBRARIES
   MrsRvizPlugins_PoseWithCovarianceArray
   MrsRvizPlugins_TrackArray
   MrsRvizPlugins_NamedGoalTool
-  MrsRvizPlugins_MrsWaypointPlanner
-  MrsRvizPlugins_MrsOdomViz
+  MrsRvizPlugins_OdomViz
+  MrsRvizPlugins_WaypointPlanner
+  MrsRvizPlugins_Status
   )
 
 catkin_package(
@@ -199,39 +198,66 @@ target_link_libraries(MrsRvizPlugins_NamedGoalTool
 
 ## ODOM ViZ
 
-add_library(MrsRvizPlugins_MrsOdomViz
+add_library(MrsRvizPlugins_OdomViz
   include/odom_viz/odom_viz.h
   include/odom_viz/visual_entity.h
   src/odom_viz/odom_viz.cpp
   src/odom_viz/visual_entity.cpp
 )
 
-add_dependencies(MrsRvizPlugins_MrsOdomViz
+add_dependencies(MrsRvizPlugins_OdomViz
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(MrsRvizPlugins_MrsOdomViz
+target_link_libraries(MrsRvizPlugins_OdomViz
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
 ## WAYPOINT PLANNER
 
-add_library(MrsRvizPlugins_MrsWaypointPlanner
+add_library(MrsRvizPlugins_WaypointPlanner
   include/waypoint_planner/waypoint_planner.h
   src/waypoint_planner/waypoint_planner.cpp
 )
 
-add_dependencies(MrsRvizPlugins_MrsWaypointPlanner
+add_dependencies(MrsRvizPlugins_WaypointPlanner
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
 
-target_link_libraries(MrsRvizPlugins_MrsWaypointPlanner
+target_link_libraries(MrsRvizPlugins_WaypointPlanner
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
 )
+
+## STATUS DISPLAY and CONTOL TOOL
+
+add_library(MrsRvizPlugins_Status
+  include/uav_status/status_display.h
+  include/uav_status/overlay_utils.h
+  include/control/im_server.h
+  include/control/control.h
+  include/control/drone_entity.h
+  include/control/overlay_picker_tool.h
+  src/control/im_server.cpp
+  src/control/control.cpp
+  src/control/drone_entity.cpp
+  src/control/overlay_picker_tool.cpp
+  src/uav_status/status_display.cpp
+  src/uav_status/overlay_utils.cpp
+  )
+
+add_dependencies(MrsRvizPlugins_Status
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins_Status
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
 
 ## --------------------------------------------------------------
 ## |                           Install                          |

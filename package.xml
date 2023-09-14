@@ -22,6 +22,7 @@
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>rviz</depend>
+  <depend>visualisation_msgs</depend>
 
   <depend>qtbase5-dev</depend>
   <depend>libqt5-core</depend>
