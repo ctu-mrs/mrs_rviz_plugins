@@ -227,7 +227,7 @@ void DroneEntity::newSeviceCallback(const std_msgs::StringConstPtr& msg) {
   ROS_INFO("[Control tool] %s: new service \"%s\" has been added.", name.c_str(), service_name.c_str());
 }
 
-void DroneEntity::positionCmdCallback(const mrs_msgs::PositionCommandConstPtr& msg) {
+void DroneEntity::positionCmdCallback(const mrs_msgs::HwApiPositionCmdConstPtr& msg) {
   last_position = *msg;
 }
 

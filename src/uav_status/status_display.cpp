@@ -15,7 +15,7 @@ StatusDisplay::StatusDisplay() {
   control_manager_property = new rviz::BoolProperty("Control manager", true, "Show control manager data", this, SLOT(controlManagerUpdate()), this);
   odometry_property        = new rviz::BoolProperty("Odometry", true, "Show odometry data", this, SLOT(odometryUpdate()), this);
   computer_load_property   = new rviz::BoolProperty("Computer load", true, "Show computer load data", this, SLOT(computerLoadUpdate()), this);
-  mavros_state_property    = new rviz::BoolProperty("Mavros state", true, "Show mavros state data", this, SLOT(mavrosStateUpdate()), this);
+  hw_api_state_property    = new rviz::BoolProperty("Hw api state", true, "Show hw api state data", this, SLOT(hwApiStateUpdate()), this);
   topic_rates_property     = new rviz::BoolProperty("Topic rates", true, "Show somethin, idk anythin 1", this, SLOT(topicRatesUpdate()), this);
   custom_str_property      = new rviz::BoolProperty("Custom strings", true, "Show somethin, idk anythin 2", this, SLOT(customStrUpdate()), this);
   node_stats_property      = new rviz::BoolProperty("Node stats list", false, "Show rosnodes and their workload", this, SLOT(nodeStatsUpdate()), this);
@@ -34,7 +34,7 @@ void StatusDisplay::onInitialize() {
   contol_manager_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Control manager") + std::to_string(id)));
   odometry_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Odometry") + std::to_string(id)));
   general_info_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("General info") + std::to_string(id)));
-  mavros_state_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Mavros state") + std::to_string(id)));
+  hw_api_state_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Hw api state") + std::to_string(id)));
   topic_rates_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Topic rates") + std::to_string(id)));
   custom_strings_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Custom strings") + std::to_string(id)));
   rosnode_stats_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Rosnode shitlist") + std::to_string(id)));
@@ -184,8 +184,8 @@ void StatusDisplay::update(float wall_dt, float ros_dt) {
     drawOdometry();
   if (comp_state_update_required || global_update_required)
     drawGeneralInfo();
-  if (mavros_update_required || global_update_required)
-    drawMavros();
+  if (hw_api_state_update_required || global_update_required)
+    drawHwApiState();
   if (topics_update_required || global_update_required)
     drawCustomTopicRates();
   if (string_update_required || global_update_required)
@@ -553,19 +553,19 @@ void StatusDisplay::drawGeneralInfo() {
   general_info_overlay->setDimensions(general_info_overlay->getTextureWidth(), general_info_overlay->getTextureHeight());
 }
 
-void StatusDisplay::drawMavros() {
-  // Mavros overlay
-  mavros_state_overlay->updateTextureSize(230, 120);
-  mavros_state_overlay->setPosition(display_pos_x + mavros_pos_x, display_pos_y + mavros_pos_y);
-  mavros_state_overlay->show(mavros_state_property->getBool());
+void StatusDisplay::drawHwApiState() {
+  // Hw api overlay
+  hw_api_state_overlay->updateTextureSize(230, 120);
+  hw_api_state_overlay->setPosition(display_pos_x + hw_api_pos_x, display_pos_y + hw_api_pos_y);
+  hw_api_state_overlay->show(hw_api_state_property->getBool());
 
-  if (!mavros_state_property->getBool()) {
+  if (!hw_api_state_property->getBool()) {
     return;
   }
 
   // Setting the painter up
-  jsk_rviz_plugins::ScopedPixelBuffer buffer = mavros_state_overlay->getBuffer();
-  QImage                              hud    = buffer.getQImage(*mavros_state_overlay, bg_color);
+  jsk_rviz_plugins::ScopedPixelBuffer buffer = hw_api_state_overlay->getBuffer();
+  QImage                              hud    = buffer.getQImage(*hw_api_state_overlay, bg_color);
   QFont                               font   = QFont("DejaVu Sans Mono");
   font.setBold(true);
   QPainter painter(&hud);
@@ -576,12 +576,12 @@ void StatusDisplay::drawMavros() {
   // Main row
   QStaticText mavros_text = QStaticText("Mavros");
   QString     tmp;
-  tmp.sprintf("%s%.1f Hz", mavros_rate >= 100 ? "" : " ", mavros_rate);
-  QStaticText mavros_freq_text = QStaticText(tmp);
+  tmp.sprintf("%s%.1f Hz", hw_api_rate >= 100 ? "" : " ", hw_api_rate);
+  QStaticText hw_api_freq_text = QStaticText(tmp);
   painter.drawStaticText(94, 0, mavros_text);
-  painter.drawStaticText(152, 0, mavros_freq_text);
+  painter.drawStaticText(152, 0, hw_api_freq_text);
 
-  if (mavros_rate == 0) {  // No data
+  if (hw_api_rate == 0) {  // No data
     QRect no_data_rect = painter.boundingRect(0, 0, 0, 0, Qt::AlignLeft, "!NO DATA!");
     painter.fillRect(no_data_rect, RED_COLOR);
     painter.drawText(no_data_rect, "!NO DATA!");
@@ -590,13 +590,13 @@ void StatusDisplay::drawMavros() {
   // State:
   QRect state_rect = painter.boundingRect(0, 20, 0, 0, Qt::AlignLeft, "State: ");
   painter.drawStaticText(0, 20, QStaticText("State: "));
-  if (state_rate == 0) {
+  if (hw_api_state_rate == 0) {
     QRect error_rect = painter.boundingRect(state_rect.right(), 20, 0, 0, Qt::AlignLeft, "ERROR");
     painter.fillRect(error_rect, RED_COLOR);
     painter.drawText(error_rect, "ERROR");
 
   } else {
-    if (armed) {
+    if (hw_api_armed) {
       painter.drawStaticText(state_rect.right(), 20, QStaticText("ARMED"));
     } else {
       QRect error_rect = painter.boundingRect(state_rect.right(), 20, 0, 0, Qt::AlignLeft, "DISARMED");
@@ -608,15 +608,15 @@ void StatusDisplay::drawMavros() {
   // Mode:
   QRect mode_rect = painter.boundingRect(0, 40, 0, 0, Qt::AlignLeft, "Mode: ");
   painter.drawStaticText(0, 40, QStaticText("Mode: "));
-  if (mode != "OFFBOARD") {
-    painter.fillRect(painter.boundingRect(mode_rect.right(), 40, 0, 0, Qt::AlignLeft, QString(mode.c_str())), RED_COLOR);
+  if (hw_api_mode != "OFFBOARD") {
+    painter.fillRect(painter.boundingRect(mode_rect.right(), 40, 0, 0, Qt::AlignLeft, QString(hw_api_mode.c_str())), RED_COLOR);
   }
-  painter.drawStaticText(mode_rect.right(), 40, QStaticText(mode.c_str()));
+  painter.drawStaticText(mode_rect.right(), 40, QStaticText(hw_api_mode.c_str()));
 
   // Batt:
   QRect batt_rect = painter.boundingRect(0, 60, 0, 0, Qt::AlignLeft, "Batt: ");
   painter.drawStaticText(0, 60, QStaticText("Batt: "));
-  if (battery_rate == 0) {
+  if (hw_api_battery_rate == 0) {
 
     QRect error_rect = painter.boundingRect(batt_rect.right(), 60, 0, 0, Qt::AlignLeft, "ERROR");
     painter.fillRect(error_rect, RED_COLOR);
@@ -659,8 +659,8 @@ void StatusDisplay::drawMavros() {
   }
   painter.drawStaticText(thrst_rect.right(), 100, QStaticText(tmp));
 
-  // GPS
-  if (!mavros_gps_ok) {
+  // GNSS
+  if (!hw_api_gnss_ok) {
     QRect error_rect = painter.boundingRect(160, 20, 0, 0, Qt::AlignLeft, "NO_GPS");
     painter.fillRect(error_rect, RED_COLOR);
     painter.drawText(error_rect, Qt::AlignLeft, "NO_GPS");
@@ -669,13 +669,13 @@ void StatusDisplay::drawMavros() {
     painter.drawStaticText(160, 20, QStaticText("GPS_OK"));
 
     QColor gps_qual_color = RED_COLOR;
-    if (gps_qual < 5.0) {
+    if (hw_api_gnss_qual < 5.0) {
       gps_qual_color = NO_COLOR;
-    } else if (gps_qual < 10.0) {
+    } else if (hw_api_gnss_qual < 10.0) {
       gps_qual_color = YELLOW_COLOR;
     }
     
-    tmp.sprintf("Q: %.1f", gps_qual);
+    tmp.sprintf("Q: %.1f", hw_api_gnss_qual);
     QRect qual_rect = painter.boundingRect(160, 40, 0, 0, Qt::AlignLeft, tmp);
     painter.fillRect(qual_rect, gps_qual_color);
     painter.drawText(qual_rect, Qt::AlignLeft, tmp);
@@ -699,8 +699,8 @@ void StatusDisplay::drawMavros() {
   painter.drawText(mass_estim_rect, Qt::AlignLeft, tmp);
   painter.drawStaticText(mass_estim_rect.right(), 100, QStaticText("kg"));
 
-  mavros_update_required = false;
-  mavros_state_overlay->setDimensions(mavros_state_overlay->getTextureWidth(), mavros_state_overlay->getTextureHeight());
+  hw_api_state_update_required = false;
+  hw_api_state_overlay->setDimensions(hw_api_state_overlay->getTextureWidth(), hw_api_state_overlay->getTextureHeight());
 }
 
 void StatusDisplay::drawCustomTopicRates() {
@@ -869,7 +869,7 @@ void StatusDisplay::uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg) {
   processControlManager(msg);
   processOdometry(msg);
   processGeneralInfo(msg);
-  processMavros(msg);
+  processHwApiState(msg);
   processCustomTopics(msg);
   processCustomStrings(msg);
   processNodeStats(msg);
@@ -976,36 +976,36 @@ void StatusDisplay::processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg) {
   comp_state_update_required |= compareAndUpdate(new_disk_free, disk_free);
 }
 
-void StatusDisplay::processMavros(const mrs_msgs::UavStatusConstPtr& msg) {
-  double      new_mavros_rate        = msg->mavros_hz;
-  double      new_state_rate         = msg->mavros_state_hz;
-  double      new_cmd_rate           = msg->mavros_cmd_hz;
-  double      new_battery_rate       = msg->mavros_battery_hz;
-  bool        new_mavros_gps_ok      = msg->mavros_gps_ok;
-  bool        new_armed              = msg->mavros_armed;
-  std::string new_mode               = msg->mavros_mode;
-  double      new_battery_volt       = msg->battery_volt;
-  double      new_battery_curr       = msg->battery_curr;
-  double      new_battery_wh_drained = msg->battery_wh_drained;
-  double      new_thrust             = msg->thrust;
-  double      new_mass_estimate      = msg->mass_estimate;
-  double      new_mass_set           = msg->mass_set;
-  double      new_gps_qual           = msg->mavros_gps_qual;
+void StatusDisplay::processHwApiState(const mrs_msgs::UavStatusConstPtr& msg) {
+  double      new_hw_api_rate         = msg->hw_api_hz;
+  double      new_hw_api_state_rate   = msg->hw_api_state_hz;
+  double      new_hw_api_cmd_rate     = msg->hw_api_cmd_hz;
+  double      new_hw_api_battery_rate = msg->hw_api_battery_hz;
+  bool        new_hw_api_gnss_ok      = msg->hw_api_gnss_ok;
+  bool        new_hw_api_armed        = msg->hw_api_armed;
+  std::string new_hw_api_mode         = msg->hw_api_mode;
+  double      new_battery_volt        = msg->battery_volt;
+  double      new_battery_curr        = msg->battery_curr;
+  double      new_battery_wh_drained  = msg->battery_wh_drained;
+  double      new_thrust              = msg->thrust;
+  double      new_mass_estimate       = msg->mass_estimate;
+  double      new_mass_set            = msg->mass_set;
+  double      new_hw_api_gnss_qual    = msg->hw_api_gnss_qual;
 
-  mavros_update_required |= compareAndUpdate(new_mavros_rate, mavros_rate);
-  mavros_update_required |= compareAndUpdate(new_state_rate, state_rate);
-  mavros_update_required |= compareAndUpdate(new_cmd_rate, cmd_rate);
-  mavros_update_required |= compareAndUpdate(new_battery_rate, battery_rate);
-  mavros_update_required |= compareAndUpdate(new_mavros_gps_ok, mavros_gps_ok);
-  mavros_update_required |= compareAndUpdate(new_armed, armed);
-  mavros_update_required |= compareAndUpdate(new_mode, mode);
-  mavros_update_required |= compareAndUpdate(new_battery_volt, battery_volt);
-  mavros_update_required |= compareAndUpdate(new_battery_curr, battery_curr);
-  mavros_update_required |= compareAndUpdate(new_battery_wh_drained, battery_wh_drained);
-  mavros_update_required |= compareAndUpdate(new_thrust, thrust);
-  mavros_update_required |= compareAndUpdate(new_mass_estimate, mass_estimate);
-  mavros_update_required |= compareAndUpdate(new_mass_set, mass_set);
-  mavros_update_required |= compareAndUpdate(new_gps_qual, gps_qual);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_rate,           hw_api_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_state_rate,     hw_api_state_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_cmd_rate,       hw_api_cmd_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_battery_rate,   hw_api_battery_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_ok,        hw_api_gnss_ok);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_armed,          hw_api_armed);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_mode,           hw_api_mode);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_volt,          battery_volt);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_curr,          battery_curr);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_wh_drained,    battery_wh_drained);
+  hw_api_state_update_required |= compareAndUpdate(new_thrust,                thrust);
+  hw_api_state_update_required |= compareAndUpdate(new_mass_estimate,         mass_estimate);
+  hw_api_state_update_required |= compareAndUpdate(new_mass_set,              mass_set);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_qual,      hw_api_gnss_qual);
 }
 
 void StatusDisplay::processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -1110,11 +1110,11 @@ void StatusDisplay::computerLoadUpdate() {
   comp_state_update_required = true;
   if (!computer_load_property->getBool()) {
 
-    if (!mavros_state_property->getBool()) {
+    if (!hw_api_state_property->getBool()) {
       present_columns[GEN_INFO_INDEX] = false;
     }
 
-    mavrosStateUpdate();
+    hwApiStateUpdate();
     topicRatesUpdate();
     return;
   }
@@ -1126,31 +1126,31 @@ void StatusDisplay::computerLoadUpdate() {
     gen_info_pos_x += present_columns[i] ? 233 : 0;
   }
   gen_info_pos_y = top_line_property->getBool() ? 23 : 0;
-  mavrosStateUpdate();
+  hwApiStateUpdate();
 }
 
-void StatusDisplay::mavrosStateUpdate() {
-  mavros_update_required = true;
-  if (!mavros_state_property->getBool()) {
+void StatusDisplay::hwApiStateUpdate() {
+  hw_api_state_update_required = true;
+  if (!hw_api_state_property->getBool()) {
 
     if (!computer_load_property->getBool()) {
-      present_columns[MAVROS_INDEX] = false;
+      present_columns[HW_API_STATE_INDEX] = false;
     }
 
     topicRatesUpdate();
     return;
   }
 
-  present_columns[MAVROS_INDEX] = true;
+  present_columns[HW_API_STATE_INDEX] = true;
 
-  mavros_pos_x = 0;
-  for (int i = 0; i < MAVROS_INDEX; ++i) {
-    mavros_pos_x += present_columns[i] ? 233 : 0;
+  hw_api_pos_x = 0;
+  for (int i = 0; i < HW_API_STATE_INDEX; ++i) {
+    hw_api_pos_x += present_columns[i] ? 233 : 0;
   }
 
-  mavros_pos_y = 0;
-  mavros_pos_y += top_line_property->getBool() ? 23 : 0;
-  mavros_pos_y += computer_load_property->getBool() ? 63 : 0;
+  hw_api_pos_y = 0;
+  hw_api_pos_y += top_line_property->getBool() ? 23 : 0;
+  hw_api_pos_y += computer_load_property->getBool() ? 63 : 0;
   topicRatesUpdate();
 }
 
@@ -1276,7 +1276,7 @@ void StatusDisplay::onEnable() {
   contol_manager_overlay->show();
   odometry_overlay->show();
   general_info_overlay->show();
-  mavros_state_overlay->show();
+  hw_api_state_overlay->show();
   topic_rates_overlay->show();
   custom_strings_overlay->show();
   rosnode_stats_overlay->show();
@@ -1288,7 +1288,7 @@ void StatusDisplay::onDisable() {
   contol_manager_overlay->hide();
   odometry_overlay->hide();
   general_info_overlay->hide();
-  mavros_state_overlay->hide();
+  hw_api_state_overlay->hide();
   topic_rates_overlay->hide();
   custom_strings_overlay->hide();
   rosnode_stats_overlay->hide();

@@ -42,7 +42,7 @@
 #define CM_INDEX 0
 #define ODOM_INDEX 0
 #define GEN_INFO_INDEX 1
-#define MAVROS_INDEX 1
+#define HW_API_STATE_INDEX 1
 #define TOPIC_RATE_INDEX 2
 #define CUSTOM_STR_INDEX 3
 #define NODE_STATS_INDEX 4
@@ -85,7 +85,7 @@ private Q_SLOTS:
   void controlManagerUpdate();
   void odometryUpdate();
   void computerLoadUpdate();
-  void mavrosStateUpdate();
+  void hwApiStateUpdate();
   void topicRatesUpdate();
   void customStrUpdate();
   void nodeStatsUpdate();
@@ -117,7 +117,7 @@ private:
   void processControlManager(const mrs_msgs::UavStatusConstPtr& msg);
   void processOdometry(const mrs_msgs::UavStatusConstPtr& msg);
   void processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg);
-  void processMavros(const mrs_msgs::UavStatusConstPtr& msg);
+  void processHwApiState(const mrs_msgs::UavStatusConstPtr& msg);
   void processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg);
   void processCustomStrings(const mrs_msgs::UavStatusConstPtr& msg);
   void processNodeStats(const mrs_msgs::UavStatusConstPtr& msg);
@@ -127,7 +127,7 @@ private:
   void drawControlManager();
   void drawOdometry();
   void drawGeneralInfo();
-  void drawMavros();
+  void drawHwApiState();
   void drawCustomTopicRates();
   void drawCustomStrings();
   void drawNodeStats();
@@ -140,7 +140,7 @@ private:
   rviz::BoolProperty*         control_manager_property;
   rviz::BoolProperty*         odometry_property;
   rviz::BoolProperty*         computer_load_property;
-  rviz::BoolProperty*         mavros_state_property;
+  rviz::BoolProperty*         hw_api_state_property;
   rviz::BoolProperty*         topic_rates_property;
   rviz::BoolProperty*         custom_str_property;
   rviz::BoolProperty*         node_stats_property;
@@ -150,7 +150,7 @@ private:
   jsk_rviz_plugins::OverlayObject::Ptr contol_manager_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr odometry_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr general_info_overlay;
-  jsk_rviz_plugins::OverlayObject::Ptr mavros_state_overlay;
+  jsk_rviz_plugins::OverlayObject::Ptr hw_api_state_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr topic_rates_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr custom_strings_overlay;
   jsk_rviz_plugins::OverlayObject::Ptr rosnode_stats_overlay;
@@ -204,24 +204,24 @@ private:
   double disk_free                  = 0;
   bool   comp_state_update_required = true;
 
-  // Mavros
-  double      mavros_rate            = 0;
-  double      state_rate             = 0;
-  double      cmd_rate               = 0;
-  double      battery_rate           = 0;
-  bool        mavros_gps_ok          = false;
-  bool        armed                  = false;
-  std::string mode                   = "";
+  // Hw api state
+  double      hw_api_rate            = 0;
+  double      hw_api_state_rate      = 0;
+  double      hw_api_cmd_rate        = 0;
+  double      hw_api_battery_rate    = 0;
+  bool        hw_api_gnss_ok          = false;
+  bool        hw_api_armed           = false;
+  std::string hw_api_mode            = "";
   double      battery_volt           = 0;
   double      battery_curr           = 0;
   double      battery_wh_drained     = 0;
   double      thrust                 = 0;
   double      mass_estimate          = 0;
   double      mass_set               = 0;
-  double      gps_qual               = 0;
+  double      hw_api_gnss_qual        = 0;
   double      mag_norm               = 0;
   double      mag_norm_rate          = 0;
-  bool        mavros_update_required = true;
+  bool        hw_api_state_update_required = true;
 
   // Custom topics
   std::vector<mrs_msgs::CustomTopic> custom_topic_vec;
@@ -262,8 +262,8 @@ private:
   int  odom_pos_y             = 86;
   int  gen_info_pos_x         = 233;
   int  gen_info_pos_y         = 23;
-  int  mavros_pos_x           = 233;
-  int  mavros_pos_y           = 86;
+  int  hw_api_pos_x           = 233;
+  int  hw_api_pos_y           = 86;
   int  topic_rate_pos_x       = 466;
   int  topic_rate_pos_y       = 23;
   int  custom_str_pos_x       = 699;

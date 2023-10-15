@@ -13,7 +13,7 @@
 
 #include <mrs_msgs/TrajectoryReferenceSrv.h>
 #include <mrs_msgs/ReferenceStampedSrv.h>
-#include <mrs_msgs/PositionCommand.h>
+#include <mrs_msgs/HwApiPositionCmd.h>
 #include <mrs_msgs/UavStatus.h>
 #include <mrs_msgs/String.h>
 
@@ -111,7 +111,7 @@ protected:
   // | --------------------- State Callbacks -------------------- |
   void statusCallback(const mrs_msgs::UavStatusConstPtr& msg);
   void newSeviceCallback(const std_msgs::StringConstPtr& msg);
-  void positionCmdCallback(const mrs_msgs::PositionCommandConstPtr& msg);
+  void positionCmdCallback(const mrs_msgs::HwApiPositionCmdConstPtr& msg);
 
   // | ------------------------ Services ------------------------ |
   mrs_lib::ServiceClientHandler<mrs_msgs::ReferenceStampedSrv> service_goto_reference;
@@ -144,7 +144,7 @@ protected:
   // | ----------------------- Attributes ----------------------- |
   std::string               name;
   bool                      null_tracker; // Responsible for showing Land vs Takeoff
-  mrs_msgs::PositionCommand last_position;
+  mrs_msgs::HwApiPositionCmd last_position;
 
   // No method to get entries from menu handler, so we have to save them on inserting
   typedef interactive_markers::MenuHandler::EntryHandle MenuEntryHandle;
