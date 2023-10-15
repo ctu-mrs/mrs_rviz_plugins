@@ -103,7 +103,7 @@ void ControlTool::updateFocus(const rviz::ViewportMouseEvent& event) {
 
 int ControlTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   int flags;
-  if(!event.shift()){
+  if(!event.shift() || (event.shift() && event.alt())){
     flags = rviz::SelectionTool::processMouseEvent(event);
   }
 
