@@ -3,11 +3,11 @@
 
 namespace mrs_rviz_plugins
 {
-int StatusDisplay::display_number = 0;
+int                                   StatusDisplay::display_number = 0;
 std::unordered_map<std::string, bool> StatusDisplay::taken_uavs;
 
 StatusDisplay::StatusDisplay() {
-  id = display_number++;
+  id            = display_number++;
   last_uav_name = "uav1";
 
   uav_name_property        = new rviz::EditableEnumProperty("UAV name", "uav1", "Uav name to show status data", this, SLOT(nameUpdate()), this);
@@ -70,7 +70,7 @@ void StatusDisplay::onInitialize() {
 
     drone_names.push_back(name);
     uav_name_property->addOptionStd(name);
-    if(taken_uavs.find(name) == taken_uavs.end()) {
+    if (taken_uavs.find(name) == taken_uavs.end()) {
       taken_uavs[name] = false;
       ROS_INFO("[UAV Status]: %s was added to global drone names", name.c_str());
     }
@@ -80,18 +80,18 @@ void StatusDisplay::onInitialize() {
 
   // Find the first occurrence of a false value
   std::string first_available_uav;
-  bool found = false;
+  bool        found = false;
 
   for (const auto& pair : taken_uavs) {
     if (!pair.second) {
       first_available_uav = pair.first;
-      found = true;
+      found               = true;
       break;
     }
   }
 
   ROS_INFO("Available uav was %sfound", found ? "" : "not ");
-  if(found){
+  if (found) {
     uav_name_property->setStdString(first_available_uav);
     taken_uavs[first_available_uav] = true;
   }
@@ -106,15 +106,16 @@ void StatusDisplay::onInitialize() {
 }
 
 // Meant to take "Global Options" property only!
-void StatusDisplay::setTextColor(rviz::Property* property){
+void StatusDisplay::setTextColor(rviz::Property* property) {
   rviz::ColorProperty* color_property = nullptr;
   try {
     color_property = dynamic_cast<rviz::ColorProperty*>(property);
-  }catch (const std::bad_cast& e) {
+  }
+  catch (const std::bad_cast& e) {
     color_property = nullptr;
   }
 
-  if(color_property){
+  if (color_property) {
     int curr_r;
     int curr_g;
     int curr_b;
@@ -134,7 +135,7 @@ std::pair<int, int> StatusDisplay::getSpawnCoordinates(rviz::Property* property)
   rviz::DisplayGroup* display_group  = nullptr;
   StatusDisplay*      status_display = nullptr;
 
-  if(property->getNameStd() == "Global Options") {
+  if (property->getNameStd() == "Global Options") {
     for (int i = 0; i < property->numChildren(); i++) {
       setTextColor(property->childAt(i));
     }
@@ -269,7 +270,7 @@ void StatusDisplay::drawControlManager() {
   QString controller_text;
   if (controller_rate == 0) {
     controller_color = RED_COLOR;
-    controller_text = "NO CONTROLLER";
+    controller_text  = "NO CONTROLLER";
   } else {
     if (curr_controller.find("!NO DATA!") != std::string::npos) {
       controller_color = RED_COLOR;
@@ -296,8 +297,8 @@ void StatusDisplay::drawControlManager() {
   if (controller_rate == 0) {
 
     tracker_color = RED_COLOR;
-    tracker_text = "NO_TRACKER";
-  
+    tracker_text  = "NO_TRACKER";
+
   } else {
 
     if (curr_controller.find("!NO DATA!") != std::string::npos || null_tracker) {
@@ -356,7 +357,7 @@ void StatusDisplay::drawOdometry() {
     return;
   }
 
-  // XYZ and hdg column 
+  // XYZ and hdg column
   painter.drawStaticText(0, 20, QStaticText("X"));
   painter.drawStaticText(0, 40, QStaticText("Y"));
   painter.drawStaticText(0, 60, QStaticText("Z"));
@@ -445,19 +446,19 @@ void StatusDisplay::drawOdometry() {
     h_err_str.sprintf("%.1f", cerr_hdg);
 
     // Printing constant string and saving coordinates for changeable data
-    QRect tmp_rect   = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "C/E X");
+    QRect tmp_rect = painter.boundingRect(0, 100, 0, 0, Qt::AlignLeft, "C/E X");
     painter.drawText(tmp_rect, Qt::AlignLeft, "C/E X");
     QRect x_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, x_err_str);
 
-    tmp_rect   = painter.boundingRect(x_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Y");
+    tmp_rect = painter.boundingRect(x_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Y");
     painter.drawText(tmp_rect, Qt::AlignLeft, " Y");
     QRect y_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, y_err_str);
 
-    tmp_rect   = painter.boundingRect(y_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Z");
+    tmp_rect = painter.boundingRect(y_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " Z");
     painter.drawText(tmp_rect, Qt::AlignLeft, " Z");
     QRect z_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, z_err_str);
 
-    tmp_rect   = painter.boundingRect(z_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " H");
+    tmp_rect = painter.boundingRect(z_err_rect.right(), 100, 0, 0, Qt::AlignLeft, " H");
     painter.drawText(tmp_rect, Qt::AlignLeft, " H");
     QRect h_err_rect = painter.boundingRect(tmp_rect.right(), 100, 0, 0, Qt::AlignLeft, h_err_str);
 
@@ -674,7 +675,7 @@ void StatusDisplay::drawHwApiState() {
     } else if (hw_api_gnss_qual < 10.0) {
       gps_qual_color = YELLOW_COLOR;
     }
-    
+
     tmp.sprintf("Q: %.1f", hw_api_gnss_qual);
     QRect qual_rect = painter.boundingRect(160, 40, 0, 0, Qt::AlignLeft, tmp);
     painter.fillRect(qual_rect, gps_qual_color);
@@ -726,13 +727,13 @@ void StatusDisplay::drawCustomTopicRates() {
   painter.setPen(QPen(fg_color, 2, Qt::SolidLine));
 
   // Drawing topics
-  QString     frequency;
+  QString frequency;
   for (size_t i = 0; i < custom_topic_vec.size(); i++) {
     frequency.sprintf("%.1f Hz", custom_topic_vec[i].topic_hz);
 
     painter.drawStaticText(0, 20 * i, QStaticText(custom_topic_vec[i].topic_name.c_str()));
 
-    QRect freq_rect = painter.boundingRect(225, 20*i, 0, 0, Qt::AlignRight, frequency);
+    QRect freq_rect = painter.boundingRect(225, 20 * i, 0, 0, Qt::AlignRight, frequency);
     painter.fillRect(freq_rect, getColor(custom_topic_vec[i].topic_color));
     painter.drawText(freq_rect, Qt::AlignRight, frequency);
   }
@@ -836,10 +837,10 @@ void StatusDisplay::drawNodeStats() {
 
     QString load_text;
     load_text.sprintf("%3.1f", node_cpu_load_vec.cpu_loads[i]);
-    QRect load_rect = painter.boundingRect(390, (i+1)*20, 0, 0, Qt::AlignRight, load_text);
+    QRect load_rect = painter.boundingRect(390, (i + 1) * 20, 0, 0, Qt::AlignRight, load_text);
     painter.fillRect(load_rect, tmp_color);
     painter.drawText(load_rect, Qt::AlignRight, load_text);
-    
+
 
     // tmp.sprintf("%5.1f", node_cpu_load_vec.cpu_loads[i]);
     // painter.drawStaticText(345, 20 * (i + 1), QStaticText(tmp));
@@ -992,20 +993,20 @@ void StatusDisplay::processHwApiState(const mrs_msgs::UavStatusConstPtr& msg) {
   double      new_mass_set            = msg->mass_set;
   double      new_hw_api_gnss_qual    = msg->hw_api_gnss_qual;
 
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_rate,           hw_api_rate);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_state_rate,     hw_api_state_rate);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_cmd_rate,       hw_api_cmd_rate);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_battery_rate,   hw_api_battery_rate);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_ok,        hw_api_gnss_ok);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_armed,          hw_api_armed);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_mode,           hw_api_mode);
-  hw_api_state_update_required |= compareAndUpdate(new_battery_volt,          battery_volt);
-  hw_api_state_update_required |= compareAndUpdate(new_battery_curr,          battery_curr);
-  hw_api_state_update_required |= compareAndUpdate(new_battery_wh_drained,    battery_wh_drained);
-  hw_api_state_update_required |= compareAndUpdate(new_thrust,                thrust);
-  hw_api_state_update_required |= compareAndUpdate(new_mass_estimate,         mass_estimate);
-  hw_api_state_update_required |= compareAndUpdate(new_mass_set,              mass_set);
-  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_qual,      hw_api_gnss_qual);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_rate, hw_api_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_state_rate, hw_api_state_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_cmd_rate, hw_api_cmd_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_battery_rate, hw_api_battery_rate);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_ok, hw_api_gnss_ok);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_armed, hw_api_armed);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_mode, hw_api_mode);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_volt, battery_volt);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_curr, battery_curr);
+  hw_api_state_update_required |= compareAndUpdate(new_battery_wh_drained, battery_wh_drained);
+  hw_api_state_update_required |= compareAndUpdate(new_thrust, thrust);
+  hw_api_state_update_required |= compareAndUpdate(new_mass_estimate, mass_estimate);
+  hw_api_state_update_required |= compareAndUpdate(new_mass_set, mass_set);
+  hw_api_state_update_required |= compareAndUpdate(new_hw_api_gnss_qual, hw_api_gnss_qual);
 }
 
 void StatusDisplay::processCustomTopics(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -1029,10 +1030,10 @@ void StatusDisplay::processNodeStats(const mrs_msgs::UavStatusConstPtr& msg) {
 }
 
 void StatusDisplay::nameUpdate() {
-  if(taken_uavs.find(last_uav_name) != taken_uavs.end()){
+  if (taken_uavs.find(last_uav_name) != taken_uavs.end()) {
     taken_uavs[last_uav_name] = false;
   }
-  if(taken_uavs.find(uav_name_property->getStdString()) != taken_uavs.end()){
+  if (taken_uavs.find(uav_name_property->getStdString()) != taken_uavs.end()) {
     taken_uavs[last_uav_name] = true;
   }
   last_uav_name = uav_name_property->getStdString();
