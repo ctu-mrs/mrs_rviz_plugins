@@ -34,7 +34,7 @@
   </class>
 </library>
 
-<library path="lib/libMrsRvizPlugins_MrsOdomViz">
+<library path="lib/libMrsRvizPlugins_OdomViz">
   <class name="mrs_rviz_plugins/OdometryWithVelocity" type="mrs_rviz_plugins::OdomViz" base_class_type="rviz::Display">
     <description>
       Advanced nav_msgs/Odometry visualizer.
@@ -42,10 +42,26 @@
   </class>
 </library>
 
-<library path="lib/libMrsRvizPlugins_MrsWaypointPlanner">
+<library path="lib/libMrsRvizPlugins_WaypointPlanner">
   <class name="mrs_rviz_plugins/WaypointPlanner" type="mrs_rviz_plugins::WaypointPlanner" base_class_type="rviz::Tool">
     <description>
-      Set sequence of waypoints that a drone has to fly through.
+      Set sequence of navigation waypoints for a drone to fly through.
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsRvizPlugins_Status">
+  <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
+    <description>
+      UAV control tool with mrs_uav_status functionality (including visualization).
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsRvizPlugins_Status">
+  <class name="mrs_rviz_plugins/Status" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
+    <description>
+      RVIZ visualization copying the mrs_uav_status functionality.
     </description>
   </class>
 </library>
