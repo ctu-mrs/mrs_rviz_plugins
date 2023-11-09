@@ -3,16 +3,17 @@
 
 using namespace visualization_msgs;
 
-namespace mrs_rviz_plugins{
+namespace mrs_rviz_plugins
+{
 
-ImServer::ImServer(){
+ImServer::ImServer() {
   nh = ros::NodeHandle();
   checkNewDrones(ros::TimerEvent());
   check_new_drones = nh.createTimer(ros::Duration(3.0), &ImServer::checkNewDrones, this);
 }
 
-ImServer::~ImServer(){
-  for(auto drone_ptr : drones){
+ImServer::~ImServer() {
+  for (auto drone_ptr : drones) {
     delete drone_ptr.second;
   }
   drones.clear();
@@ -22,7 +23,8 @@ void ImServer::addDrone(const std::string& name) {
   drones.insert(std::make_pair(name, new DroneEntity(name)));
 }
 
-void ImServer::checkNewDrones(const ros::TimerEvent&){
+void ImServer::checkNewDrones(const ros::TimerEvent&) {
+
   // Preparing for searching the drone's name
   XmlRpc::XmlRpcValue      req = "/node";
   XmlRpc::XmlRpcValue      res;
@@ -53,21 +55,20 @@ void ImServer::checkNewDrones(const ros::TimerEvent&){
     state[x] = name;
   }
 
-  for(const std::string& uav_name : drone_names){
-    if(drones.find(uav_name) == drones.end()){
+  for (const std::string& uav_name : drone_names) {
+    if (drones.find(uav_name) == drones.end()) {
       addDrone(uav_name);
     }
   }
-
 }
 
 // If element of "possible" is not in "present", deletes it
-void chooseOptions(std::vector<std::string>& possible, const std::vector<std::string>& present){
-  for(auto option_iter = possible.begin(); option_iter != possible.end(); ){
+void chooseOptions(std::vector<std::string>& possible, const std::vector<std::string>& present) {
+  for (auto option_iter = possible.begin(); option_iter != possible.end();) {
     auto iter = std::find(present.begin(), present.end(), *option_iter);
-    if(iter == present.end()){
+    if (iter == present.end()) {
       option_iter = possible.erase(option_iter);
-    }else{
+    } else {
       ++option_iter;
     }
   }
@@ -75,9 +76,9 @@ void chooseOptions(std::vector<std::string>& possible, const std::vector<std::st
 
 bool ImServer::select(const std::vector<std::string>& names) {
   selected_drones.clear();
-  for(const std::string& name : names){
+  for (const std::string& name : names) {
     auto drone = drones.find(name);
-    if(drone == drones.end()){
+    if (drone == drones.end()) {
       ROS_ERROR("[Control tool]: Selected drone is not found among existing drones");
       selected_drones.clear();
       return false;
@@ -88,24 +89,24 @@ bool ImServer::select(const std::vector<std::string>& names) {
 }
 
 boost::shared_ptr<QMenu> ImServer::getMenu() {
-  if(selected_drones.empty()){
+  if (selected_drones.empty()) {
     ROS_INFO("[Control tool]: No drone has been selected");
     return (boost::shared_ptr<QMenu>());
   }
 
   // Create basic instances
   menu.reset(new QMenu());
-  QAction* land              = new QAction("Land",            menu.get());
-  QAction* land_home       = new QAction("Land Home",       menu.get());
-  QAction* takeoff         = new QAction("Takeoff",         menu.get());
-  QMenu* set_constraints   = new QMenu("Set Constraints",   menu.get());
-  QMenu* set_gains         = new QMenu("Set Gains",         menu.get());
-  QMenu* set_controller    = new QMenu("Set Controller",    menu.get());
-  QMenu* set_tracker       = new QMenu("Set Tracker",       menu.get());
-  QMenu* set_odom_source   = new QMenu("Set Odom Source",   menu.get());
-  QMenu* set_lat_estimator = new QMenu("Set Lat Estimator", menu.get());
-  QMenu* set_alt_estimator = new QMenu("Set Alt Estimator", menu.get());
-  QMenu* set_hdg_estimator = new QMenu("Set Hdg Estimator", menu.get());
+  QAction* land              = new QAction("Land", menu.get());
+  QAction* land_home         = new QAction("Land Home", menu.get());
+  QAction* takeoff           = new QAction("Takeoff", menu.get());
+  QMenu*   set_constraints   = new QMenu("Set Constraints", menu.get());
+  QMenu*   set_gains         = new QMenu("Set Gains", menu.get());
+  QMenu*   set_controller    = new QMenu("Set Controller", menu.get());
+  QMenu*   set_tracker       = new QMenu("Set Tracker", menu.get());
+  QMenu*   set_odom_source   = new QMenu("Set Odom Source", menu.get());
+  QMenu*   set_lat_estimator = new QMenu("Set Lat Estimator", menu.get());
+  QMenu*   set_alt_estimator = new QMenu("Set Alt Estimator", menu.get());
+  QMenu*   set_hdg_estimator = new QMenu("Set Hdg Estimator", menu.get());
 
   // Connect signals
   connect(land, &QAction::triggered, this, &ImServer::landNow);
@@ -114,13 +115,13 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
 
   // Check state of each drone, and if they are different, do not put Land and Takeoff
   const bool first_value = selected_drones[0]->getNullTracker();
-  bool is_same = true;
-  for(auto& selected_drone : selected_drones){
+  bool       is_same     = true;
+  for (auto& selected_drone : selected_drones) {
     is_same &= first_value == selected_drone->getNullTracker();
   }
-  if(is_same && first_value){
+  if (is_same && first_value) {
     menu->addAction(takeoff);
-  } else if(is_same && !first_value){
+  } else if (is_same && !first_value) {
     menu->addAction(land);
     menu->addAction(land_home);
   }
@@ -138,10 +139,10 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   std::vector<std::string> odom_hdg_estimtor_options = drone->getHdgEstimators();
   std::vector<std::string> present_options;
 
-  for(auto& selected_drone : selected_drones){
+  for (auto& selected_drone : selected_drones) {
     present_options = selected_drone->getConstraints();
     chooseOptions(constraint_options, present_options);
-    
+
     present_options = selected_drone->getGains();
     chooseOptions(gain_options, present_options);
 
@@ -165,58 +166,58 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   }
 
   // Set menu actions
-  for(const auto& option : constraint_options){
+  for (const auto& option : constraint_options) {
     QAction* action = new QAction(option.c_str(), set_constraints);
-    connect(action, &QAction::triggered, this, [this, option](){setConstraints(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setConstraints(option); });
     set_constraints->addAction(action);
   }
   menu->addMenu(set_constraints);
 
-  for(const auto& option : gain_options){
+  for (const auto& option : gain_options) {
     QAction* action = new QAction(option.c_str(), set_gains);
-    connect(action, &QAction::triggered, this, [this, option](){setGains(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setGains(option); });
     set_gains->addAction(action);
   }
   menu->addMenu(set_gains);
 
-  for(const auto& option : controller_options){
+  for (const auto& option : controller_options) {
     QAction* action = new QAction(option.c_str(), set_controller);
-    connect(action, &QAction::triggered, this, [this, option](){setControllers(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setControllers(option); });
     set_controller->addAction(action);
   }
   menu->addMenu(set_controller);
 
-  for(const auto& option : tracker_options){
+  for (const auto& option : tracker_options) {
     QAction* action = new QAction(option.c_str(), set_tracker);
-    connect(action, &QAction::triggered, this, [this, option](){setTrackers(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setTrackers(option); });
     set_tracker->addAction(action);
   }
   menu->addMenu(set_tracker);
 
-  for(const auto& option : odom_source_options){
+  for (const auto& option : odom_source_options) {
     QAction* action = new QAction(option.c_str(), set_odom_source);
-    connect(action, &QAction::triggered, this, [this, option](){setOdomSources(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setOdomSources(option); });
     set_odom_source->addAction(action);
   }
   menu->addMenu(set_odom_source);
 
-  for(const auto& option : odom_lat_estimtor_options){
+  for (const auto& option : odom_lat_estimtor_options) {
     QAction* action = new QAction(option.c_str(), set_lat_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setLatEstimators(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setLatEstimators(option); });
     set_lat_estimator->addAction(action);
   }
   menu->addMenu(set_lat_estimator);
 
-  for(const auto& option : odom_alt_estimtor_options){
+  for (const auto& option : odom_alt_estimtor_options) {
     QAction* action = new QAction(option.c_str(), set_alt_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setAltEstimators(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setAltEstimators(option); });
     set_alt_estimator->addAction(action);
   }
   menu->addMenu(set_alt_estimator);
 
-  for(const auto& option : odom_hdg_estimtor_options){
+  for (const auto& option : odom_hdg_estimtor_options) {
     QAction* action = new QAction(option.c_str(), set_hdg_estimator);
-    connect(action, &QAction::triggered, this, [this, option](){setHdgEstimators(option);});
+    connect(action, &QAction::triggered, this, [this, option]() { setHdgEstimators(option); });
     set_hdg_estimator->addAction(action);
   }
   menu->addMenu(set_hdg_estimator);
@@ -224,184 +225,148 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   return menu;
 }
 
-void ImServer::flyForwardSelected(bool global_mode_on){
-  for(const auto& drone : selected_drones){
+void ImServer::flyForwardSelected(bool global_mode_on) {
+  for (const auto& drone : selected_drones) {
     drone->flyForward(global_mode_on);
   }
 }
 
-void ImServer::flyBackwardSelected(bool global_mode_on){
-  for(const auto& drone : selected_drones){
+void ImServer::flyBackwardSelected(bool global_mode_on) {
+  for (const auto& drone : selected_drones) {
     drone->flyBackward(global_mode_on);
   }
 }
 
-void ImServer::flyRightSelected(bool global_mode_on){
-  for(const auto& drone : selected_drones){
+void ImServer::flyRightSelected(bool global_mode_on) {
+  for (const auto& drone : selected_drones) {
     drone->flyRight(global_mode_on);
   }
 }
 
-void ImServer::flyLeftSelected(bool global_mode_on){
-  for(const auto& drone : selected_drones){
+void ImServer::flyLeftSelected(bool global_mode_on) {
+  for (const auto& drone : selected_drones) {
     drone->flyLeft(global_mode_on);
   }
 }
 
-void ImServer::flyUpSelected(){
-  for(const auto& drone : selected_drones){
+void ImServer::flyUpSelected() {
+  for (const auto& drone : selected_drones) {
     drone->flyUp();
   }
 }
 
-void ImServer::flyDownSelected(){
-  for(const auto& drone : selected_drones){
+void ImServer::flyDownSelected() {
+  for (const auto& drone : selected_drones) {
     drone->flyDown();
   }
 }
 
-void ImServer::rotateClockwiseSelected(){
-  for(const auto& drone : selected_drones){
+void ImServer::rotateClockwiseSelected() {
+  for (const auto& drone : selected_drones) {
     drone->rotateClockwise();
   }
 }
 
-void ImServer::rotateAntiClockwiseSelected(){
-  for(const auto& drone : selected_drones){
+void ImServer::rotateAntiClockwiseSelected() {
+  for (const auto& drone : selected_drones) {
     drone->rotateAntiClockwise();
   }
 }
 
 void ImServer::landNow() {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->land();
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: selected drones landed successfully");
-  } else{
-    ROS_INFO("[Control toll]: landing failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: landing failed on one or more drones");
   }
 }
 
 void ImServer::landHome() {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->landHome();
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: selected drones landed home successfully");
-  } else{
-    ROS_INFO("[Control toll]: landing home failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: landing home failed on one or more drones");
   }
 }
 
 void ImServer::takeoffNow() {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->takeoff();
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: selected drones took off successfully");
-  } else{
-    ROS_INFO("[Control toll]: taking off failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: taking off failed on one or more drones");
   }
 }
 
 void ImServer::setConstraints(const std::string& value) {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->setConstraint(value);
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: constraints are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting constraints failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: setting constraints failed on one or more drones");
   }
 }
 
 void ImServer::setGains(const std::string& value) {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->setGain(value);
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: gains are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting gains failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: setting gains failed on one or more drones");
   }
 }
 
 void ImServer::setControllers(const std::string& value) {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->setController(value);
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: controllers are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting controllers failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: setting controllers failed on one or more drones");
   }
 }
 
 void ImServer::setTrackers(const std::string& value) {
   bool res = true;
-  for(const auto& drone : selected_drones){
+  for (const auto& drone : selected_drones) {
     res &= drone->setTracker(value);
   }
-  if(res){
+  if (res) {
     ROS_INFO("[Control tool]: trackers are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting trackers failed on one or more drones");
+  } else {
+    ROS_INFO("[Control tool]: setting trackers failed on one or more drones");
   }
 }
 
 void ImServer::setOdomSources(const std::string& value) {
   bool res = true;
-  for(const auto& drone : selected_drones){
-    res &= drone->setOdomSource(value);
+  for (const auto& drone : selected_drones) {
+    res &= drone->setEstimator(value);
   }
-  if(res){
-    ROS_INFO("[Control tool]: odometry sources are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting odomentry sources failed on one or more drones");
-  }
-}
-
-void ImServer::setLatEstimators(const std::string& value) {
-  bool res = true;
-  for(const auto& drone : selected_drones){
-    res &= drone->setLatEstimator(value);
-  }
-  if(res){
-    ROS_INFO("[Control tool]: lat estimators are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting lat estimators failed on one or more drones");
+  if (res) {
+    ROS_INFO("[Control tool]: estimator sources are set successfully");
+  } else {
+    ROS_INFO("[Control tool]: setting estimator sources failed on one or more drones");
   }
 }
 
-void ImServer::setAltEstimators(const std::string& value) {
-  bool res = true;
-  for(const auto& drone : selected_drones){
-    res &= drone->setAltEstimator(value);
-  }
-  if(res){
-    ROS_INFO("[Control tool]: alt estimators are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting alt estimators failed on one or more drones");
-  }
-}
-
-void ImServer::setHdgEstimators(const std::string& value) {
-  bool res = true;
-  for(const auto& drone : selected_drones){
-    res &= drone->setHdgEstimator(value);
-  }
-  if(res){
-    ROS_INFO("[Control tool]: hdg estimators are set successfully");
-  } else{
-    ROS_INFO("[Control toll]: setting hdg estimators failed on one or more drones");
-  }
-}
-
-} // namespace mrs_rviz_plugins
+}  // namespace mrs_rviz_plugins

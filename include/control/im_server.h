@@ -64,7 +64,7 @@ protected:
   void setConstraints   (const std::string& value);
   void setGains         (const std::string& value);
   void setControllers   (const std::string& value);
-  void setTrackers      (const std::string& value);
+  void setTracker      (const std::string& value);
   void setOdomSources   (const std::string& value);
   void setLatEstimators (const std::string& value);
   void setAltEstimators (const std::string& value);
