@@ -13,18 +13,18 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>roscpp</depend>
   <depend>cmake_modules</depend>
-  <depend>pluginlib</depend>
-  <depend>nodelet</depend>
-
-  <depend>mrs_msgs</depend>
-  <depend>visualisation_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>nav_msgs</depend>
   <depend>mrs_lib</depend>
-
+  <depend>mrs_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>nodelet</depend>
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
   <depend>rviz</depend>
+  <depend>rviz_satellite</depend>
+  <depend>visualization_msgs</depend>
+
   <depend>qtbase5-dev</depend>
   <depend>libqt5-core</depend>
   <depend>libqt5-gui</depend>

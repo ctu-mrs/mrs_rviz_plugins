@@ -22,8 +22,6 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 
-#include <mrs_msgs/SpawnerDiagnostics.h>
-
 #include <ros/ros.h>
 
 #include <QString>

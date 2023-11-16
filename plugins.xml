@@ -1,32 +1,32 @@
-<library path="lib/libMrsSphereRviz">
+<library path="lib/libMrsRvizPlugins_Sphere">
   <class name="mrs_rviz_plugins/Sphere" type="mrs_rviz_plugins::sphere::Display" base_class_type="rviz::Display">
     <description>Display tool for visualizing mrs_msgs/Sphere messages.</description>
     <message_type>mrs_msgs/Sphere</message_type>
   </class>
 </library>
 
-<library path="lib/libMrsBumperRviz">
+<library path="lib/libMrsRvizPlugins_Bumper">
   <class name="mrs_rviz_plugins/Bumper" type="mrs_rviz_plugins::bumper::Display" base_class_type="rviz::Display">
     <description>Display tool for visualizing mrs_msgs/ObstacleSectors messages.</description>
     <message_type>mrs_msgs/ObstacleSectors</message_type>
   </class>
 </library>
 
-<library path="lib/libMrsPoseWithCovarianceArrayRviz">
+<library path="lib/libMrsRvizPlugins_PoseWithCovarianceArray">
   <class name="mrs_rviz_plugins/PoseWithCovarianceArray" type="mrs_rviz_plugins::pose_with_covariance_array::Display" base_class_type="rviz::Display">
     <description>Display tool for visualizing mrs_msgs/PoseWithCovarianceArrayStamped messages.</description>
     <message_type>mrs_msgs/PoseWithCovarianceArrayStamped</message_type>
   </class>
 </library>
 
-<library path="lib/libMrsTrackArrayRviz">
+<library path="lib/libMrsRvizPlugins_TrackArray">
   <class name="mrs_rviz_plugins/TrackArray" type="mrs_rviz_plugins::track_array::Display" base_class_type="rviz::Display">
     <description>Display tool for visualizing mrs_msgs/TrackArrayStamped messages.</description>
     <message_type>mrs_msgs/TrackArrayStamped</message_type>
   </class>
 </library>
 
-<library path="lib/libMrsNamedGoalTool">
+<library path="lib/libMrsRvizPlugins_NamedGoalTool">
   <class name="mrs_rviz_plugins/NamedSetGoal" type="mrs_rviz_plugins::NamedGoalTool" base_class_type="rviz::Tool">
     <description>
       Publish a goal pose for the robot. After one use, reverts to default tool.
@@ -34,7 +34,7 @@
   </class>
 </library>
 
-<library path="lib/libMrsOdomViz">
+<library path="lib/libMrsRvizPlugins_OdomViz">
   <class name="mrs_rviz_plugins/OdometryWithVelocity" type="mrs_rviz_plugins::OdomViz" base_class_type="rviz::Display">
     <description>
       Advanced nav_msgs/Odometry visualizer.
@@ -42,7 +42,7 @@
   </class>
 </library>
 
-<library path="lib/libMrsWaypointPlanner">
+<library path="lib/libMrsRvizPlugins_WaypointPlanner">
   <class name="mrs_rviz_plugins/WaypointPlanner" type="mrs_rviz_plugins::WaypointPlanner" base_class_type="rviz::Tool">
     <description>
       Set sequence of navigation waypoints for a drone to fly through.
@@ -50,7 +50,7 @@
   </class>
 </library>
 
-<library path="lib/libMrsControlPlugin">
+<library path="lib/libMrsRvizPlugins_Status">
   <class name="mrs_rviz_plugins/ControlTool" type="mrs_rviz_plugins::ControlTool" base_class_type="rviz::Tool">
     <description>
       UAV control tool with mrs_uav_status functionality (including visualization).
@@ -58,8 +58,8 @@
   </class>
 </library>
 
-<library path="lib/libMrsControlPlugin">
-  <class name="mrs_rviz_plugins/UAV Status" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
+<library path="lib/libMrsRvizPlugins_Status">
+  <class name="mrs_rviz_plugins/Status" type="mrs_rviz_plugins::StatusDisplay" base_class_type="rviz::Display">
     <description>
       RVIZ visualization copying the mrs_uav_status functionality.
     </description>

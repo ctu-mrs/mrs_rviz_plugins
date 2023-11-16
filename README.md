@@ -2,8 +2,9 @@
 
 ![](.fig/thumbnail.jpg)
 
-| Build status | [![Build Status](https://github.com/ctu-mrs/mrs_rviz_plugins/workflows/Noetic/badge.svg)](https://github.com/ctu-mrs/mrs_rviz_plugins/actions) |
-|--------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+> :warning: **Attention please: This README is outdated.**
+>
+> The MRS UAV System 1.5 is being released and this page needs updating. Please, keep in mind that the information on this page might not be valid.
 
 ## Plugins
 
@@ -76,11 +77,10 @@ You can add your own services to drone's menu.
 
 Press the 'm' key (as menu) to show services on selected drones. Custom services will not be shown, only the default ones.
 
-=======
 #### WaypointPlanner
 
 Allows sending a sequence of waypoints to drone.
-The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, fly now, loop, use heading).  
+The click-and-pull input supplies a 2D position with heading (a waypoint). Tool properties allow customization (height change, fly now, loop, use heading).
 
 |  Key  |         Action         |
 |:-----:|:----------------------:|
@@ -88,9 +88,8 @@ The click-and-pull input supplies a 2D position with heading (a waypoint). Tool 
 |  del  |  Delete last waypoint  |
 | enter |   Trigger behaviour    |
 
-
 ![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
->>>>>>> master
+
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal

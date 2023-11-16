@@ -12,6 +12,7 @@
 
 #include <mrs_msgs/MpcTrackerDiagnostics.h>
 #include <mrs_msgs/ReferenceStampedSrv.h>
+#include <mrs_msgs/TrackerCommand.h>
 
 #include <mrs_lib/param_loader.h>
 #include <mrs_lib/profiler.h>
@@ -40,21 +41,21 @@ private:
   ros::NodeHandle nh_;
   bool            is_initialized_ = false;
 
+  std::string _uav_name_;
+
   // | ---------------------- msg callbacks --------------------- |
 
 private:
   mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped> sh_rviz_goal_;
-  void                                                  callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>& wrp);
 
-  mrs_lib::SubscribeHandler<nav_msgs::Odometry> sh_cmd_odom_;
-  void                                          callbackCmdOdomUav(mrs_lib::SubscribeHandler<nav_msgs::Odometry>& wrp);
+  void callbackRvizNavGoal(const geometry_msgs::PoseStamped::ConstPtr wrp);
 
-  void timeoutGeneric(const std::string& topic, const ros::Time& last_msg, [[maybe_unused]] const int n_pubs);
+  mrs_lib::SubscribeHandler<mrs_msgs::TrackerCommand> sh_tracker_cmd_;
 
-  void               callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
-  nav_msgs::Odometry odom_uav_;
-  bool               got_odom_uav_ = false;
-  std::mutex         mutex_odom_uav_;
+  void timeoutTrackerCmd(const std::string& topic, const ros::Time& last_msg);
+
+  bool       got_odom_uav_ = false;
+  std::mutex mutex_odom_uav_;
 
   mrs_lib::Transformer transformer_;
 
@@ -81,9 +82,11 @@ void NavGoal::onInit() {
   mrs_lib::ParamLoader param_loader(nh_, "NavGoal");
 
   param_loader.loadParam("enable_profiler", _profiler_enabled_);
+  param_loader.loadParam("uav_name", _uav_name_);
 
   transformer_ = mrs_lib::Transformer("NavGoal");
   transformer_.setLookupTimeout(ros::Duration(1.0));
+  transformer_.setDefaultFrame(_uav_name_);
 
   mrs_lib::SubscribeHandlerOptions shopts;
   shopts.nh                 = nh_;
@@ -96,9 +99,8 @@ void NavGoal::onInit() {
 
 
   // | ----------------------- subscribers ---------------------- |
-  sh_rviz_goal_ = mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>(shopts, "rviz_nav_goal_in", &NavGoal::callbackRvizNavGoal, this);
-  sh_cmd_odom_  = mrs_lib::SubscribeHandler<nav_msgs::Odometry>(shopts, "cmd_odom_in", ros::Duration(1.0), &NavGoal::timeoutGeneric, this,
-                                                               &NavGoal::callbackCmdOdomUav, this);
+  sh_rviz_goal_   = mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>(shopts, "rviz_nav_goal_in", &NavGoal::callbackRvizNavGoal, this);
+  sh_tracker_cmd_ = mrs_lib::SubscribeHandler<mrs_msgs::TrackerCommand>(shopts, "tracker_cmd_in", ros::Duration(1.0), &NavGoal::timeoutTrackerCmd, this);
 
   // | --------------- initialize service clients --------------- |
   srv_client_reference_ = nh_.serviceClient<mrs_msgs::ReferenceStampedSrv>("reference_service_out");
@@ -116,45 +118,48 @@ void NavGoal::onInit() {
 
 /* callbackRvizNavGoal() //{ */
 
-void NavGoal::callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseStamped>& wrp) {
+void NavGoal::callbackRvizNavGoal(const geometry_msgs::PoseStamped::ConstPtr msg) {
 
   /* do not continue if the nodelet is not initialized */
   if (!is_initialized_) {
     return;
   }
 
-  if (!got_odom_uav_) {
-    ROS_WARN("[NavGoal]: Haven't received UAV odometry yet, skipping goal.");
+  if (!sh_tracker_cmd_.hasMsg()) {
+    ROS_WARN("[NavGoal]: Haven't received tracker command yet, skipping goal.");
     return;
   }
 
-  geometry_msgs::PoseStampedConstPtr goal_ptr = wrp.getMsg();
-  geometry_msgs::PoseStamped         goal     = *goal_ptr;
+  geometry_msgs::PoseStamped goal = *msg;
 
-  {
-    std::scoped_lock lock(mutex_odom_uav_);
+  auto tracker_cmd = sh_tracker_cmd_.getMsg();
 
-    // transform UAV odometry to reference frame of the goal
-    auto tf = transformer_.getTransform(odom_uav_.header.frame_id, goal.header.frame_id, odom_uav_.header.stamp);
-    if (tf) {
-      geometry_msgs::PoseStamped pose_uav;
-      pose_uav.header = odom_uav_.header;
-      pose_uav.pose   = odom_uav_.pose.pose;
-      auto res        = transformer_.transform(pose_uav, tf.value());
-      if (res) {
-        // set z-coordinate of the goal to be the same as in cmd odom
-        goal.pose.position.z = res.value().pose.position.z;
-        ROS_INFO("[NavGoal]: Setting z = %.3f m to the goal, frame_id of goal: %s", goal.pose.position.z, goal.header.frame_id.c_str());
-      } else {
-        ROS_WARN("[NavGoal]: Unable to transform cmd odom from %s to %s at time %.6f.", odom_uav_.header.frame_id.c_str(), goal.header.frame_id.c_str(),
-                 odom_uav_.header.stamp.toSec());
-        return;
-      }
+  // transform UAV odometry to reference frame of the goal
+  auto tf = transformer_.getTransform(tracker_cmd->header.frame_id, goal.header.frame_id, tracker_cmd->header.stamp);
+
+  if (tf) {
+
+    geometry_msgs::PoseStamped pose_uav;
+    pose_uav.header           = tracker_cmd->header;
+    pose_uav.pose.position    = tracker_cmd->position;
+    pose_uav.pose.orientation = tracker_cmd->orientation;
+
+    auto res = transformer_.transform(pose_uav, tf.value());
+
+    if (res) {
+      // set z-coordinate of the goal to be the same as in cmd odom
+      goal.pose.position.z = res.value().pose.position.z;
+      ROS_INFO("[NavGoal]: Setting z = %.3f m to the goal, frame_id of goal: %s", goal.pose.position.z, goal.header.frame_id.c_str());
     } else {
-      ROS_WARN("[NavGoal]: Unable to find transform from %s to %s at time %.6f.", odom_uav_.header.frame_id.c_str(), goal.header.frame_id.c_str(),
-               odom_uav_.header.stamp.toSec());
+      ROS_WARN("[NavGoal]: Unable to transform tracker command from %s to %s at time %.6f.", tracker_cmd->header.frame_id.c_str(), goal.header.frame_id.c_str(),
+               tracker_cmd->header.stamp.toSec());
       return;
     }
+
+  } else {
+    ROS_WARN("[NavGoal]: Unable to find transform from %s to %s at time %.6f.", tracker_cmd->header.frame_id.c_str(), goal.header.frame_id.c_str(),
+             tracker_cmd->header.stamp.toSec());
+    return;
   }
 
   // publish the goal to the service
@@ -187,34 +192,14 @@ void NavGoal::callbackRvizNavGoal(mrs_lib::SubscribeHandler<geometry_msgs::PoseS
 
 //}
 
-/* callbackOdomUav() //{ */
+/* timeoutTrackerCmd() //{ */
 
-void NavGoal::callbackCmdOdomUav(mrs_lib::SubscribeHandler<nav_msgs::Odometry>& wrp) {
-
-  /* do not continue if the nodelet is not initialized */
-  if (!is_initialized_)
-    return;
-
-  {
-    std::scoped_lock lock(mutex_odom_uav_);
-
-    nav_msgs::OdometryConstPtr odom_ptr = wrp.getMsg();
-    odom_uav_                           = *odom_ptr;
-  }
-
-  if (!got_odom_uav_) {
-    got_odom_uav_ = true;
-  }
-}
-
-//}
-
-/* timeoutGeneric() */ /*//{*/
-void NavGoal::timeoutGeneric(const std::string& topic, const ros::Time& last_msg, [[maybe_unused]] const int n_pubs) {
+void NavGoal::timeoutTrackerCmd(const std::string& topic, const ros::Time& last_msg) {
 
   ROS_WARN_THROTTLE(1.0, "[NavGoal]: not receiving '%s' for %.3f s", topic.c_str(), (ros::Time::now() - last_msg).toSec());
 }
-/*//}*/
+
+//}
 
 }  // namespace rviz_interface
 
