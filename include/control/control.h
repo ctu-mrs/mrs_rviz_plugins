@@ -26,6 +26,8 @@
 #include "control/overlay_picker_tool.h"
 #include "control/im_server.h"
 
+#include <rviz/display_group.h>
+
 namespace mrs_rviz_plugins{
 
 class ControlTool : public rviz::SelectionTool{
@@ -39,6 +41,7 @@ public:
   void deactivate() override;
   int  processMouseEvent(rviz::ViewportMouseEvent& event) override;
   int  processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel) override;
+  rviz::InteractiveMarkerDisplay* findDisplay(rviz::Property* property);
 
 protected:
   // Check if the mouse has moved from one object to another,

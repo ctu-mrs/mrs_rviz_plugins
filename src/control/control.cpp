@@ -32,11 +32,34 @@ void ControlTool::onInitialize(){
   rviz::SelectionTool::onInitialize();
   overlay_picker_tool->initialize(context_);
 
-  dis = new rviz::InteractiveMarkerDisplay();
-  dynamic_cast<rviz::VisualizationManager*>(context_)->addDisplay(dis, true);
+  dis = findDisplay(context_->getRootDisplayGroup());
+  if(dis == NULL){
+    dis = new rviz::InteractiveMarkerDisplay();
+    dynamic_cast<rviz::VisualizationManager*>(context_)->addDisplay(dis, true);
+    dis->setName(QString("Control Display"));
+    dis->setClassId("rviz/InteractiveMarkers");
+  }
 
-  dis->setName(QString("Control Display"));
   dis->setTopic(QString("control/update"), QString("visualization_msgs/InteractiveMarkerUpdate"));
+}
+
+rviz::InteractiveMarkerDisplay* ControlTool::findDisplay(rviz::Property* property){
+  if(overlay_picker_tool->isPropertyType<rviz::DisplayGroup>(property)){
+    rviz::DisplayGroup* group_property = overlay_picker_tool->isPropertyType<rviz::DisplayGroup>(property);
+    for (int i = 0; i < group_property->numChildren(); i++) {
+      rviz::InteractiveMarkerDisplay* res = findDisplay(group_property->childAt(i));
+      if (res) {
+        return res;
+      }
+    }
+  }
+  else{
+    rviz::InteractiveMarkerDisplay* im_display = overlay_picker_tool->isPropertyType<rviz::InteractiveMarkerDisplay>(property);
+    if(im_display && im_display->getName() == "Control Display"){
+      return im_display;
+    }
+  }
+  return NULL;
 }
 
 void ControlTool::activate(){
