@@ -37,7 +37,7 @@ void StatusDisplay::onInitialize() {
   hw_api_state_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Hw api state") + std::to_string(id)));
   topic_rates_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Topic rates") + std::to_string(id)));
   custom_strings_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Custom strings") + std::to_string(id)));
-  rosnode_stats_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Rosnode shitlist") + std::to_string(id)));
+  rosnode_stats_overlay.reset(new jsk_rviz_plugins::OverlayObject(std::string("Rosnode cpu usage") + std::to_string(id)));
 
   uav_status_sub =
       nh.subscribe(uav_name_property->getStdString() + "/mrs_uav_status/uav_status", 10, &StatusDisplay::uavStatusCb, this, ros::TransportHints().tcpNoDelay());
@@ -816,7 +816,7 @@ void StatusDisplay::drawNodeStats() {
   // Main row
   QString tmp;
   tmp.sprintf("%.1f", cpu_load_total);
-  painter.drawStaticText(0, 0, QStaticText("ROS Node Shitlist"));
+  painter.drawStaticText(0, 0, QStaticText("ROS Node CPU usage"));
   painter.drawStaticText(285, 0, QStaticText(tmp));
   painter.drawStaticText(345, 0, QStaticText("CPU %"));
 
