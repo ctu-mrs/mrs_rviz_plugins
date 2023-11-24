@@ -135,9 +135,9 @@ void DroneEntity::updateMenu() {
                          [this, tracker](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) { setTracker(tracker, feedback); });
   }
 
-  for (const auto odom_source : odom_lat_sources) {
-    menu_handler->insert(entries[SET_ESTIMATOR], odom_source,
-                         [this, odom_source](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) { setEstimator(odom_source, feedback); });
+  for (const auto odom_estimator : odom_estimators) {
+    menu_handler->insert(entries[SET_ESTIMATOR], odom_estimator,
+                         [this, odom_estimator](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) { setEstimator(odom_estimator, feedback); });
   }
 
   menu_handler->apply(*server, name + " marker");
@@ -152,9 +152,9 @@ void DroneEntity::statusCallback(const mrs_msgs::UavStatusConstPtr &msg) {
   updated |= compareAndUpdate(gains, msg->gains);
   updated |= compareAndUpdate(controllers, msg->controllers);
   updated |= compareAndUpdate(trackers, msg->trackers);
-  updated |= compareAndUpdate(odom_lat_sources, msg->odom_estimators_hori);
-  updated |= compareAndUpdate(odom_alt_sources, msg->odom_estimators_vert);
-  updated |= compareAndUpdate(odom_hdg_sources, msg->odom_estimators_hdg);
+  updated |= compareAndUpdate(odom_estimators, msg->odom_estimators);
+  /* updated |= compareAndUpdate(odom_alt_sources, msg->odom_estimators_vert); */
+  /* updated |= compareAndUpdate(odom_hdg_sources, msg->odom_estimators_hdg); */
   updated |= msg->null_tracker != null_tracker;
   null_tracker = msg->null_tracker;
 
@@ -451,20 +451,8 @@ std::vector<std::string> DroneEntity::getTrackers() {
   return trackers;
 }
 
-std::vector<std::string> DroneEntity::getOdomSources() {
-  return odom_lat_sources;
-}
-
-std::vector<std::string> DroneEntity::getLatEstimators() {
-  return odom_lat_sources;
-}
-
-std::vector<std::string> DroneEntity::getAltEstimators() {
-  return odom_alt_sources;
-}
-
-std::vector<std::string> DroneEntity::getHdgEstimators() {
-  return odom_hdg_sources;
+std::vector<std::string> DroneEntity::getOdomEstimators() {
+  return odom_estimators;
 }
 
 bool DroneEntity::getNullTracker() {

@@ -228,7 +228,7 @@ void StatusDisplay::drawTopLine() {
   } else {
     avoiding_text = "COL AVOID DISABLED";
   }
-  tmp.sprintf("ToF: %3d:%02d %s %s %s   %s  UAVs:%d", secs_flown / 60, secs_flown % 60, uav_name.c_str(), uav_type.c_str(), nato_name.c_str(),
+  tmp.sprintf("ToF: %3d:%02d %s %s   %s  UAVs:%d", secs_flown / 60, secs_flown % 60, uav_name.c_str(), uav_type.c_str(),
               avoiding_text.c_str(), num_other_uavs);
   painter.drawStaticText(0, 0, QStaticText(tmp));
 
@@ -386,13 +386,9 @@ void StatusDisplay::drawOdometry() {
   painter.drawStaticText(15, 80, QStaticText(value));
 
   // Estimators info
-  QString hori = QString("Hori: %1").arg(curr_estimator_hori.c_str());
-  QString vert = QString("Vert: %1").arg(curr_estimator_vert.c_str());
-  QString head = QString("Head: %1").arg(curr_estimator_hdg.c_str());
+  QString estimator = QString("%1").arg(curr_estimator.c_str());
   painter.drawStaticText(100, 20, QStaticText(odom_frame.c_str()));
-  painter.drawStaticText(100, 40, QStaticText(hori));
-  painter.drawStaticText(100, 60, QStaticText(vert));
-  painter.drawStaticText(100, 80, QStaticText(head));
+  painter.drawStaticText(100, 40, QStaticText(estimator));
 
   if (!null_tracker) {
     const double cerr_x   = std::fabs(state_x - cmd_x);
@@ -879,7 +875,6 @@ void StatusDisplay::uavStatusCb(const mrs_msgs::UavStatusConstPtr& msg) {
 void StatusDisplay::processTopLine(const mrs_msgs::UavStatusConstPtr& msg) {
   std::string new_uav_name                    = msg->uav_name;
   std::string new_uav_type                    = msg->uav_type;
-  std::string new_nato_name                   = msg->nato_name;
   bool        new_collision_avoidance_enabled = msg->collision_avoidance_enabled;
   bool        new_avoiding_collision          = msg->avoiding_collision;
   bool        new_automatic_start_can_takeoff = msg->automatic_start_can_takeoff;
@@ -888,7 +883,6 @@ void StatusDisplay::processTopLine(const mrs_msgs::UavStatusConstPtr& msg) {
 
   top_line_update_required |= compareAndUpdate(new_uav_name, uav_name);
   top_line_update_required |= compareAndUpdate(new_uav_type, uav_type);
-  top_line_update_required |= compareAndUpdate(new_nato_name, nato_name);
   top_line_update_required |= compareAndUpdate(new_collision_avoidance_enabled, collision_avoidance_enabled);
   top_line_update_required |= compareAndUpdate(new_avoiding_collision, avoiding_collision);
   top_line_update_required |= compareAndUpdate(new_automatic_start_can_takeoff, automatic_start_can_takeoff);
@@ -937,15 +931,11 @@ void StatusDisplay::processOdometry(const mrs_msgs::UavStatusConstPtr& msg) {
   double      new_cmd_z         = msg->cmd_z;
   double      new_cmd_hdg       = msg->cmd_hdg;
   std::string new_odom_frame    = msg->odom_frame;
-  std::string new_curr_estimator_hori;
-  std::string new_curr_estimator_vert;
-  std::string new_curr_estimator_hdg;
+  std::string new_curr_estimator;
 
   new_odom_frame = new_odom_frame.substr(new_odom_frame.find("/") + 1);
 
-  msg->odom_estimators_hori.empty() ? new_curr_estimator_hori = "NONE" : new_curr_estimator_hori = msg->odom_estimators_hori[0];
-  msg->odom_estimators_vert.empty() ? new_curr_estimator_vert = "NONE" : new_curr_estimator_vert = msg->odom_estimators_vert[0];
-  msg->odom_estimators_hdg.empty() ? new_curr_estimator_hdg = "NONE" : new_curr_estimator_hdg = msg->odom_estimators_hdg[0];
+  msg->odom_estimators.empty() ? new_curr_estimator = "NONE" : new_curr_estimator = msg->odom_estimators[0];
 
   odom_update_required |= compareAndUpdate(new_avg_odom_rate, avg_odom_rate);
   odom_update_required |= compareAndUpdate(new_color, color);
@@ -958,9 +948,7 @@ void StatusDisplay::processOdometry(const mrs_msgs::UavStatusConstPtr& msg) {
   odom_update_required |= compareAndUpdate(new_cmd_z, cmd_z);
   odom_update_required |= compareAndUpdate(new_cmd_hdg, cmd_hdg);
   odom_update_required |= compareAndUpdate(new_odom_frame, odom_frame);
-  odom_update_required |= compareAndUpdate(new_curr_estimator_hori, curr_estimator_hori);
-  odom_update_required |= compareAndUpdate(new_curr_estimator_vert, curr_estimator_vert);
-  odom_update_required |= compareAndUpdate(new_curr_estimator_hdg, curr_estimator_hdg);
+  odom_update_required |= compareAndUpdate(new_curr_estimator, curr_estimator);
 }
 
 void StatusDisplay::processGeneralInfo(const mrs_msgs::UavStatusConstPtr& msg) {
@@ -1051,9 +1039,7 @@ void StatusDisplay::nameUpdate() {
 
   // Odometry
   odom_frame           = "!NO DATA!";
-  curr_estimator_hori  = "!NO DATA!";
-  curr_estimator_vert  = "!NO DATA!";
-  curr_estimator_hdg   = "!NO DATA!";
+  curr_estimator  = "!NO DATA!";
   avg_odom_rate        = 0.0;
   odom_update_required = true;
 

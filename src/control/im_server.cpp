@@ -96,17 +96,17 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
 
   // Create basic instances
   menu.reset(new QMenu());
-  QAction* land              = new QAction("Land", menu.get());
-  QAction* land_home         = new QAction("Land Home", menu.get());
-  QAction* takeoff           = new QAction("Takeoff", menu.get());
-  QMenu*   set_constraints   = new QMenu("Set Constraints", menu.get());
-  QMenu*   set_gains         = new QMenu("Set Gains", menu.get());
-  QMenu*   set_controller    = new QMenu("Set Controller", menu.get());
-  QMenu*   set_tracker       = new QMenu("Set Tracker", menu.get());
-  QMenu*   set_odom_source   = new QMenu("Set Odom Source", menu.get());
-  QMenu*   set_lat_estimator = new QMenu("Set Lat Estimator", menu.get());
-  QMenu*   set_alt_estimator = new QMenu("Set Alt Estimator", menu.get());
-  QMenu*   set_hdg_estimator = new QMenu("Set Hdg Estimator", menu.get());
+  QAction* land               = new QAction("Land", menu.get());
+  QAction* land_home          = new QAction("Land Home", menu.get());
+  QAction* takeoff            = new QAction("Takeoff", menu.get());
+  QMenu*   set_constraints    = new QMenu("Set Constraints", menu.get());
+  QMenu*   set_gains          = new QMenu("Set Gains", menu.get());
+  QMenu*   set_controller     = new QMenu("Set Controller", menu.get());
+  QMenu*   set_tracker        = new QMenu("Set Tracker", menu.get());
+  QMenu*   set_odom_estimator = new QMenu("Set Odom Estimator", menu.get());
+  QMenu*   set_lat_estimator  = new QMenu("Set Lat Estimator", menu.get());
+  QMenu*   set_alt_estimator  = new QMenu("Set Alt Estimator", menu.get());
+  QMenu*   set_hdg_estimator  = new QMenu("Set Hdg Estimator", menu.get());
 
   // Connect signals
   connect(land, &QAction::triggered, this, &ImServer::landNow);
@@ -129,14 +129,11 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   // Filter the options that are not present in every selected drone
   DroneEntity* drone = selected_drones[0];
 
-  std::vector<std::string> constraint_options        = drone->getConstraints();
-  std::vector<std::string> gain_options              = drone->getGains();
-  std::vector<std::string> controller_options        = drone->getControllers();
-  std::vector<std::string> tracker_options           = drone->getTrackers();
-  std::vector<std::string> odom_source_options       = drone->getOdomSources();
-  std::vector<std::string> odom_lat_estimtor_options = drone->getLatEstimators();
-  std::vector<std::string> odom_alt_estimtor_options = drone->getAltEstimators();
-  std::vector<std::string> odom_hdg_estimtor_options = drone->getHdgEstimators();
+  std::vector<std::string> constraint_options      = drone->getConstraints();
+  std::vector<std::string> gain_options            = drone->getGains();
+  std::vector<std::string> controller_options      = drone->getControllers();
+  std::vector<std::string> tracker_options         = drone->getTrackers();
+  std::vector<std::string> odom_estimators_options = drone->getOdomEstimators();
   std::vector<std::string> present_options;
 
   for (auto& selected_drone : selected_drones) {
@@ -152,17 +149,8 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
     present_options = selected_drone->getTrackers();
     chooseOptions(tracker_options, present_options);
 
-    present_options = selected_drone->getOdomSources();
-    chooseOptions(odom_source_options, present_options);
-
-    present_options = selected_drone->getLatEstimators();
-    chooseOptions(odom_lat_estimtor_options, present_options);
-
-    present_options = selected_drone->getAltEstimators();
-    chooseOptions(odom_alt_estimtor_options, present_options);
-
-    present_options = selected_drone->getHdgEstimators();
-    chooseOptions(odom_hdg_estimtor_options, present_options);
+    present_options = selected_drone->getOdomEstimators();
+    chooseOptions(odom_estimators_options, present_options);
   }
 
   // Set menu actions
@@ -194,33 +182,12 @@ boost::shared_ptr<QMenu> ImServer::getMenu() {
   }
   menu->addMenu(set_tracker);
 
-  for (const auto& option : odom_source_options) {
-    QAction* action = new QAction(option.c_str(), set_odom_source);
+  for (const auto& option : odom_estimators_options) {
+    QAction* action = new QAction(option.c_str(), set_odom_estimator);
     connect(action, &QAction::triggered, this, [this, option]() { setOdomSources(option); });
-    set_odom_source->addAction(action);
+    set_odom_estimator->addAction(action);
   }
-  menu->addMenu(set_odom_source);
-
-  for (const auto& option : odom_lat_estimtor_options) {
-    QAction* action = new QAction(option.c_str(), set_lat_estimator);
-    connect(action, &QAction::triggered, this, [this, option]() { setLatEstimators(option); });
-    set_lat_estimator->addAction(action);
-  }
-  menu->addMenu(set_lat_estimator);
-
-  for (const auto& option : odom_alt_estimtor_options) {
-    QAction* action = new QAction(option.c_str(), set_alt_estimator);
-    connect(action, &QAction::triggered, this, [this, option]() { setAltEstimators(option); });
-    set_alt_estimator->addAction(action);
-  }
-  menu->addMenu(set_alt_estimator);
-
-  for (const auto& option : odom_hdg_estimtor_options) {
-    QAction* action = new QAction(option.c_str(), set_hdg_estimator);
-    connect(action, &QAction::triggered, this, [this, option]() { setHdgEstimators(option); });
-    set_hdg_estimator->addAction(action);
-  }
-  menu->addMenu(set_hdg_estimator);
+  menu->addMenu(set_odom_estimator);
 
   return menu;
 }

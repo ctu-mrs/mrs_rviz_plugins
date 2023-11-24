@@ -41,10 +41,7 @@ public:
   std::vector<std::string> getGains();
   std::vector<std::string> getControllers();
   std::vector<std::string> getTrackers();
-  std::vector<std::string> getOdomSources();
-  std::vector<std::string> getLatEstimators();
-  std::vector<std::string> getAltEstimators();
-  std::vector<std::string> getHdgEstimators();
+  std::vector<std::string> getOdomEstimators();
   bool                     getNullTracker();
 
   void setServiceNumCalls(const int value);
@@ -126,10 +123,10 @@ protected:
   std::vector<std::string> controllers{};
   std::vector<std::string> trackers{};
   std::vector<std::string>
-      odom_lat_sources{};  // Seems to be the same as odom source
+      odom_estimators{};  // Seems to be the same as odom source
                            // (https://github.com/ctu-mrs/mrs_uav_status/blob/78f9ee8fce216a810d15d14d7a4e479e2c41d503/src/status.cpp#L872C65-L872C65)
-  std::vector<std::string> odom_alt_sources{};
-  std::vector<std::string> odom_hdg_sources{};
+  /* std::vector<std::string> odom_alt_sources{}; */
+  /* std::vector<std::string> odom_hdg_sources{}; */
 
 
   // | ----------------------- Attributes ----------------------- |
