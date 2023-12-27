@@ -34,6 +34,11 @@ Use `mrs_rviz_plugins/OdometryWithVelocity` display type.
 
 RViz goal tool with modifiable label.
 
+#### World Manager
+
+Has full InteractionTool functionality + allows adding new obstacles to the world.  
+To add new obstacle, right-click on the desired place and select "Add obstacle". This will not work in case you clicked on an interactive marker.
+
 #### Control tool
 
 Integrates [mrs_uav_status](https://github.com/ctu-mrs/mrs_uav_status/tree/master) and Selection tool functionality into one tool.  
