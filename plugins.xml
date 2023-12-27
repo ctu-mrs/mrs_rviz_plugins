@@ -65,3 +65,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsRvizPlugins_WorldManager">
+  <class name="mrs_rviz_plugins/WorldManager" type="mrs_rviz_plugins::WorldManager" base_class_type="rviz::Tool">
+    <description>
+      InteractionTool + menu for adding obstacles.
+    </description>
+  </class>
+</library>
