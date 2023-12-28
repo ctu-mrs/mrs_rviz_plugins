@@ -12,6 +12,7 @@
 #include <rviz/visualization_manager.h>
 
 #include <mrs_msgs/ReferenceStampedSrv.h>
+#include <mrs_msgs/String.h>
 
 #include <vector>
 
@@ -29,11 +30,13 @@ public:
 
 protected Q_SLOTS:
   void add_obstacle();
+  void save_config();
 
 private:
   std::vector<rviz::BoolProperty*> properties;
   ros::NodeHandle                  node_handler;
-  std::vector<ros::ServiceClient>  clients;
+  std::vector<ros::ServiceClient>  add_obstacle_clients;
+  std::vector<ros::ServiceClient>  save_config_clients;
 
   Ogre::Vector3 current_intersection;
 
