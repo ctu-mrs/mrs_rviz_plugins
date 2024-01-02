@@ -174,13 +174,13 @@ void WorldManager::save_config() {
 
     // Correcting filenames to avoid name conflicts 
     mrs_msgs::String srv;
+    srv.request.value = filename.toStdString();
     if(drone_num > 1){
-      srv.request.value = filename.toStdString();
       size_t pos = srv.request.value.find(".yaml");
       if(pos == std::string::npos){
         srv.request.value = srv.request.value + "_" + properties[i]->getNameStd();
       } else{
-        srv.request.value.insert(pos-1, "_" + properties[i]->getNameStd());
+        srv.request.value.insert(pos, "_" + properties[i]->getNameStd());
       }
     }
 
@@ -190,10 +190,10 @@ void WorldManager::save_config() {
       continue;
     }
     if(!srv.response.success){
-      ROS_WARN("[WorldManager]: Could not add obstacle for drone %s: %s", properties[i]->getNameStd().c_str(), srv.response.message.c_str());
+      ROS_WARN("[WorldManager]: Could save config for drone %s: %s", properties[i]->getNameStd().c_str(), srv.response.message.c_str());
       continue;
     }
-    ROS_INFO("[WorldManager]: Obstacles has been added successfully");
+    ROS_INFO("[WorldManager]: Config has been saved successfully");
   }
 }
 
