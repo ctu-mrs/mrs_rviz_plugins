@@ -220,7 +220,8 @@ std::vector<std::string> ControlTool::findSelectedDroneNames(){
 int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
   int res = Render;
 
-  server->select(findSelectedDroneNames());
+  std::vector<std::string> names = findSelectedDroneNames();
+  server->select(names);
 
   // KEY_F is binded to focus on selected items in SelectionTool
   if(!(remote_mode_on && event->key() == KEY_F)){
@@ -249,6 +250,10 @@ int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
 
   if(!remote_mode_on){
     return res;
+  }
+
+  if(names.size() == 0){
+    setStatus("No drone has been selected. Please, click and drag to select drones and control them");
   }
 
   if(event->key() == KEY_W || event->key() == KEY_H){
