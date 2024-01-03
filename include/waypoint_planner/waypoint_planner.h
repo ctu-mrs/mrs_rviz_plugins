@@ -72,6 +72,7 @@ protected Q_SLOTS:
   void update_topic();
   void update_position();
   void update_shape();
+  void update_height();
 
   // | --------------------- Default values --------------------- |
 private:

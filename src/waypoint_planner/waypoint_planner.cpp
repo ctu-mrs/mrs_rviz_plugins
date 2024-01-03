@@ -26,7 +26,8 @@ WaypointPlanner::WaypointPlanner() {
                                                     SLOT(update_topic()), this);
   topic_property         = new rviz::StringProperty("Topic", DEFAULT_TOPIC.c_str(), "Drone name + topic = service to send path.", getPropertyContainer(),
                                                     SLOT(update_topic()), this);
-  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.", getPropertyContainer());
+  height_offset_property = new rviz::FloatProperty("Height offset", 0.0, "Value to be added to the actual \"z\" coordinate.", getPropertyContainer(),
+                                                    SLOT(update_height()), this);
   use_heading_property   = new rviz::BoolProperty("Use heading", true, "If true, drone will rotate according to set heading", getPropertyContainer());
   fly_now_property       = new rviz::BoolProperty("Fly now", true, "If true, the drone will start moving imediately after enter.", getPropertyContainer());
   stop_at_waypoints_property = new rviz::BoolProperty("Stop at waypoints", false, "If true, the drone will stop at added points.", getPropertyContainer());
@@ -97,6 +98,14 @@ void WaypointPlanner::update_shape() {
     for (const auto& node : pose_nodes) {
       axes.push_back(new rviz::Axes(scene_manager_, node));
     }
+  }
+}
+
+void WaypointPlanner::update_height(){
+  for(size_t i=0; i<pose_nodes.size(); i++){
+    Ogre::Vector3 position =  pose_nodes[i]->getPosition();
+    position.z = height_offset_property->getFloat();
+    pose_nodes[i]->setPosition(position);
   }
 }
 
@@ -277,7 +286,6 @@ int WaypointPlanner::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel)
     return Render;
   }
   PoseTool::processKeyEvent(event, panel);
-  ROS_INFO("[Waypoint planner]: Received key %d", (int)event->key());
   // Sends added waypoints to service
   if (event->key() == KEY_ENTER) {
     if (loop_property->getBool()) {
