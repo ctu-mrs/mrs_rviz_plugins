@@ -38,7 +38,8 @@ RViz goal tool with modifiable label.
 
 Has full InteractionTool functionality + allows adding new obstacles to the world and saving the world configuration.  
  - To add new obstacle, right-click on the desired place and select "Add obstacle".   
- - To save current world configuration, right-click, select "Save world config" and choose file to save the configuration. If more than 1 drone is active in the tool properties, postfix "uav_name" will be added to filenames in order to avoid conflicts.
+ - To load config, right-click, select file with world configuration.
+ - To save current world configuration, right-click, select "Save world config" and choose file to save the configuration. If more than 1 drone is active in the tool properties, postfix "uav_name" will be added to filenames in order to avoid conflicts.  
 
 Any of this will not work in case you clicked on an interactive marker.
 

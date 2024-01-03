@@ -61,6 +61,7 @@ void WorldManager::onInitialize(){
       properties.push_back(tmp);
       add_obstacle_clients.push_back(node_handler.serviceClient<mrs_msgs::ReferenceStampedSrv>("/" + drone_names[i] + "/safety_area_manager/add_obstacle"));
       save_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/save_world_config"));
+      load_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/load_world_config"));
     }
     setStatus("Several drones found.");
   }
@@ -100,8 +101,12 @@ int WorldManager::processMouseEvent(rviz::ViewportMouseEvent& event) {
   QAction* save_config = new QAction("Save world config", menu.get());
   connect(save_config, &QAction::triggered, this, &WorldManager::save_config);
 
+  QAction* load_config = new QAction("Load world config", menu.get());
+  connect(load_config, &QAction::triggered, this, &WorldManager::load_config);
+
   menu->addAction(add_obstacle);
   menu->addAction(save_config);
+  menu->addAction(load_config);
   render_panel->showContextMenu(menu);
 
   return res | Render;
@@ -143,11 +148,13 @@ void WorldManager::save_config() {
   QWidget* current_widget = QApplication::focusWidget();
   if(current_widget == nullptr){
     ROS_ERROR("[WorldManager]: Current widget is nullptr. Could not open eplorer window");
+    setStatus("Current widget is nullptr. Could not open eplorer window");
     return;
   }
   QString filename = QFileDialog::getSaveFileName(current_widget, tr("Save File"), "/home", tr("yaml files (*.yaml)"));
   if(filename.isNull()){
     ROS_WARN("[WorldManager]: File has not been selected. No config has been saved");
+    setStatus("File has not been selected. No config has been saved");
     return;
   }
 
@@ -194,6 +201,42 @@ void WorldManager::save_config() {
       continue;
     }
     ROS_INFO("[WorldManager]: Config has been saved successfully");
+  }
+}
+
+void WorldManager::load_config() {
+  // Opening explorer window to choose a file
+  QWidget* current_widget = QApplication::focusWidget();
+  if(current_widget == nullptr){
+    ROS_ERROR("[WorldManager]: Current widget is nullptr. Could not open eplorer window");
+    setStatus("Current widget is nullptr. Could not open eplorer window");
+    return;
+  }
+  QString filename = QFileDialog::getOpenFileName(current_widget, tr("Select File"), "/home", tr("All files (*);;yaml files (*.yaml)"));
+  if(filename.isNull()){
+    ROS_WARN("[WorldManager]: File has not been selected. No config has been loaded");
+    setStatus("File has not been selected. No config has been loaded");
+    return;
+  }
+
+  // Sending requests
+  for(size_t i=0; i<properties.size(); i++){
+    mrs_msgs::String srv;
+    srv.request.value = filename.toStdString();
+
+    if(!load_config_clients[i].call(srv)){
+      ROS_WARN("[WorldManager]: Could not call load_world_config service for drone %s", properties[i]->getNameStd().c_str());
+      std::string status = "Could not call load_world_config service for drone " + properties[i]->getNameStd();
+      setStatus(status.c_str());
+      continue;
+    }
+    if(!srv.response.success){
+      ROS_WARN("[WorldManager]: Could load config for drone %s: %s", properties[i]->getNameStd().c_str(), srv.response.message.c_str());
+      std::string status = "Could load config for drone " + properties[i]->getNameStd() + ": " + srv.response.message;
+      setStatus(status.c_str());
+      continue;
+    }
+    ROS_INFO("[WorldManager]: Config has been loaded successfully");
   }
 }
 
