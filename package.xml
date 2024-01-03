@@ -22,8 +22,11 @@
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>rviz</depend>
-  <depend>rviz_satellite</depend>
+  <!-- <depend>rviz_satellite</depend> -->
   <depend>visualization_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <depend>qtbase5-dev</depend>
   <depend>libqt5-core</depend>

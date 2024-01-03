@@ -4,6 +4,7 @@ project(mrs_rviz_plugins)
 set(CATKIN_DEPENDENCIES
   cmake_modules
   geometry_msgs
+  sensor_msgs
   mrs_lib
   mrs_msgs
   nav_msgs
@@ -11,6 +12,8 @@ set(CATKIN_DEPENDENCIES
   pluginlib
   roscpp
   rviz
+  tf2
+  tf2_geometry_msgs
   )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -26,9 +29,9 @@ if(rviz_QT_VERSION VERSION_LESS "5")
   include(${QT_USE_FILE})
 else()
   message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
-  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
+  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets Gui Network REQUIRED)
   ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-  set(QT_LIBRARIES Qt5::Widgets)
+  set(QT_LIBRARIES Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Network)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -55,6 +58,7 @@ set(LIBRARIES
   MrsRvizPlugins_WaypointPlanner
   MrsRvizPlugins_Status
   MrsRvizPlugins_WorldManager
+  MrsRvizPlugins_Satellite
   )
 
 catkin_package(
@@ -275,6 +279,60 @@ add_dependencies(MrsRvizPlugins_WorldManager
 target_link_libraries(MrsRvizPlugins_WorldManager
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
+)
+
+## SATELLITE IMAGES
+
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};/usr/share/cmake/geographiclib")
+find_package(GeographicLib REQUIRED)
+
+set(MrsRvizPlugins_Satellite_HEADERS
+  include/satellite/aerialmap_display.h
+  include/satellite/detail/tile_downloader.h
+  include/satellite/position_reference_property.h
+)
+
+qt5_wrap_cpp(MrsRvizPlugins_Satellite_MOC_FILES ${MrsRvizPlugins_Satellite_HEADERS})
+
+add_library(MrsRvizPlugins_Satellite
+
+  # include/aerialmap_display.h
+  # include/detail/tile_downloader.h
+  # include/position_reference_property.h
+
+  # include/detail/error_rate_manager.h
+  # include/detail/tile_downloader.h
+  # include/satellite/aerialmap_display.h
+  # include/satellite/area.h
+  # include/satellite/coordinates.h
+  # include/satellite/mercator.h
+  # include/satellite/ogre_tile.h
+  # include/satellite/position_reference.h
+  # include/satellite/position_reference_property.h
+  # include/satellite/tile_cache_delay.h
+  # include/satellite/tile_cache.h
+  # include/satellite/tile_id.h
+  src/satellite/aerialmap_display.cpp
+  src/satellite/ogre_tile.cpp
+  src/satellite/position_reference_property.cpp
+  src/satellite/tile_id.cpp
+  ${MrsRvizPlugins_Satellite_MOC_FILES}
+)
+
+add_dependencies(MrsRvizPlugins_Satellite
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsRvizPlugins_Satellite
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${GeographicLib_LIBRARIES}
+)
+
+target_compile_options(MrsRvizPlugins_Satellite
+  PUBLIC
+  -Wall -Wunused -std=c++11 "-DRVIZ_SATELLITE_VERSION=\"3.1.0\""
 )
 
 ## --------------------------------------------------------------
