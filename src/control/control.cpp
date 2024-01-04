@@ -251,15 +251,15 @@ int ControlTool::processKeyEvent(QKeyEvent* event, rviz::RenderPanel* panel){
     return res;
   }
 
-  if(event->key() == KEY_W || event->key() == KEY_H){
+  if(event->key() == KEY_W || event->key() == KEY_K){
     server->flyForwardSelected(global_mode_on);
   }
 
-  if(event->key() == KEY_A || event->key() == KEY_J){
+  if(event->key() == KEY_A || event->key() == KEY_H){
     server->flyLeftSelected(global_mode_on);
   }
 
-  if(event->key() == KEY_S || event->key() == KEY_K){
+  if(event->key() == KEY_S || event->key() == KEY_J){
     server->flyBackwardSelected(global_mode_on);
   }
 
