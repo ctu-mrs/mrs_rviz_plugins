@@ -59,6 +59,7 @@ set(LIBRARIES
   MrsRvizPlugins_Status
   MrsRvizPlugins_WorldManager
   MrsRvizPlugins_Satellite
+  MrsRvizPlugins_CoveragePlanner
   )
 
 catkin_package(
@@ -333,6 +334,23 @@ target_link_libraries(MrsRvizPlugins_Satellite
 target_compile_options(MrsRvizPlugins_Satellite
   PUBLIC
   -Wall -Wunused -std=c++11 "-DRVIZ_SATELLITE_VERSION=\"3.1.0\""
+)
+
+## COVERAGE PATH PLANNING
+
+add_library(MrsRvizPlugins_CoveragePlanner
+  include/coverage_path_planning/planner_tool.h
+  src/coverage_path_planning/planner_tool.cpp
+)
+
+add_dependencies(MrsRvizPlugins_CoveragePlanner
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsRvizPlugins_CoveragePlanner
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
 )
 
 ## --------------------------------------------------------------

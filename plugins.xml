@@ -81,3 +81,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsRvizPlugins_CoveragePlanner">
+  <class name="mrs_rviz_plugins/PlannerTool" type="mrs_rviz_plugins::PlannerTool" base_class_type="rviz::Tool">
+    <description>
+      Tool for planning coverage path using chosen method.
+    </description>
+  </class>
+</library>
