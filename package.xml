@@ -36,6 +36,7 @@
   <export>
     <rviz plugin="${prefix}/plugins.xml"/>
     <nodelet plugin="${prefix}/nodelets.xml" />
+    <mrs_rviz_plugins plugin="${prefix}/cpp_methods.xml" />
   </export>
 
 </package>

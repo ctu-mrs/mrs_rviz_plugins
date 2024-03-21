@@ -1,0 +1,7 @@
+<library path="lib/libMrsRvizPlugins_CoveragePlannerPlugins">
+  <class  type="mrs_rviz_plugins::StrideMethod" base_class_type="mrs_rviz_plugins::CoverageMethod">
+    <description>
+      Coverage path plannig algorithm with linear time complexity.
+    </description>
+  </class>
+</library>

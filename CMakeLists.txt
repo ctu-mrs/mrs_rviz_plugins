@@ -60,6 +60,7 @@ set(LIBRARIES
   MrsRvizPlugins_WorldManager
   MrsRvizPlugins_Satellite
   MrsRvizPlugins_CoveragePlanner
+  MrsRvizPlugins_CoveragePlannerPlugins
   )
 
 catkin_package(
@@ -349,6 +350,24 @@ add_dependencies(MrsRvizPlugins_CoveragePlanner
 )
 
 target_link_libraries(MrsRvizPlugins_CoveragePlanner
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
+# CPP plugins
+
+add_library(MrsRvizPlugins_CoveragePlannerPlugins
+  include/coverage_path_planning/coverage_method.h 
+  include/coverage_path_planning/stride_method.h
+  src/coverage_path_planning/stride_method.cpp
+)
+
+add_dependencies(MrsRvizPlugins_CoveragePlannerPlugins
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(MrsRvizPlugins_CoveragePlannerPlugins
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
 )
