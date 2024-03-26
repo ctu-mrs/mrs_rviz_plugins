@@ -15,9 +15,11 @@ public:
   //   scene_manager_ = scene_manager;
   // }
 
-  void initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager){
+  // All the scene nodes created by this plugin must be children of root_node.
+  void initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
     property_container_ = property_container;
     scene_manager_ = scene_manager;
+    root_node_ = root_node;
   }
 
   virtual void update(mrs_lib::Polygon &new_polygon) = 0;
@@ -29,6 +31,7 @@ public:
 protected:
   rviz::Property* property_container_;
   Ogre::SceneManager* scene_manager_;
+  Ogre::SceneNode*    root_node_;
 
 }; // class CoverageMethod
 

@@ -1,10 +1,8 @@
 #include <coverage_path_planning/stride_method.h>
 
+#include <rviz/ogre_helpers/axes.h>
+
 namespace mrs_rviz_plugins{
-
-// StrideMethod::StrideMethod(rviz::Property* property_container, Ogre::SceneManager* scene_manager){
-
-// }
 
 void StrideMethod::update(mrs_lib::Polygon &new_polygon){
 
@@ -16,6 +14,10 @@ void StrideMethod::compute(mrs_lib::Polygon &new_polygon){
 
 void StrideMethod::start(){
   ROS_INFO("[StrideMethod]: start called");
+
+  Ogre::SceneNode* new_node = scene_manager_->createSceneNode();
+  root_node_->addChild(new_node);
+  new rviz::Axes(scene_manager_, new_node);
 }
 } // namespace mrs_rviz_plugins
 

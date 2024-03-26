@@ -12,6 +12,8 @@
 
 #include <coverage_path_planning/coverage_method.h>
 
+#include <pluginlib/class_loader.h>
+
 namespace mrs_rviz_plugins
 {
 class PlannerTool : public rviz::Tool {
@@ -29,7 +31,9 @@ protected Q_SLOTS:
   void methodChosen();
 
 private:
-  rviz::EnumProperty* method_property;
+  Ogre::SceneNode*                                    root_node;
+  rviz::EnumProperty*                                 method_property;
+  pluginlib::ClassLoader<CoverageMethod>              method_loader;
   boost::shared_ptr<mrs_rviz_plugins::CoverageMethod> current_coverage_method;
 
 }; // class PlannerTool
