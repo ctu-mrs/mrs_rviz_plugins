@@ -13,6 +13,8 @@ class StrideMethod : public CoverageMethod {
 
   void compute(mrs_lib::Polygon &new_polygon) override;
 
+  void setStart(Ogre::Vector3 position) override;
+
   void start();
 };
 } // namespace mrs_rviz_plugins

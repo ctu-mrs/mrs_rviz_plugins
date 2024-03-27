@@ -9,6 +9,8 @@
 
 #include <rviz/tool.h>
 #include <rviz/properties/enum_property.h>
+#include <rviz/properties/float_property.h>
+#include <rviz/properties/editable_enum_property.h>
 
 #include <coverage_path_planning/coverage_method.h>
 
@@ -29,12 +31,24 @@ public:
 
 protected Q_SLOTS:
   void methodChosen();
+  void heightChanged();
+  void droneChanged();
+
+  void updatePolygon();
+  void computePath();
+  void startMission();
 
 private:
   Ogre::SceneNode*                                    root_node;
   rviz::EnumProperty*                                 method_property;
+  rviz::FloatProperty*                                height_property;
+  rviz::EditableEnumProperty*                         drone_name_property;
   pluginlib::ClassLoader<CoverageMethod>              method_loader;
   boost::shared_ptr<mrs_rviz_plugins::CoverageMethod> current_coverage_method;
+
+  // ROS communication
+  ros::NodeHandle nh_;
+  ros::ServiceClient client_;
 
 }; // class PlannerTool
 } // namespace mrs_rviz_plugins

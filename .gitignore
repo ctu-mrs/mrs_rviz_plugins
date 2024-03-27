@@ -10,3 +10,6 @@
 
 # Runtime-python
 *.pyc
+
+# ignore vscode config files
+.vscode/

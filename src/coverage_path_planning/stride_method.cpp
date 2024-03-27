@@ -12,6 +12,10 @@ void StrideMethod::compute(mrs_lib::Polygon &new_polygon){
 
 }
 
+void StrideMethod::setStart(Ogre::Vector3 position){
+  
+}
+
 void StrideMethod::start(){
   ROS_INFO("[StrideMethod]: start called");
 

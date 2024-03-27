@@ -5,6 +5,7 @@
 #include <rviz/properties/property.h>
 #include <OGRE/OgreSceneManager.h>
 
+
 namespace mrs_rviz_plugins{
 
 class CoverageMethod{
@@ -23,6 +24,8 @@ public:
   }
 
   virtual void update(mrs_lib::Polygon &new_polygon) = 0;
+
+  virtual void setStart(Ogre::Vector3 position) = 0;
 
   virtual void compute(mrs_lib::Polygon &new_polygon) = 0;
 
