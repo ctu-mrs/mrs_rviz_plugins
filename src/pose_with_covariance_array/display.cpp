@@ -141,6 +141,11 @@ void Display::onInitialize() {
     // TODO: is it safe to change Arrow to point in +X direction?
     d.arrow_->setOrientation(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
 
+    Ogre::ColourValue color = color_property_->getOgreColor();
+    color.a                 = alpha_property_->getFloat();
+    d.arrow_->setColor(color);
+      
+
     d.axes_ = boost::make_shared<rviz::Axes>(scene_manager_, scene_node_, axes_length_property_->getFloat(), axes_radius_property_->getFloat());
 
     d.covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_);
@@ -260,6 +265,10 @@ void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::Con
 
     d.arrow_ = boost::make_shared<rviz::Arrow>(scene_manager_, scene_node_, shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(),
                                           head_length_property_->getFloat(), head_radius_property_->getFloat());
+
+    Ogre::ColourValue color = color_property_->getOgreColor();
+    color.a                 = alpha_property_->getFloat();
+    d.arrow_->setColor(color);
 
     d.axes_ = boost::make_shared<rviz::Axes>(scene_manager_, scene_node_, axes_length_property_->getFloat(), axes_radius_property_->getFloat());
 
