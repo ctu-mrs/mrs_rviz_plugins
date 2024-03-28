@@ -70,6 +70,9 @@ catkin_package(
   )
 
 include_directories(
+  #TODO: delete this
+    /home/azat/mrs_workspace/devel/include
+    /home/azat/mrs_workspace/src/mrs_lib/include
   include
   ${catkin_INCLUDE_DIRS}
   )
@@ -357,6 +360,7 @@ target_link_libraries(MrsRvizPlugins_CoveragePlanner
 # CPP plugins
 
 add_library(MrsRvizPlugins_CoveragePlannerPlugins
+  
   include/coverage_path_planning/coverage_method.h 
   include/coverage_path_planning/stride_method.h
   src/coverage_path_planning/stride_method.cpp

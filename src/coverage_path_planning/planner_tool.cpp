@@ -7,7 +7,15 @@
 
 #include <mrs_msgs/GetSafeZoneAtHeight.h>
 
+// TODO: include polygon only
+// #include <mrs_lib/safety_zone/polygon.h>
+#include <mrs_lib/safety_zone/prism.h>
+
+#include <boost/geometry.hpp>
+
 #include <QMenu>
+
+namespace bg = boost::geometry;
 
 namespace mrs_rviz_plugins
 {
@@ -47,7 +55,7 @@ void PlannerTool::onInitialize(){
     if (name.find("trajectory_generation/path") == std::string::npos) {
       continue;
     }
-    ROS_INFO("[Waypoint planner]: %s found", name.c_str());
+    ROS_INFO("[Coverage Path Planning]: %s found", name.c_str());
 
     std::size_t index = name.find("/", 0, 1);
     if (index != std::string::npos) {
@@ -60,7 +68,7 @@ void PlannerTool::onInitialize(){
     }
 
     drone_names.push_back(name);
-    ROS_INFO("[Waypoint planner]: %s was added to drone names", name.c_str());
+    ROS_INFO("[Coverage Path Planning]: %s was added to drone names", name.c_str());
     state[x] = name;
   }
 
@@ -85,7 +93,7 @@ void PlannerTool::onInitialize(){
   }
 
   client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property->getStdString() + 
-              "/uav1/safety_area_manager/get_safety_zone_at_height");
+              "/safety_area_manager/get_safety_zone_at_height");
 }
 
 int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
@@ -158,9 +166,51 @@ void PlannerTool::heightChanged(){
 }
 
 void PlannerTool::updatePolygon(){
-  ROS_INFO("update called");
+  if(!current_coverage_method){
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+    return;
+  }
 
+  mrs_msgs::GetSafeZoneAtHeight srv;
+  srv.request.height = height_property->getFloat();
 
+  if(!client_.call(srv)){
+    ROS_WARN("[Coverage Path Planning]: could not call service %s", client_.getService().c_str());
+    setStatus("Could not call Safety Area Manager of " + drone_name_property->getString());
+    return;
+  }
+
+  // Add the border
+  mrs_lib::Polygon result = mrs_lib::Polygon();
+  for(geometry_msgs::Point32 point : srv.response.safety_zone[0].points){
+    mrs_lib::Point2d p{point.x, point.y};
+    bg::append(result, p);
+  }
+  
+  // Add obstacles
+  if(srv.response.safety_zone.size() > 1){
+    bg::interior_rings(result).resize(srv.response.safety_zone.size() - 1);
+    
+    for(size_t i=1; i < srv.response.safety_zone.size(); i++){
+      for(geometry_msgs::Point32 point : srv.response.safety_zone[i].points){
+        mrs_lib::Point2d p{point.x, point.y};
+        bg::append(result, p, i-1);
+      }
+    }
+  }
+
+  // Correcting the orientation of the polygon (vertices must be conter-clockwise oredered)
+  bg::correct(result);
+  
+  std::string msg;
+  if(!bg::is_valid(result, msg)){
+    ROS_WARN("[Coverage Path Planning]: The received polygon could not be corrected: %s", msg.c_str());
+    setStatus(msg.c_str()); 
+    return;
+  }
+
+  current_coverage_method->update(result);
 }
 
 void PlannerTool::computePath(){
@@ -173,7 +223,7 @@ void PlannerTool::startMission(){
 
 void PlannerTool::droneChanged(){
   client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property->getStdString() + 
-              "/uav1/safety_area_manager/get_safety_zone_at_height");
+              "/safety_area_manager/get_safety_zone_at_height");
 }
 
 }// namespace mrs_rviz_plugins

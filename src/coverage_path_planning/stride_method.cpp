@@ -2,10 +2,13 @@
 
 #include <rviz/ogre_helpers/axes.h>
 
+#include <ros/ros.h>
+
 namespace mrs_rviz_plugins{
 
 void StrideMethod::update(mrs_lib::Polygon &new_polygon){
-
+  current_polygon_ = new_polygon;
+  std::cout << boost::geometry::dsv(current_polygon_) << std::endl;
 }
 
 void StrideMethod::compute(mrs_lib::Polygon &new_polygon){

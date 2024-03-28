@@ -8,7 +8,7 @@ namespace mrs_rviz_plugins{
 class StrideMethod : public CoverageMethod {
 
   // StrideMethod(rviz::Property* property_container, Ogre::SceneManager* scene_manager);
-
+public:
   void update(mrs_lib::Polygon &new_polygon) override;
 
   void compute(mrs_lib::Polygon &new_polygon) override;
@@ -16,6 +16,10 @@ class StrideMethod : public CoverageMethod {
   void setStart(Ogre::Vector3 position) override;
 
   void start();
+
+private:
+  mrs_lib::Polygon current_polygon_;
+
 };
 } // namespace mrs_rviz_plugins
 
