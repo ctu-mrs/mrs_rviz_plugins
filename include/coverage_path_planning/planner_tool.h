@@ -11,6 +11,7 @@
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/editable_enum_property.h>
+#include <rviz/properties/int_property.h>
 
 #include <coverage_path_planning/coverage_method.h>
 
@@ -31,18 +32,24 @@ public:
 
 protected Q_SLOTS:
   void methodChosen();
-  void heightChanged();
   void droneChanged();
+  void heightChanged();
+  void angleChanged();
+  void overlapChanged();
 
   void updatePolygon();
   void computePath();
   void startMission();
 
 private:
-  Ogre::SceneNode*                                    root_node;
+// Properties
+  rviz::IntProperty*                                  angle_property_;
   rviz::EnumProperty*                                 method_property;
+  rviz::FloatProperty*                                overlap_property_;
   rviz::FloatProperty*                                height_property;
   rviz::EditableEnumProperty*                         drone_name_property;
+  
+  Ogre::SceneNode*                                    root_node;
   pluginlib::ClassLoader<CoverageMethod>              method_loader;
   boost::shared_ptr<mrs_rviz_plugins::CoverageMethod> current_coverage_method;
 

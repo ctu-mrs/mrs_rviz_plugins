@@ -23,16 +23,24 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
   ROS_INFO("Constructor called");
   shortcut_key_ = 'p';
 
+  drone_name_property = new rviz::EditableEnumProperty("Main Safety area manager", "uav1", "Safety area of this drone will be used to plan the coverage path.", 
+                        getPropertyContainer(), SLOT(droneChanged()), this);
   method_property = new rviz::EnumProperty("Used method", "None", "Choose the algorithm to plan the coverage path", getPropertyContainer(), 
                         SLOT(methodChosen()), this);
   height_property = new rviz::FloatProperty("Height", 3.0F, "The height of the flight", getPropertyContainer(), 
-                        SLOT(flightChanged()), this);
-  drone_name_property = new rviz::EditableEnumProperty("Main Safety area manager", "uav1", "Safety area of this drone will be used to plan the coverage path.", 
-                        getPropertyContainer(), SLOT(droneChanged()), this);
+                        SLOT(heightChanged()), this);
+  angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's angle of view", getPropertyContainer(), SLOT(angleChanged()), this);
+  overlap_property_ = new rviz::FloatProperty("Overlap", 0.1, "Overlap percentage of adjacent pictures", getPropertyContainer(), SLOT(overlapChanged()), this);
 
   for(auto& name : method_loader.getDeclaredClasses()){
     method_property->addOptionStd(name);
   }
+
+  angle_property_->setMin(1);
+  angle_property_->setMax(179);
+
+  overlap_property_->setMax(1);
+  overlap_property_->setMin(0);
 
   ROS_INFO("Planner Tool constructed");
 }
@@ -161,10 +169,6 @@ void PlannerTool::methodChosen() {
   current_coverage_method->initialize(getPropertyContainer(), scene_manager_, root_node);
 }
 
-void PlannerTool::heightChanged(){
-  // TODO: implement me!
-}
-
 void PlannerTool::updatePolygon(){
   if(!current_coverage_method){
     ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
@@ -210,7 +214,7 @@ void PlannerTool::updatePolygon(){
     return;
   }
 
-  current_coverage_method->update(result);
+  current_coverage_method->setPolygon(result);
 }
 
 void PlannerTool::computePath(){
@@ -224,6 +228,33 @@ void PlannerTool::startMission(){
 void PlannerTool::droneChanged(){
   client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property->getStdString() + 
               "/safety_area_manager/get_safety_zone_at_height");
+}
+
+void PlannerTool::angleChanged(){
+  if(!current_coverage_method){
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+    return;
+  }
+  current_coverage_method->setAngle(angle_property_->getInt());
+}
+
+void PlannerTool::overlapChanged(){
+  if(!current_coverage_method){
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+    return;
+  }
+  current_coverage_method->setOverlap(overlap_property_->getFloat());
+}
+
+void PlannerTool::heightChanged(){
+  if(!current_coverage_method){
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+    return;
+  }
+  current_coverage_method->setHeight(height_property->getFloat());
 }
 
 }// namespace mrs_rviz_plugins
