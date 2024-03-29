@@ -29,7 +29,7 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
                         SLOT(methodChosen()), this);
   height_property = new rviz::FloatProperty("Height", 3.0F, "The height of the flight", getPropertyContainer(), 
                         SLOT(heightChanged()), this);
-  angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's angle of view", getPropertyContainer(), SLOT(angleChanged()), this);
+  angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's viewing angle", getPropertyContainer(), SLOT(angleChanged()), this);
   overlap_property_ = new rviz::FloatProperty("Overlap", 0.1, "Overlap percentage of adjacent pictures", getPropertyContainer(), SLOT(overlapChanged()), this);
 
   for(auto& name : method_loader.getDeclaredClasses()){
@@ -167,6 +167,10 @@ void PlannerTool::methodChosen() {
 
   root_node = scene_manager_->getRootSceneNode()->createChildSceneNode();
   current_coverage_method->initialize(getPropertyContainer(), scene_manager_, root_node);
+  current_coverage_method->setHeight(height_property->getFloat(), false);
+  current_coverage_method->setAngle(angle_property_->getInt(), false);
+  current_coverage_method->setOverlap(overlap_property_->getFloat(), false);
+  updatePolygon();
 }
 
 void PlannerTool::updatePolygon(){

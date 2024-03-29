@@ -4,11 +4,11 @@
 #include <mrs_lib/safety_zone/polygon.h>
 #include <rviz/properties/property.h>
 #include <OGRE/OgreSceneManager.h>
-
+#include <QObject>
 
 namespace mrs_rviz_plugins{
 
-class CoverageMethod{
+class CoverageMethod : public QObject{
 
 public:
   // CoverageMethod(rviz::Property* property_container, Ogre::SceneManager* scene_manager){
@@ -23,19 +23,19 @@ public:
     root_node_ = root_node;
   }
 
-  virtual void setPolygon(mrs_lib::Polygon &new_polygon) = 0;
+  virtual void setPolygon(mrs_lib::Polygon &new_polygon, bool update=true) = 0;
 
   virtual void setStart(Ogre::Vector3 position) = 0;
 
   virtual void compute() = 0;
 
   // Angle must be in interval (0; 180)
-  virtual void setAngle(int angle) = 0;
+  virtual void setAngle(int angle, bool update=true) = 0;
 
   // overlap percentage is in interval [0; 1]
-  virtual void setOverlap(float percentage) = 0;
+  virtual void setOverlap(float percentage, bool update=true) = 0;
 
-  virtual void setHeight(float height) = 0;
+  virtual void setHeight(float height, bool update=true) = 0;
 
   virtual void start() = 0;
 
@@ -50,7 +50,7 @@ protected:
   Ogre::Vector3 start_position_;
   int angle_ = 90;
   float overlap_ = 0.1;
-  float height_ = 1;
+  float height_ = 5;
 }; // class CoverageMethod
 
 } // namespace mrs_rviz_plugins
