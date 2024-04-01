@@ -4,8 +4,12 @@
 #include <rviz/visualization_manager.h>
 #include <rviz/viewport_mouse_event.h>
 #include <rviz/render_panel.h>
+#include <rviz/mesh_loader.h>
+#include <rviz/geometry.h>
 
 #include <mrs_msgs/GetSafeZoneAtHeight.h>
+
+#include <OGRE/OgreEntity.h>
 
 // TODO: include polygon only
 // #include <mrs_lib/safety_zone/polygon.h>
@@ -22,6 +26,7 @@ namespace mrs_rviz_plugins
 PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins::CoverageMethod"){
   ROS_INFO("Constructor called");
   shortcut_key_ = 'p';
+  flag_node_ = nullptr;
 
   drone_name_property = new rviz::EditableEnumProperty("Main Safety area manager", "uav1", "Safety area of this drone will be used to plan the coverage path.", 
                         getPropertyContainer(), SLOT(droneChanged()), this);
@@ -31,6 +36,7 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
                         SLOT(heightChanged()), this);
   angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's viewing angle", getPropertyContainer(), SLOT(angleChanged()), this);
   overlap_property_ = new rviz::FloatProperty("Overlap", 0.1, "Overlap percentage of adjacent pictures", getPropertyContainer(), SLOT(overlapChanged()), this);
+  start_property_   = new rviz::VectorProperty("Start", Ogre::Vector3(), "Start point for the mission", getPropertyContainer(), SLOT(startChanged()), this);
 
   for(auto& name : method_loader.getDeclaredClasses()){
     method_property->addOptionStd(name);
@@ -48,6 +54,13 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
 void PlannerTool::onInitialize(){
   setName("Coverage path");
   root_node = scene_manager_->getRootSceneNode()->createChildSceneNode();
+
+  // Prepare mash resource
+  flag_path_ = "package://rviz_plugin_tutorials/media/flag.dae";
+  if(rviz::loadMeshFromResource(flag_path_).isNull()){
+    ROS_ERROR( "PlantFlagTool: failed to load model resource '%s'.", flag_path_.c_str() );
+    return;
+  }
 
   // Preparing for searching the drone's name
   XmlRpc::XmlRpcValue      req = "/node";
@@ -104,15 +117,56 @@ void PlannerTool::onInitialize(){
               "/safety_area_manager/get_safety_zone_at_height");
 }
 
+void PlannerTool::makeFlag( const Ogre::Vector3& position ){
+  if(!flag_node_){
+    flag_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
+  }
+  Ogre::Entity* entity = scene_manager_->createEntity(flag_path_);
+  if(!entity){
+    ROS_ERROR("[Coverage Path Planning]: Could not create entity of flag!");
+  }else{
+    flag_node_->attachObject( entity );
+  }
+  flag_node_->setVisible( true );
+  flag_node_->setPosition( position );
+}
+
 int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
+  int res = rviz::MoveTool::processMouseEvent(event);
+
+  // Infotmation messages
+  if(event.shift()){
+    setStatus("<b>Left-Click:</b> Move X/Y. <b>Right-Click:</b> Move Z. <b>Mouse Wheel</b> Zoom.");
+    return res;
+  } else if(event.alt()){
+    setStatus("<b>Left-Click:</b> Set start point.");
+  } else{
+    setStatus("<b>Left-Click:</b> Rotate. <b>Middle-Click:</b> Move X/Y. <b>Mouse Wheel</b> Zoom. <b>Alt:</b> Set start point. <b>Shift:</b> More options.");
+  }
+
+  // Setting start point
+  if(event.alt() && event.leftUp()){
+    Ogre::Vector3 intersection;
+    Ogre::Plane ground_plane(Ogre::Vector3::UNIT_Z, height_property->getFloat());
+
+    if (!rviz::getPointOnPlaneFromWindowXY(event.viewport, ground_plane, event.x, event.y, intersection)) {
+      ROS_ERROR("[Coverage Path Planning]: Intersection was not found");
+      return res;
+    }
+
+    makeFlag(intersection);
+    start_property_->setVector(intersection);
+  }
+
   if (event.panel->contextMenuVisible()){
-    return Render;
+    return res;
   }
 
-  if(!event.rightDown()){
-    return Render;
+  if(!event.rightUp()){
+    return res;
   }
 
+  // Showing menu
   rviz::RenderPanel* render_panel = dynamic_cast<rviz::VisualizationManager*>(context_)->getRenderPanel();
   boost::shared_ptr<QMenu> menu;
   menu.reset(new QMenu());
@@ -131,7 +185,7 @@ int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
   menu->addAction(load_config);
   render_panel->showContextMenu(menu);
 
-  return Render;
+  return res | Render;
 }
 
 void PlannerTool::activate() {
@@ -141,6 +195,7 @@ void PlannerTool::activate() {
 
 void PlannerTool::deactivate() {
   root_node->setVisible(false);
+  flag_node_->setVisible(false);
   ROS_INFO("[PlannerTool]: Deactivated");
 }
 
@@ -259,6 +314,13 @@ void PlannerTool::heightChanged(){
     return;
   }
   current_coverage_method->setHeight(height_property->getFloat());
+}
+
+void PlannerTool::startChanged(){
+  flag_node_->setPosition(start_property_->getVector());
+  if(current_coverage_method){
+    current_coverage_method->setStart(start_property_->getVector());
+  }
 }
 
 }// namespace mrs_rviz_plugins
