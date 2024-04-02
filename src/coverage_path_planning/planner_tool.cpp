@@ -281,11 +281,21 @@ void PlannerTool::updatePolygon(){
 }
 
 void PlannerTool::computePath(){
-  ROS_INFO("compute called");
+  if(current_coverage_method){
+    current_coverage_method->compute();
+  }else{
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+  }
 }
 
 void PlannerTool::startMission(){
-  ROS_INFO("start called");
+  if(current_coverage_method){
+    current_coverage_method->start();
+  }else{
+    ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
+    setStatus("Select a coverage path planning method.");
+  }
 }
 
 void PlannerTool::droneChanged(){

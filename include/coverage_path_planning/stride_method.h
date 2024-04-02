@@ -1,51 +1,42 @@
 #ifndef COVERAGE_PATH_PLANNING_METHOD_STRIDES_H
 #define COVERAGE_PATH_PLANNING_METHOD_STRIDES_H
 
-#include <coverage_path_planning/coverage_method.h>
+#include "coverage_path_planning/approximate_decomposition.h"
+#include <OGRE/OgreVector2.h>
 
-#include <rviz/properties/int_property.h>
+#include <mrs_msgs/PathSrv.h>
 
 namespace mrs_rviz_plugins{
-
-class StrideMethod : public CoverageMethod {
-Q_OBJECT 
+class StrideMethod : public ApproximateDecomposition {
+Q_OBJECT
 public:
-
-  void initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) override;
-
   void compute() override;
-
-  void setStart(Ogre::Vector3 position) override;
-
-  void start();
-
-  void setPolygon(mrs_lib::Polygon &new_polygon, bool update=true) override;
-
-  void setAngle(int angle, bool update=true) override;
-
-  void setOverlap(float percentage, bool update=true) override;
-
-  void setHeight(float height, bool update=true) override;
-
-protected Q_SLOTS:
-  void twistChanged();
-
-protected:
-  void drawGrid();
-
-  typedef struct {
-    float x;
-    float y;
-    bool visited = false;
-    bool valid;
-  } cell_t;
-
-  std::vector<std::vector<cell_t>> grid;
-
-  rviz::IntProperty* twist_property_;
+  void start() override;
 
 private:
-  Ogre::SceneNode* grid_node_;
+
+typedef struct {
+  Ogre::Vector2 start;
+  Ogre::Vector2 direction;
+  size_t len;
+} stride_t;
+
+typedef struct {
+  bool first = false;
+  bool second = false;
+  int num = 0;
+} limit_t;
+
+  stride_t computeStride(Ogre::Vector2 start, Ogre::Vector2 direction);
+  limit_t getLimits(Ogre::Vector2 cell, Ogre::Vector2 direction);
+
+  // Returns false if cell.x and cell.y are valid indices of grid and 
+  // corresponding element of grid is neither visited nor valid
+  // true otherwise
+  bool isLimit(Ogre::Vector2 cell);
+
+  mrs_msgs::PathSrv path_;
+  bool is_computed_ = false;
 };
 } // namespace mrs_rviz_plugins
 
