@@ -54,6 +54,12 @@ void ApproximateDecomposition::drawGrid(){
   float camera_width = (std::tan(angle_rad / 2) * height_);
   float distance = camera_width * (1 - overlap_);
   Ogre::Quaternion cube_rotation(Ogre::Radian(twist_rad), Ogre::Vector3(0, 0, 1));
+  bool show_grid = true;
+  const auto& tf = transformer_.getTransform(current_frame_, polygon_frame_);
+  if (!tf) {
+    ROS_INFO("[ApproximateDecomposition]: Transformation is not found. Grid will not be displayed");
+    show_grid = false;
+  }
 
   // 2.2: Iterate over matrix *grid, assign positions (in original axes) and add waypoints to the visualisation
   grid.resize(std::ceil((max_y - min_y) / distance));
@@ -64,15 +70,40 @@ void ApproximateDecomposition::drawGrid(){
       float tmp_x = min_x + (camera_width / 2) + distance * j;
       float tmp_y = min_y + (camera_width / 2) + distance * i;
 
-      // Assing position in original axes
+      // Assigning position in original axes
       grid[i][j].x = std::cos(-twist_rad) * tmp_x + std::sin(-twist_rad) * tmp_y;
       grid[i][j].y = -std::sin(-twist_rad) * tmp_x + std::cos(-twist_rad) * tmp_y;
 
       // Add waypoint to the visualisation
+      if(!show_grid){
+        if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
+          grid[i][j].valid = true;
+        }else{
+          grid[i][j].valid = false;
+        }
+        continue;
+      }
       rviz::Shape* cube = new rviz::Shape(rviz::Shape::Type::Cube, scene_manager_, grid_node_);
-      cube->setPosition(Ogre::Vector3(grid[i][j].x, grid[i][j].y, height_));
       cube->setScale(Ogre::Vector3(1, 1, 1));
-      cube->setOrientation(cube_rotation);
+
+      // Setting waypoint position
+      geometry_msgs::Pose pose;
+      pose.position.x = grid[i][j].x;
+      pose.position.y = grid[i][j].y;
+      pose.position.z = height_;
+      pose.orientation.w = cube_rotation.w;
+      pose.orientation.x = cube_rotation.x;
+      pose.orientation.y = cube_rotation.y;
+      pose.orientation.z = cube_rotation.z;
+      const auto& point_transformed = transformer_.transform(pose, tf.value());
+      if (!point_transformed) {
+        ROS_INFO("[ApproximateDecomposition]: Unable to transform cmd reference from %s to %s at time %.6f.", current_frame_.c_str(), polygon_frame_.c_str(),
+                ros::Time::now().toSec());
+        continue;
+      }
+      pose = point_transformed.value();
+      cube->setPosition(Ogre::Vector3(pose.position.x, pose.position.y, pose.position.z));
+      cube->setOrientation(Ogre::Quaternion(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z));
 
       // Verify if the waipoint lies within the polygon
       if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
@@ -94,10 +125,12 @@ void ApproximateDecomposition::initialize(rviz::Property* property_container, Og
   twist_property_ = new rviz::IntProperty("Twist", 0, "TODO: add description", property_container_, SLOT(twistChanged()), this);
   twist_property_->setMax(180);
   twist_property_->setMin(0);
+  transformer_ = mrs_lib::Transformer(nh_);
 }
 
-void ApproximateDecomposition::setPolygon(mrs_lib::Polygon &new_polygon, bool update){
+void ApproximateDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
   current_polygon_ = new_polygon;
+  polygon_frame_ = frame_id;
   if(update){
     drawGrid();
   }
@@ -129,7 +162,7 @@ void ApproximateDecomposition::setHeight(float height, bool update) {
 }
 
 void ApproximateDecomposition::setFrame(std::string new_frame, bool update){
-  frame_ = new_frame;
+  current_frame_ = new_frame;
   if(update){
     drawGrid();
   }

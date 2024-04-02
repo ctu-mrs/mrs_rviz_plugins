@@ -5,6 +5,10 @@
 
 #include <rviz/properties/int_property.h>
 
+#include <mrs_lib/transformer.h>
+
+#include <ros/ros.h>
+
 namespace mrs_rviz_plugins{
 
 class ApproximateDecomposition : public CoverageMethod {
@@ -15,7 +19,7 @@ public:
 
   void setStart(Ogre::Vector3 position) override;
 
-  void setPolygon(mrs_lib::Polygon &new_polygon, bool update=true) override;
+  void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) override;
 
   void setAngle(int angle, bool update=true) override;
 
@@ -43,6 +47,9 @@ protected:
   rviz::IntProperty* twist_property_;
 
   Ogre::SceneNode* grid_node_;
+
+  mrs_lib::Transformer transformer_;
+  ros::NodeHandle      nh_;
 };
 } // namespace mrs_rviz_plugins
 

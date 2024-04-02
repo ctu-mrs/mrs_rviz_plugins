@@ -277,7 +277,7 @@ void PlannerTool::updatePolygon(){
     return;
   }
 
-  current_coverage_method->setPolygon(result);
+  current_coverage_method->setPolygon(srv.request.header.frame_id, result);
 }
 
 void PlannerTool::computePath(){

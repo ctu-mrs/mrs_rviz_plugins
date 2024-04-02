@@ -23,7 +23,7 @@ public:
     root_node_ = root_node;
   }
 
-  virtual void setPolygon(mrs_lib::Polygon &new_polygon, bool update=true) = 0;
+  virtual void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) = 0;
 
   virtual void setStart(Ogre::Vector3 position) = 0;
 
@@ -50,7 +50,8 @@ protected:
   // Math
   mrs_lib::Polygon current_polygon_;
   Ogre::Vector3 start_position_;
-  std::string frame_; 
+  std::string polygon_frame_;
+  std::string current_frame_; 
   float overlap_ = 0.1;
   float height_ = 5;
   int angle_ = 90;
