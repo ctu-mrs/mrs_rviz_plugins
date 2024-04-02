@@ -27,6 +27,9 @@ typedef struct {
   int num = 0;
 } limit_t;
 
+  std::vector<Ogre::Vector2> getPathToNextCell(Ogre::Vector2 cur_cell);
+  bool isNextToVisited(Ogre::Vector2 cell);
+  void addCellToPath(Ogre::Vector2 cell);
   stride_t computeStride(Ogre::Vector2 start, Ogre::Vector2 direction);
   limit_t getLimits(Ogre::Vector2 cell, Ogre::Vector2 direction);
 
@@ -37,6 +40,7 @@ typedef struct {
 
   mrs_msgs::PathSrv path_;
   bool is_computed_ = false;
+  Ogre::SceneNode* path_node_ = nullptr;
 };
 } // namespace mrs_rviz_plugins
 

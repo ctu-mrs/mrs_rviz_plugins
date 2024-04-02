@@ -253,6 +253,7 @@ void PlannerTool::updatePolygon(){
   for(geometry_msgs::Point32 point : srv.response.safety_zone[0].points){
     mrs_lib::Point2d p{point.x, point.y};
     bg::append(result, p);
+    std::cout << point.x << " "<< point.y << std::endl;
   }
   
   // Add obstacles
