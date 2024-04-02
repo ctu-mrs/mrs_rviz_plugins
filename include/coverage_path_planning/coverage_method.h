@@ -37,6 +37,8 @@ public:
 
   virtual void setHeight(float height, bool update=true) = 0;
 
+  virtual void setFrame(std::string new_frame, bool update=true) = 0;
+
   virtual void start() = 0;
 
 protected:
@@ -48,9 +50,10 @@ protected:
   // Math
   mrs_lib::Polygon current_polygon_;
   Ogre::Vector3 start_position_;
-  int angle_ = 90;
+  std::string frame_; 
   float overlap_ = 0.1;
   float height_ = 5;
+  int angle_ = 90;
 }; // class CoverageMethod
 
 } // namespace mrs_rviz_plugins

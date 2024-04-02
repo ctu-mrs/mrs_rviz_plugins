@@ -195,13 +195,15 @@ void PlannerTool::activate() {
 
 void PlannerTool::deactivate() {
   root_node->setVisible(false);
-  flag_node_->setVisible(false);
+  if(flag_node_){
+    flag_node_->setVisible(false);
+  }
   ROS_INFO("[PlannerTool]: Deactivated");
 }
 
 void PlannerTool::methodChosen() {
   ROS_INFO("Method has been chosen");
-  if(!current_coverage_method){
+  if(!root_node){
     scene_manager_->destroySceneNode(root_node);
     root_node = nullptr;
   }
@@ -225,6 +227,7 @@ void PlannerTool::methodChosen() {
   current_coverage_method->setHeight(height_property->getFloat(), false);
   current_coverage_method->setAngle(angle_property_->getInt(), false);
   current_coverage_method->setOverlap(overlap_property_->getFloat(), false);
+  current_coverage_method->setFrame(context_->getFrameManager()->getFixedFrame(), false);
   updatePolygon();
 }
 
@@ -237,6 +240,7 @@ void PlannerTool::updatePolygon(){
 
   mrs_msgs::GetSafeZoneAtHeight srv;
   srv.request.height = height_property->getFloat();
+  srv.request.header.frame_id = context_->getFrameManager()->getFixedFrame();
 
   if(!client_.call(srv)){
     ROS_WARN("[Coverage Path Planning]: could not call service %s", client_.getService().c_str());
