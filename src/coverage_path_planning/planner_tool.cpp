@@ -32,7 +32,7 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
                         getPropertyContainer(), SLOT(droneChanged()), this);
   method_property = new rviz::EnumProperty("Used method", "None", "Choose the algorithm to plan the coverage path", getPropertyContainer(), 
                         SLOT(methodChosen()), this);
-  height_property = new rviz::FloatProperty("Height", 3.0F, "The height of the flight", getPropertyContainer(), 
+  height_property = new rviz::FloatProperty("Height", 6.0F, "The height of the flight", getPropertyContainer(), 
                         SLOT(heightChanged()), this);
   angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's viewing angle", getPropertyContainer(), SLOT(angleChanged()), this);
   overlap_property_ = new rviz::FloatProperty("Overlap", 0.1, "Overlap percentage of adjacent pictures", getPropertyContainer(), SLOT(overlapChanged()), this);
