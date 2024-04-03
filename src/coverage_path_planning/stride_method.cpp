@@ -95,16 +95,22 @@ void StrideMethod::compute(){
     if(valid_directions.size() == 0){
       std::cout << "getPathToNextCell\n";
       std::vector<Ogre::Vector2> path_to_next = getPathToNextCell(cur_cell);
-      for(auto& cell : path_to_next){
-        std::cout << cell.x << " " << cell.y << std::endl;
-        addCellToPath(cell);
-      }
-
+      
       if(path_to_next.size() == 0){
         ROS_WARN("[StrideMethod]: Could not find the path to unvisited cell. Terminating algorithm");
         break;
       }
-      
+
+      // Delete redundant waypoints
+      for(size_t i=1; i<path_to_next.size() - 1; ++i){
+        if(path_to_next[i] - path_to_next[i-1] == path_to_next[i+1] - path_to_next[i]){
+          continue;
+        }
+
+        addCellToPath(path_to_next[i]);
+      }
+      addCellToPath(path_to_next.back());
+
       std::cout << "size: "<< path_to_next.size() << std::endl; 
       cur_cell = path_to_next.back();
       continue;
