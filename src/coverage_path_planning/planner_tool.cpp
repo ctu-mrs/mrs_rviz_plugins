@@ -36,7 +36,7 @@ PlannerTool::PlannerTool() : method_loader("mrs_rviz_plugins", "mrs_rviz_plugins
                         SLOT(heightChanged()), this);
   angle_property_ = new rviz::IntProperty("Angle", 90, "Camera's viewing angle", getPropertyContainer(), SLOT(angleChanged()), this);
   overlap_property_ = new rviz::FloatProperty("Overlap", 0.1, "Overlap percentage of adjacent pictures", getPropertyContainer(), SLOT(overlapChanged()), this);
-  start_property_   = new rviz::VectorProperty("Start", Ogre::Vector3(), "Start point for the mission", getPropertyContainer(), SLOT(startChanged()), this);
+  start_property_   = new rviz::VectorProperty("Start", Ogre::Vector3(0, 0, 0), "Start point for the mission", getPropertyContainer(), SLOT(startChanged()), this);
 
   for(auto& name : method_loader.getDeclaredClasses()){
     method_property->addOptionStd(name);
@@ -62,6 +62,33 @@ void PlannerTool::onInitialize(){
     return;
   }
 
+  std::vector<std::string> drone_names = getUavNames();
+
+  // Set up drone's name
+  if (drone_names.size() == 0) {
+
+    setStatus("Warning: No drone was found. Drone name set to: uav1");
+    drone_name_property->setString("uav1");
+
+  } else if (drone_names.size() > 1) {
+
+    for(std::string& name : drone_names){
+      drone_name_property->addOptionStd(name);
+    }
+    drone_name_property->setStdString(drone_names[0]);
+    setStatus("Warning: Several drones found. Please, set drone name property");
+
+  } else {
+
+    drone_name_property->setStdString(drone_names[0]);
+    setStatus("Drone name is set to " + drone_name_property->getString());
+  }
+
+  client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property->getStdString() + 
+              "/safety_area_manager/get_safety_zone_at_height");
+}
+
+std::vector<std::string> PlannerTool::getUavNames(){
   // Preparing for searching the drone's name
   XmlRpc::XmlRpcValue      req = "/node";
   XmlRpc::XmlRpcValue      res;
@@ -92,29 +119,7 @@ void PlannerTool::onInitialize(){
     ROS_INFO("[Coverage Path Planning]: %s was added to drone names", name.c_str());
     state[x] = name;
   }
-
-  // Set up drone's name
-  if (drone_names.size() == 0) {
-
-    setStatus("Warning: No drone was found. Drone name set to: uav1");
-    drone_name_property->setString("uav1");
-
-  } else if (drone_names.size() > 1) {
-
-    for(std::string& name : drone_names){
-      drone_name_property->addOptionStd(name);
-    }
-    drone_name_property->setStdString(drone_names[0]);
-    setStatus("Warning: Several drones found. Please, set drone name property");
-
-  } else {
-
-    drone_name_property->setStdString(drone_names[0]);
-    setStatus("Drone name is set to " + drone_name_property->getString());
-  }
-
-  client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property->getStdString() + 
-              "/safety_area_manager/get_safety_zone_at_height");
+  return drone_names;
 }
 
 void PlannerTool::makeFlag( const Ogre::Vector3& position ){
@@ -253,7 +258,6 @@ void PlannerTool::updatePolygon(){
   for(geometry_msgs::Point32 point : srv.response.safety_zone[0].points){
     mrs_lib::Point2d p{point.x, point.y};
     bg::append(result, p);
-    std::cout << point.x << " "<< point.y << std::endl;
   }
   
   // Add obstacles

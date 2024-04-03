@@ -1,4 +1,5 @@
 #include "coverage_path_planning/stride_method.h"
+#include "coverage_path_planning/planner_tool.h"
 
 #include <ros/ros.h>
 
@@ -11,6 +12,27 @@
 
 namespace mrs_rviz_plugins{
 
+void StrideMethod::initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
+  ApproximateDecomposition::initialize(property_container, scene_manager, root_node);
+
+  turn_num_property_ = new rviz::IntProperty("Turns", 0, "Number of turns in current path", property_container);
+  drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
+
+  cell_num_property_->setReadOnly(true);
+  turn_num_property_->setReadOnly(true);
+
+  std::vector<std::string> drone_names = PlannerTool::getUavNames();
+  for(auto& name : drone_names){
+    drone_name_property_->addOption(name.c_str());
+  }
+
+  if(drone_names.size() > 0){
+    drone_name_property_->setString(drone_names[0].c_str());
+  }else{
+    ROS_WARN("[StrideMethod]: could not find any uav for coverage mission");
+  }
+}
+
 void StrideMethod::compute(){
   float min_dist = std::numeric_limits<float>::max();
   Ogre::Vector2 index_min;
@@ -21,8 +43,10 @@ void StrideMethod::compute(){
   for(size_t i=0; i<grid.size(); ++i){
     for(size_t j=0; j<grid[i].size(); ++j){
       float cur_dist;
+      if(!grid[i][j].valid){
+        continue;
+      }
 
-      // std::cout << "grid: " << grid[i][j].x << " " << grid[i][j].y << std::endl;
       cur_dist = std::pow(grid[i][j].x - start_position_.x, 2) + std::pow(grid[i][j].y - start_position_.y, 2);
       if(cur_dist < min_dist){
         index_min.x = i;
@@ -74,6 +98,11 @@ void StrideMethod::compute(){
       for(auto& cell : path_to_next){
         std::cout << cell.x << " " << cell.y << std::endl;
         addCellToPath(cell);
+      }
+
+      if(path_to_next.size() == 0){
+        ROS_WARN("[StrideMethod]: Could not find the path to unvisited cell. Terminating algorithm");
+        break;
       }
       
       std::cout << "size: "<< path_to_next.size() << std::endl; 
@@ -162,6 +191,8 @@ void StrideMethod::compute(){
     line->setScale(Ogre::Vector3(1, 1, 1));
     line->setVisible(true);
   }
+
+  turn_num_property_->setInt(path_.request.path.points.size() - 1);
 }
 
 void StrideMethod::addCellToPath(Ogre::Vector2 cell){

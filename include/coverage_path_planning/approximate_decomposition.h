@@ -45,6 +45,7 @@ protected:
   std::vector<std::vector<cell_t>> grid;
 
   rviz::IntProperty* twist_property_;
+  rviz::IntProperty* cell_num_property_;
 
   Ogre::SceneNode* grid_node_;
 

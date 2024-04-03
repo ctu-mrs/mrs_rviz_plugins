@@ -16,6 +16,7 @@ namespace bg = boost::geometry;
 namespace mrs_rviz_plugins{
 
 void ApproximateDecomposition::drawGrid(){
+  std::cout << "ApproximateDecomposition draw grid is entered\n";
   scene_manager_->destroySceneNode(grid_node_);
   grid_node_ = root_node_->createChildSceneNode();
   float twist_rad = (((float)twist_property_->getInt()) / 180) * M_PI;
@@ -50,6 +51,7 @@ void ApproximateDecomposition::drawGrid(){
   // 2: We fill the rectangle with waypoints
 
   // 2.1: Compute parameters
+  int cell_num = 0;
   float angle_rad = (((float)angle_) / 180) * M_PI;
   float camera_width = (std::tan(angle_rad / 2) * height_);
   float distance = camera_width * (1 - overlap_);
@@ -78,6 +80,7 @@ void ApproximateDecomposition::drawGrid(){
       if(!show_grid){
         if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
           grid[i][j].valid = true;
+          cell_num ++;
         }else{
           grid[i][j].valid = false;
         }
@@ -109,6 +112,7 @@ void ApproximateDecomposition::drawGrid(){
       if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
         cube->setColor(0.0F, 1.0F, 0.0F, 1.0F);
         grid[i][j].valid = true;
+        cell_num++;
       }else{
         cube->setColor(1.0F, 0.0F, 0.0F, 1.0F);
         grid[i][j].valid = false;
@@ -117,14 +121,19 @@ void ApproximateDecomposition::drawGrid(){
     }
   }
 
+  cell_num_property_->setInt(cell_num);
 }
 
 void ApproximateDecomposition::initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
   CoverageMethod::initialize(property_container, scene_manager, root_node);
   grid_node_ = root_node_->createChildSceneNode();
+
   twist_property_ = new rviz::IntProperty("Twist", 0, "TODO: add description", property_container_, SLOT(twistChanged()), this);
+  cell_num_property_ = new rviz::IntProperty("Cells", 0, "Number of cells that are to cover", property_container);
+  
   twist_property_->setMax(180);
   twist_property_->setMin(0);
+  cell_num_property_->setReadOnly(true);
   transformer_ = mrs_lib::Transformer(nh_);
 }
 

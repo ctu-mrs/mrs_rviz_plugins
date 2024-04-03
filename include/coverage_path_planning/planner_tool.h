@@ -31,6 +31,8 @@ public:
   void activate() override;
   void deactivate() override;
 
+  static std::vector<std::string> getUavNames();
+
 protected Q_SLOTS:
   void methodChosen();
   void droneChanged();
