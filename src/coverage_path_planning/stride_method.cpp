@@ -293,7 +293,18 @@ void StrideMethod::start(){
     ROS_WARN("[StrideMethod]: Could not start the mission. The path has not been computed yet.");
     return;
   }
-  ROS_INFO("[StrideMethod]: start() is called");
+  client_ = nh_.serviceClient<mrs_msgs::PathSrv>("/" + drone_name_property_->getStdString() + "/trajectory_generation/path");
+
+  // Make the call
+  if(!client_.call(path_)){
+    ROS_INFO("[StrideMethod]: Call failed. Service name: %s", client_.getService().c_str());
+    return;
+  }
+  if (!path_.response.success) {
+    ROS_INFO("[StrideMethod]: Call failed: %s", path_.response.message.c_str());
+    return;
+  } 
+  ROS_INFO("[StrideMethod]: Call processed successfully");
 }
 
 StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Vector2 direction){

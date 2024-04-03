@@ -49,6 +49,8 @@ typedef struct {
 
   rviz::IntProperty*          turn_num_property_;
   rviz::EditableEnumProperty* drone_name_property_;
+
+  ros::ServiceClient client_;
 };
 } // namespace mrs_rviz_plugins
 
