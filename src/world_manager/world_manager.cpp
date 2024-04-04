@@ -124,7 +124,7 @@ void WorldManager::add_obstacle() {
   srv.request.header.frame_id = context_->getFrameManager()->getFixedFrame();
   srv.request.reference.position.x = current_intersection.x;
   srv.request.reference.position.y = current_intersection.y;
-  srv.request.reference.position.z = 0; // SafetyAreaManger doesn't condiser z offset
+  srv.request.reference.position.z = 0; // SafetyAreaManager doesn't consider z offset
 
   for(size_t i=0; i<properties.size(); i++){
     if(!properties[i]->getBool()){

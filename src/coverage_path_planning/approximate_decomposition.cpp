@@ -57,7 +57,7 @@ void ApproximateDecomposition::drawGrid(){
   float distance = camera_width * (1 - overlap_);
   Ogre::Quaternion cube_rotation(Ogre::Radian(twist_rad), Ogre::Vector3(0, 0, 1));
   bool show_grid = true;
-  const auto& tf = transformer_.getTransform(current_frame_, polygon_frame_);
+  const auto& tf = transformer_.getTransform(polygon_frame_, current_frame_);
   if (!tf) {
     ROS_INFO("[ApproximateDecomposition]: Transformation is not found. Grid will not be displayed");
     show_grid = false;
@@ -147,6 +147,8 @@ void ApproximateDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon
 
 void ApproximateDecomposition::setStart(Ogre::Vector3 position){
   start_position_ = position;
+  std::cout << "current_frame: " << current_frame_ << std::endl;
+  std::cout << "polygon_frame: " << polygon_frame_ << std::endl;
 }
 
 void ApproximateDecomposition::setAngle(int angle, bool update) {

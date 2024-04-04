@@ -160,6 +160,7 @@ int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
     }
 
     makeFlag(intersection);
+
     start_property_->setVector(intersection);
   }
 
@@ -195,6 +196,9 @@ int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
 
 void PlannerTool::activate() {
   root_node->setVisible(true);
+  if(flag_node_){
+    flag_node_->setVisible(true);
+  }
   ROS_INFO("[PlannerTool]: Activated");
 }
 
@@ -282,7 +286,8 @@ void PlannerTool::updatePolygon(){
     return;
   }
 
-  current_coverage_method->setPolygon(srv.request.header.frame_id, result);
+  current_coverage_method->setFrame(context_->getFrameManager()->getFixedFrame(), false);
+  current_coverage_method->setPolygon(srv.response.header.frame_id, result);
 }
 
 void PlannerTool::computePath(){
@@ -338,6 +343,7 @@ void PlannerTool::heightChanged(){
 void PlannerTool::startChanged(){
   flag_node_->setPosition(start_property_->getVector());
   if(current_coverage_method){
+    current_coverage_method->setFrame(context_->getFrameManager()->getFixedFrame(), false);
     current_coverage_method->setStart(start_property_->getVector());
   }
 }

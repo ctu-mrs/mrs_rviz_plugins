@@ -39,6 +39,20 @@ void StrideMethod::compute(){
   
   std::cout << "compute entered\n";
   std::cout << "start: " << start_position_.x << " " << start_position_.y << std::endl;
+
+  geometry_msgs::Point start;
+  start.x = start_position_.x;
+  start.y = start_position_.y;
+  start.z = start_position_.z;
+
+  const auto& start_transformed = transformer_.transformSingle(current_frame_, start, polygon_frame_);
+  if (!start_transformed) {
+    ROS_INFO("[StrideMethod]: Unable to transform cmd reference from %s to %s at time %.6f.", current_frame_.c_str(), polygon_frame_.c_str(),
+            ros::Time::now().toSec());
+    return;
+  }
+  start = start_transformed.value();
+
   // Searching for the closest cell to the start position.
   for(size_t i=0; i<grid.size(); ++i){
     for(size_t j=0; j<grid[i].size(); ++j){
@@ -47,7 +61,7 @@ void StrideMethod::compute(){
         continue;
       }
 
-      cur_dist = std::pow(grid[i][j].x - start_position_.x, 2) + std::pow(grid[i][j].y - start_position_.y, 2);
+      cur_dist = std::pow(grid[i][j].x - start.x, 2) + std::pow(grid[i][j].y - start.y, 2);
       if(cur_dist < min_dist){
         index_min.x = i;
         index_min.y = j;
@@ -57,8 +71,8 @@ void StrideMethod::compute(){
   }
 
   std::cout << "closest cell found\n";
-  start_position_.x = grid[index_min.x][index_min.y].x;
-  start_position_.y = grid[index_min.x][index_min.y].y;
+  // start_position_.x = grid[index_min.x][index_min.y].x;
+  // start_position_.y = grid[index_min.x][index_min.y].y;
 
   // |------------------- Algorithm -------------------|
   
@@ -181,15 +195,38 @@ void StrideMethod::compute(){
     for(auto& cell : vector)
       cell.visited = false;
 
-  // Draw the path
+  drawPath();
+}
+
+void StrideMethod::drawPath(){
+  // Delete previous path
   if(path_node_){
     scene_manager_->destroySceneNode(path_node_);
   }
   path_node_ = root_node_->createChildSceneNode();
 
+  // Prepare transformation
+  const auto& tf = transformer_.getTransform(path_.request.path.header.frame_id, current_frame_);
+  if (!tf) {
+    ROS_INFO("[StrideMethod]: Transformation is not found. Path will not be displayed");
+    return;
+  }
+
   for(size_t i=0; i<path_.request.path.points.size()-1; ++i){
     geometry_msgs::Point start = path_.request.path.points[i].position;
     geometry_msgs::Point end = path_.request.path.points[i+1].position;
+
+    // Transform points to current frame
+    const auto& start_transformed = transformer_.transform(start, tf.value());
+    const auto& end_transformed = transformer_.transform(end, tf.value());
+    if (!start_transformed || !end_transformed) {
+      ROS_INFO("[StrideMethod]: Unable to transform cmd reference from %s to %s at time %.6f.", path_.request.path.header.frame_id.c_str(), current_frame_.c_str(),
+              ros::Time::now().toSec());
+      continue;
+    }
+    start = start_transformed.value();
+    end = end_transformed.value();
+
     rviz::Line* line = new rviz::Line(scene_manager_, path_node_);
     line->setColor(1, 0, 0, 1);
     line->setPoints(Ogre::Vector3(start.x, start.y, start.z), Ogre::Vector3(end.x, end.y, end.z));

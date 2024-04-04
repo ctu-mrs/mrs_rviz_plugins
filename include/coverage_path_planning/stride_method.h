@@ -38,6 +38,8 @@ typedef struct {
   stride_t computeStride(Ogre::Vector2 start, Ogre::Vector2 direction);
   limit_t getLimits(Ogre::Vector2 cell, Ogre::Vector2 direction);
 
+  void drawPath();
+
   // Returns false if cell.x and cell.y are valid indices of grid and 
   // corresponding element of grid is neither visited nor valid
   // true otherwise
