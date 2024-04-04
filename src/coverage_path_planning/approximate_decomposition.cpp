@@ -15,38 +15,27 @@ namespace bg = boost::geometry;
 
 namespace mrs_rviz_plugins{
 
+void ApproximateDecomposition::initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
+  CoverageMethod::initialize(property_container, scene_manager, root_node);
+  grid_node_ = root_node_->createChildSceneNode();
+
+  twist_property_ = new rviz::IntProperty("Twist", 0, "Rotate the grid", property_container_, SLOT(twistChanged()), this);
+  cell_num_property_ = new rviz::IntProperty("Cells", 0, "Number of cells that are to cover", property_container);
+  
+  twist_property_->setMax(180);
+  twist_property_->setMin(0);
+  cell_num_property_->setReadOnly(true);
+  transformer_ = mrs_lib::Transformer(nh_);
+}
+
 void ApproximateDecomposition::drawGrid(){
-  std::cout << "ApproximateDecomposition draw grid is entered\n";
   scene_manager_->destroySceneNode(grid_node_);
   grid_node_ = root_node_->createChildSceneNode();
   float twist_rad = (((float)twist_property_->getInt()) / 180) * M_PI;
 
   // 1: We find rectagle boundaries of the polygon in rotated axes
-
-  // 1.1: Initialize values (max and min are in rotated axes)
-  auto outer_ring = current_polygon_.outer();
-  float max_x = std::numeric_limits<float>::lowest();
-  float min_x = std::numeric_limits<float>::max();
-  float max_y = std::numeric_limits<float>::lowest();
-  float min_y = std::numeric_limits<float>::max();
-
-  // 1.2: Iterate over vertices and find max and min 
-  for(size_t i=0; i<outer_ring.size(); ++i){
-    // Get position in original axes
-    float cur_x = bg::get<0>(outer_ring[i]);
-    float cur_y = bg::get<1>(outer_ring[i]);
-
-    // Find position in rotated axes
-    float tmp_x = std::cos(twist_rad) * cur_x + std::sin(twist_rad) * cur_y;
-    float tmp_y = -std::sin(twist_rad) * cur_x + std::cos(twist_rad) * cur_y;
-
-    // Update extrems
-    max_x = max_x < tmp_x ? tmp_x : max_x;
-    min_x = min_x > tmp_x ? tmp_x : min_x;
-
-    max_y = max_y < tmp_y ? tmp_y : max_y;
-    min_y = min_y > tmp_y ? tmp_y : min_y;
-  }
+  float max_x, min_x, max_y, min_y;
+  getPolygonBoundaries(max_x, min_x, max_y, min_y);
 
   // 2: We fill the rectangle with waypoints
 
@@ -63,78 +52,105 @@ void ApproximateDecomposition::drawGrid(){
     show_grid = false;
   }
 
-  // 2.2: Iterate over matrix *grid, assign positions (in original axes) and add waypoints to the visualisation
-  grid.resize(std::ceil((max_y - min_y) / distance));
-  for(size_t i=0; i<grid.size(); ++i){
-    grid[i].resize(std::ceil((max_x - min_x) / distance));
-    for(size_t j=0; j<grid[i].size(); ++j){
-      // Find position in rotated axes
-      float tmp_x = min_x + (camera_width / 2) + distance * j;
-      float tmp_y = min_y + (camera_width / 2) + distance * i;
+  // 2.2: Iterate over matrix *grid_, assign positions (in original axes) and add waypoints to the visualisation
+  grid_.resize(std::ceil((max_y - min_y) / distance));
+  for(size_t i=0; i<grid_.size(); ++i){
+    grid_[i].resize(std::ceil((max_x - min_x) / distance));
+    for(size_t j=0; j<grid_[i].size(); ++j){
+      
+      grid_[i][j] = getCell(min_x, min_y, camera_width, distance, twist_rad, i, j);
+      cell_num += grid_[i][j].valid ? 1 : 0;
 
-      // Assigning position in original axes
-      grid[i][j].x = std::cos(-twist_rad) * tmp_x + std::sin(-twist_rad) * tmp_y;
-      grid[i][j].y = -std::sin(-twist_rad) * tmp_x + std::cos(-twist_rad) * tmp_y;
-
-      // Add waypoint to the visualisation
       if(!show_grid){
-        if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
-          grid[i][j].valid = true;
-          cell_num ++;
-        }else{
-          grid[i][j].valid = false;
-        }
         continue;
       }
-      rviz::Shape* cube = new rviz::Shape(rviz::Shape::Type::Cube, scene_manager_, grid_node_);
-      cube->setScale(Ogre::Vector3(1, 1, 1));
 
-      // Setting waypoint position
-      geometry_msgs::Pose pose;
-      pose.position.x = grid[i][j].x;
-      pose.position.y = grid[i][j].y;
-      pose.position.z = height_;
-      pose.orientation.w = cube_rotation.w;
-      pose.orientation.x = cube_rotation.x;
-      pose.orientation.y = cube_rotation.y;
-      pose.orientation.z = cube_rotation.z;
-      const auto& point_transformed = transformer_.transform(pose, tf.value());
+      // Transform point from polygon_frame_ to current_frame_ for the visualisation
+      const auto& point_transformed = transform(grid_[i][j], height_, cube_rotation, tf.value());
       if (!point_transformed) {
-        ROS_INFO("[ApproximateDecomposition]: Unable to transform cmd reference from %s to %s at time %.6f.", current_frame_.c_str(), polygon_frame_.c_str(),
+        ROS_INFO("[ApproximateDecomposition]: Unable to transform cmd reference from %s to %s at time %.6f.", 
+                current_frame_.c_str(), 
+                polygon_frame_.c_str(),
                 ros::Time::now().toSec());
         continue;
       }
-      pose = point_transformed.value();
-      cube->setPosition(Ogre::Vector3(pose.position.x, pose.position.y, pose.position.z));
-      cube->setOrientation(Ogre::Quaternion(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z));
+      geometry_msgs::Pose pose = point_transformed.value();
 
-      // Verify if the waipoint lies within the polygon
-      if(bg::within(mrs_lib::Point2d{grid[i][j].x, grid[i][j].y}, current_polygon_)){
-        cube->setColor(0.0F, 1.0F, 0.0F, 1.0F);
-        grid[i][j].valid = true;
-        cell_num++;
-      }else{
-        cube->setColor(1.0F, 0.0F, 0.0F, 1.0F);
-        grid[i][j].valid = false;
-      }
-
+      // Add waypoint to the visualisation
+      addWaypoint(pose, grid_[i][j].valid);
     }
   }
 
   cell_num_property_->setInt(cell_num);
 }
 
-void ApproximateDecomposition::initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
-  CoverageMethod::initialize(property_container, scene_manager, root_node);
-  grid_node_ = root_node_->createChildSceneNode();
+void ApproximateDecomposition::addWaypoint(geometry_msgs::Pose pose, bool valid){
+  rviz::Shape* cube = new rviz::Shape(rviz::Shape::Type::Cube, scene_manager_, grid_node_);
+  cube->setScale(Ogre::Vector3(1, 1, 1));
+  cube->setPosition(Ogre::Vector3(pose.position.x, pose.position.y, pose.position.z));
+  cube->setOrientation(Ogre::Quaternion(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z));
 
-  twist_property_ = new rviz::IntProperty("Twist", 0, "TODO: add description", property_container_, SLOT(twistChanged()), this);
-  cell_num_property_ = new rviz::IntProperty("Cells", 0, "Number of cells that are to cover", property_container);
+  if(valid){
+    cube->setColor(0.0F, 1.0F, 0.0F, 1.0F);
+  }else{
+    cube->setColor(1.0F, 0.0F, 0.0F, 1.0F);
+  }
+}
+
+ApproximateDecomposition::cell_t ApproximateDecomposition::getCell(float min_x, float min_y, float camera_width, float dist, float twist_rad, size_t x, size_t y){
+  cell_t result;
   
-  twist_property_->setMax(180);
-  twist_property_->setMin(0);
-  cell_num_property_->setReadOnly(true);
-  transformer_ = mrs_lib::Transformer(nh_);
+  // Find position in rotated axes
+  float tmp_x = min_x + (camera_width / 2) + dist * y;
+  float tmp_y = min_y + (camera_width / 2) + dist * x;
+
+  // Assigning position in original axes
+  result.x = std::cos(-twist_rad) * tmp_x + std::sin(-twist_rad) * tmp_y;
+  result.y = -std::sin(-twist_rad) * tmp_x + std::cos(-twist_rad) * tmp_y;
+
+  result.valid = bg::within(mrs_lib::Point2d{result.x, result.y}, current_polygon_);
+
+  return result;
+}
+
+void ApproximateDecomposition::getPolygonBoundaries(float& max_x, float& min_x,
+                                                    float& max_y, float& min_y){
+  // Initialize values
+  max_x = std::numeric_limits<float>::lowest();
+  min_x = std::numeric_limits<float>::max();
+  max_y = std::numeric_limits<float>::lowest();
+  min_y = std::numeric_limits<float>::max();
+  float twist_rad = (((float)twist_property_->getInt()) / 180) * M_PI;
+  auto outer_ring = current_polygon_.outer();
+
+  for(size_t i=0; i<outer_ring.size(); ++i){
+    // Get position in original axes
+    float cur_x = bg::get<0>(outer_ring[i]);
+    float cur_y = bg::get<1>(outer_ring[i]);
+
+    // Find position in rotated axes
+    float tmp_x = std::cos(twist_rad) * cur_x + std::sin(twist_rad) * cur_y;
+    float tmp_y = -std::sin(twist_rad) * cur_x + std::cos(twist_rad) * cur_y;
+
+    // Update extrems
+    max_x = max_x < tmp_x ? tmp_x : max_x;
+    min_x = min_x > tmp_x ? tmp_x : min_x;
+
+    max_y = max_y < tmp_y ? tmp_y : max_y;
+    min_y = min_y > tmp_y ? tmp_y : min_y;
+  }
+}
+
+std::optional<geometry_msgs::Pose> ApproximateDecomposition::transform(cell_t cell, float height, Ogre::Quaternion quat, geometry_msgs::TransformStamped tf){
+  geometry_msgs::Pose pose;
+  pose.position.x = cell.x;
+  pose.position.y = cell.y;
+  pose.position.z = height;
+  pose.orientation.w = quat.w;
+  pose.orientation.x = quat.x;
+  pose.orientation.y = quat.y;
+  pose.orientation.z = quat.z;
+  return transformer_.transform(pose, tf);
 }
 
 void ApproximateDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
@@ -147,8 +163,6 @@ void ApproximateDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon
 
 void ApproximateDecomposition::setStart(Ogre::Vector3 position){
   start_position_ = position;
-  std::cout << "current_frame: " << current_frame_ << std::endl;
-  std::cout << "polygon_frame: " << polygon_frame_ << std::endl;
 }
 
 void ApproximateDecomposition::setAngle(int angle, bool update) {

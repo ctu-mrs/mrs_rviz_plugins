@@ -46,25 +46,28 @@ protected Q_SLOTS:
   void startMission();
 
 private:
-// Properties
+  // Function for convenience
+  void makeFlag(const Ogre::Vector3& position);
+
+  // Properties
   rviz::IntProperty*                                  angle_property_;
   rviz::EnumProperty*                                 method_property;
   rviz::FloatProperty*                                overlap_property_;
   rviz::FloatProperty*                                height_property;
   rviz::VectorProperty*                               start_property_;
-  rviz::EditableEnumProperty*                         drone_name_property;
-  
-  std::string                                         flag_path_;
-  Ogre::SceneNode*                                    flag_node_;
-  Ogre::SceneNode*                                    root_node;
-  pluginlib::ClassLoader<CoverageMethod>              method_loader;
-  boost::shared_ptr<mrs_rviz_plugins::CoverageMethod> current_coverage_method;
+  rviz::EditableEnumProperty*                         drone_name_property_;
 
   // ROS communication
   ros::NodeHandle nh_;
   ros::ServiceClient client_;
+  
+  // Other attributes
+  std::string                                         flag_path_;
+  Ogre::SceneNode*                                    flag_node_;
+  Ogre::SceneNode*                                    root_node_;
+  pluginlib::ClassLoader<CoverageMethod>              method_loader_;
+  boost::shared_ptr<mrs_rviz_plugins::CoverageMethod> current_coverage_method_;
 
-  void makeFlag(const Ogre::Vector3& position);
 }; // class PlannerTool
 } // namespace mrs_rviz_plugins
 

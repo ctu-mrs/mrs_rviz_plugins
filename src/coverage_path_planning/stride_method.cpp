@@ -34,17 +34,12 @@ void StrideMethod::initialize (rviz::Property* property_container, Ogre::SceneMa
 }
 
 void StrideMethod::compute(){
-  float min_dist = std::numeric_limits<float>::max();
   Ogre::Vector2 index_min;
-  
-  std::cout << "compute entered\n";
-  std::cout << "start: " << start_position_.x << " " << start_position_.y << std::endl;
 
   geometry_msgs::Point start;
   start.x = start_position_.x;
   start.y = start_position_.y;
   start.z = start_position_.z;
-
   const auto& start_transformed = transformer_.transformSingle(current_frame_, start, polygon_frame_);
   if (!start_transformed) {
     ROS_INFO("[StrideMethod]: Unable to transform cmd reference from %s to %s at time %.6f.", current_frame_.c_str(), polygon_frame_.c_str(),
@@ -54,14 +49,15 @@ void StrideMethod::compute(){
   start = start_transformed.value();
 
   // Searching for the closest cell to the start position.
-  for(size_t i=0; i<grid.size(); ++i){
-    for(size_t j=0; j<grid[i].size(); ++j){
+  float min_dist = std::numeric_limits<float>::max();
+  for(size_t i=0; i<grid_.size(); ++i){
+    for(size_t j=0; j<grid_[i].size(); ++j){
       float cur_dist;
-      if(!grid[i][j].valid){
+      if(!grid_[i][j].valid){
         continue;
       }
 
-      cur_dist = std::pow(grid[i][j].x - start.x, 2) + std::pow(grid[i][j].y - start.y, 2);
+      cur_dist = std::pow(grid_[i][j].x - start.x, 2) + std::pow(grid_[i][j].y - start.y, 2);
       if(cur_dist < min_dist){
         index_min.x = i;
         index_min.y = j;
@@ -69,10 +65,6 @@ void StrideMethod::compute(){
       }
     }
   }
-
-  std::cout << "closest cell found\n";
-  // start_position_.x = grid[index_min.x][index_min.y].x;
-  // start_position_.y = grid[index_min.x][index_min.y].y;
 
   // |------------------- Algorithm -------------------|
   
@@ -85,7 +77,6 @@ void StrideMethod::compute(){
   path_.request.path.stop_at_waypoints = true;
   path_.request.path.loop              = false;
   addCellToPath(cur_cell);
-  std::cout << "1. processed\n";
 
   while(true){
     // 2. Find all unvisited neighbor cells of the current cell
@@ -102,12 +93,9 @@ void StrideMethod::compute(){
       }
     }
 
-    std::cout << "2. processed\n";
-
     // 2.1 If no neighbor has been found, find 
     // the nearest unvisited cell located next to cells already visited.
     if(valid_directions.size() == 0){
-      std::cout << "getPathToNextCell\n";
       std::vector<Ogre::Vector2> path_to_next = getPathToNextCell(cur_cell);
       
       if(path_to_next.size() == 0){
@@ -120,12 +108,10 @@ void StrideMethod::compute(){
         if(path_to_next[i] - path_to_next[i-1] == path_to_next[i+1] - path_to_next[i]){
           continue;
         }
-
         addCellToPath(path_to_next[i]);
       }
       addCellToPath(path_to_next.back());
 
-      std::cout << "size: "<< path_to_next.size() << std::endl; 
       cur_cell = path_to_next.back();
       continue;
     }
@@ -137,7 +123,6 @@ void StrideMethod::compute(){
       strides.push_back(computeStride(cur_cell, directions[index]));
     }
 
-    std::cout << "3. processed\n";
     // 4. Select the longest stride.
     stride_t longest_stride;
     longest_stride.len = 0;
@@ -147,51 +132,37 @@ void StrideMethod::compute(){
       }
     }
 
-    std::cout << "4. processed\n";
-    std::cout << "longest stride:\n " 
-              << longest_stride.start.x << std::endl
-              << longest_stride.start.y << std::endl
-              << longest_stride.direction.x << std::endl
-              << longest_stride.direction.y << std::endl
-              << longest_stride.len << std::endl;
-
     // 5. Add all cells of the stride to the path and mark them
     // as visited.
     Ogre::Vector2 last_cell = longest_stride.start;
     for(size_t i=0; i<longest_stride.len; i++){
-      grid[last_cell.x][last_cell.y].visited = true;
+      grid_[last_cell.x][last_cell.y].visited = true;
       last_cell = last_cell + longest_stride.direction;
     }
-    std::cout << "last_cell: " << last_cell.x << " " << last_cell.y << std::endl;
     addCellToPath(last_cell);
-
-    std::cout << "5. processed\n";
 
     // 6. Set the current cell to the last cell of the stride.
     cur_cell = last_cell;
 
-    std::cout << "6. processed\n";
-
     // 7. Repeat starting at point 2 until all cells have been
     // visited.
     bool finished = true;
-    for(auto& vector : grid){
+    for(auto& vector : grid_){
       for(auto& cell : vector){
         if(!cell.visited && cell.valid){
           finished = false;
-          std::cout << "cell " << cell.x << " " << cell.y << " has not been visited yet\n";
         }
       }
     }
-    std::cout << "7. processed\n";
     if(finished){
       break;
     }
   }
   is_computed_ = true;
+  ROS_INFO("[StrideMethod]: The path has been computed");
   
-  // Cleaning the grid for future computations.
-  for(auto& vector : grid)
+  // Cleaning the grid_ for future computations.
+  for(auto& vector : grid_)
     for(auto& cell : vector)
       cell.visited = false;
 
@@ -239,10 +210,10 @@ void StrideMethod::drawPath(){
 }
 
 void StrideMethod::addCellToPath(Ogre::Vector2 cell){
-  grid[cell.x][cell.y].visited = true;
+  grid_[cell.x][cell.y].visited = true;
   mrs_msgs::Reference ref;
-  ref.position.x = grid[cell.x][cell.y].x;
-  ref.position.y = grid[cell.x][cell.y].y;
+  ref.position.x = grid_[cell.x][cell.y].x;
+  ref.position.y = grid_[cell.x][cell.y].y;
   ref.position.z = height_;
   path_.request.path.points.push_back(ref);
 }
@@ -258,8 +229,8 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
   int dx[] = {-1, 1, 0, 0, 1, 1, -1, -1};
   int dy[] = {0, 0, -1, 1, 1, -1, -1, 1};
 
-  int numRows = grid.size();
-  int numCols = grid[0].size();
+  int numRows = grid_.size();
+  int numCols = grid_[0].size();
 
   // Create a queue for BFS
   std::queue<std::pair<Ogre::Vector2, std::vector<Ogre::Vector2>>> q;
@@ -288,7 +259,7 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
       int newCol = currCell.y + dy[i];
 
       // Check if the new cell is valid and not visited
-      if (isValid(newRow, newCol, numRows, numCols) && !visited[newRow][newCol] && grid[newRow][newCol].valid) {
+      if (isValid(newRow, newCol, numRows, numCols) && !visited[newRow][newCol] && grid_[newRow][newCol].valid) {
         // Mark the new cell as visited
         visited[newRow][newCol] = true;
         // Enqueue the new cell with the current path plus the new cell
@@ -304,7 +275,7 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
 }
 
 bool StrideMethod::isNextToVisited(Ogre::Vector2 cell){
-  if(grid[cell.x][cell.y].visited){
+  if(grid_[cell.x][cell.y].visited){
     return false;
   }
 
@@ -318,13 +289,13 @@ bool StrideMethod::isNextToVisited(Ogre::Vector2 cell){
 
   for(size_t i=0; i<directions.size(); ++i){
     Ogre::Vector2 cur_cell = cell + directions[i];
-    if(cur_cell.x < 0 || cur_cell.x >= grid.size()) {
+    if(cur_cell.x < 0 || cur_cell.x >= grid_.size()) {
       continue;
     }
-    if(cur_cell.y < 0 || cur_cell.y >= grid[cell.x].size()){
+    if(cur_cell.y < 0 || cur_cell.y >= grid_[cell.x].size()){
       continue;
     }
-    if(grid[cur_cell.x][cur_cell.y].visited && grid[cur_cell.x][cur_cell.y].valid){
+    if(grid_[cur_cell.x][cur_cell.y].visited && grid_[cur_cell.x][cur_cell.y].valid){
       result = true;
     }
   }
@@ -368,26 +339,20 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
     next_cell.x = next_cell.x + direction.x; 
     next_cell.y = next_cell.y + direction.y;
 
-    // std::cout << "next_cell: " << next_cell.x << " " << next_cell.y << std::endl;
-
     // We do not add next_cell if it is already in the generated path or 
     // if it falls outside the boundaries of the area
-    if(next_cell.x < 0 || next_cell.x >= grid.size()) {
+    if(next_cell.x < 0 || next_cell.x >= grid_.size()) {
       break;
     }
-    if(next_cell.y < 0 || next_cell.y >= grid[next_cell.x].size()){
+    if(next_cell.y < 0 || next_cell.y >= grid_[next_cell.x].size()){
       break;
     }
-    if(grid[next_cell.x][next_cell.y].visited || !grid[next_cell.x][next_cell.y].valid){
+    if(grid_[next_cell.x][next_cell.y].visited || !grid_[next_cell.x][next_cell.y].valid){
       break;
     }
 
     limit_t limits_last = getLimits(last_cell, direction);
     limit_t limits_next = getLimits(next_cell, direction);
-
-    // std::cout << "limits_last: " << limits_last.first << " " << limits_last.second << " " << limits_last.num << std::endl;
-    // std::cout << "limits_next: " << limits_next.first << " " << limits_next.second << " " << limits_next.num << std::endl;
-    // std::cout << "limits_start: " << limits_start.first << " " << limits_start.second << " " << limits_start.num << std::endl;
 
     // If getLimitNum(last_cell) = 2 we always add next_cell, because next_cell
     // is the only possible cell where we can go to from last_cell
@@ -440,13 +405,13 @@ StrideMethod::limit_t StrideMethod::getLimits(Ogre::Vector2 cell, Ogre::Vector2 
 }
 
 bool StrideMethod::isLimit(Ogre::Vector2 cell){
-  if(cell.x < 0 || cell.x >= grid.size()) {
+  if(cell.x < 0 || cell.x >= grid_.size()) {
     return true;
   }
-  if(cell.y < 0 || cell.y >= grid[cell.x].size()){
+  if(cell.y < 0 || cell.y >= grid_[cell.x].size()){
     return true;
   }
-  if(grid[cell.x][cell.y].visited || !grid[cell.x][cell.y].valid){
+  if(grid_[cell.x][cell.y].visited || !grid_[cell.x][cell.y].valid){
     return true;
   }
   return false;

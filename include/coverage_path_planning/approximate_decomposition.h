@@ -33,6 +33,7 @@ protected Q_SLOTS:
   void twistChanged();
 
 protected:
+  // Fills the attribute *grid_ and visualizes it in Rviz 
   void drawGrid();
 
   typedef struct {
@@ -42,7 +43,19 @@ protected:
     bool valid;
   } cell_t;
 
-  std::vector<std::vector<cell_t>> grid;
+  // Functions for convenience
+  void getPolygonBoundaries(float& max_x, float& min_x,float& max_y, float& min_y);
+  void addWaypoint(geometry_msgs::Pose pose, bool valid);
+  cell_t getCell(float min_x, float min_y, 
+                 float camera_width, float dist, 
+                 float twist_rad, size_t x, size_t y);
+  std::optional<geometry_msgs::Pose> transform(cell_t cell, 
+                                              float height, 
+                                              Ogre::Quaternion quat, 
+                                              geometry_msgs::TransformStamped tf);
+
+  // Attributes
+  std::vector<std::vector<cell_t>> grid_;
 
   rviz::IntProperty* twist_property_;
   rviz::IntProperty* cell_num_property_;

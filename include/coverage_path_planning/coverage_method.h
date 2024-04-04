@@ -11,12 +11,6 @@ namespace mrs_rviz_plugins{
 class CoverageMethod : public QObject{
 
 public:
-  // CoverageMethod(rviz::Property* property_container, Ogre::SceneManager* scene_manager){
-  //   property_container_ = property_container;
-  //   scene_manager_ = scene_manager;
-  // }
-
-  // All the scene nodes created by this plugin must be children of root_node.
   virtual void initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
     property_container_ = property_container;
     scene_manager_ = scene_manager;
@@ -45,6 +39,7 @@ protected:
   // Visualisation
   rviz::Property* property_container_;
   Ogre::SceneManager* scene_manager_;
+  // All the scene nodes created by this plugin must be children of root_node.
   Ogre::SceneNode*    root_node_;
 
   // Math
