@@ -232,7 +232,8 @@ void Display::updateShapeVisibility() {
       if (d.fast_arrow_)
         d.fast_arrow_->getSceneNode()->setVisible(false);
 
-      d.covariance_->setVisible(false);
+      if (d.covariance_)
+        d.covariance_->setVisible(false);
     }
   } else {
     /* bool use_arrow = (shape_property_->getOptionInt() == Arrow); */
