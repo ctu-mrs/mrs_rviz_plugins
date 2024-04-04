@@ -46,6 +46,7 @@ set(LIBRARIES
   MrsRvizPlugins_Bumper
   MrsRvizPlugins_Covariance
   MrsRvizPlugins_FastArrow
+  MrsRvizPlugins_SmartLine
   MrsRvizPlugins_NavGoal
   MrsRvizPlugins_PoseEstimate
   MrsRvizPlugins_Sphere
