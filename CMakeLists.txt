@@ -45,6 +45,8 @@ add_definitions("-Wno-register")
 set(LIBRARIES
   MrsRvizPlugins_Bumper
   MrsRvizPlugins_Covariance
+  MrsRvizPlugins_FastArrow
+  MrsRvizPlugins_SmartLine
   MrsRvizPlugins_NavGoal
   MrsRvizPlugins_PoseEstimate
   MrsRvizPlugins_Sphere
@@ -124,6 +126,41 @@ target_link_libraries(MrsRvizPlugins_Covariance
   ${catkin_LIBRARIES}
   )
 
+## SMART LINE
+
+add_library(MrsRvizPlugins_SmartLine
+  include/smart_line/smart_line.h
+  src/smart_line/smart_line.cpp
+  )
+
+add_dependencies(MrsRvizPlugins_SmartLine
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins_SmartLine
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  )
+
+## FAST ARROW
+
+add_library(MrsRvizPlugins_FastArrow
+  include/fast_arrow/fast_arrow.h
+  src/fast_arrow/fast_arrow.cpp
+  )
+
+add_dependencies(MrsRvizPlugins_FastArrow
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+  )
+
+target_link_libraries(MrsRvizPlugins_FastArrow
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  MrsRvizPlugins_SmartLine
+  )
+
 ## POSE WITH COVARIANCE ARRAY
 
 add_library(MrsRvizPlugins_PoseWithCovarianceArray
@@ -140,6 +177,7 @@ target_link_libraries(MrsRvizPlugins_PoseWithCovarianceArray
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
   MrsRvizPlugins_Covariance
+  MrsRvizPlugins_FastArrow
   )
 
 ## RVIZ NAV GOAL
