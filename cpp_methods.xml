@@ -1,7 +1,15 @@
 <library path="lib/libMrsRvizPlugins_CoveragePlannerPlugins">
   <class type="mrs_rviz_plugins::StrideMethod" base_class_type="mrs_rviz_plugins::CoverageMethod">
     <description>
-      Coverage path plannig algorithm with linear time complexity.
+      Algorithm with linear time complexity based on approximate cell decomposition.
+    </description>
+  </class>
+</library>
+
+<library path="lib/libMrsRvizPlugins_CoveragePlannerPlugins">
+  <class type="mrs_rviz_plugins::DiagonalDecomposition" base_class_type="mrs_rviz_plugins::CoverageMethod">
+    <description>
+      Gridy algorithm based on exact diagonal decomposition. 
     </description>
   </class>
 </library>

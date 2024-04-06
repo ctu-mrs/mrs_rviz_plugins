@@ -74,7 +74,7 @@ void StrideMethod::compute(){
   path_.request.path.points.clear();
   path_.request.path.header.frame_id   = polygon_frame_;
   path_.request.path.fly_now           = true;
-  path_.request.path.stop_at_waypoints = true;
+  path_.request.path.stop_at_waypoints = false;
   path_.request.path.loop              = false;
   addCellToPath(cur_cell);
 

@@ -357,15 +357,17 @@ target_link_libraries(MrsRvizPlugins_CoveragePlanner
   ${catkin_LIBRARIES}
 )
 
-# CPP plugins
+# Coverage path planning plugins
 
 add_library(MrsRvizPlugins_CoveragePlannerPlugins
   
   include/coverage_path_planning/coverage_method.h 
-  include/coverage_path_planning/stride_method.h
   include/coverage_path_planning/approximate_decomposition.h
+  include/coverage_path_planning/stride_method.h
+  include/coverage_path_planning/diagonal_decomposition.h
   src/coverage_path_planning/approximate_decomposition.cpp
   src/coverage_path_planning/stride_method.cpp
+  src/coverage_path_planning/diagonal_decomposition.cpp
 )
 
 add_dependencies(MrsRvizPlugins_CoveragePlannerPlugins

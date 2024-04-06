@@ -1,7 +1,7 @@
 #ifndef COVERAGE_PATH_PLANNING_APPROXIMATE_DECOMPOSITION_H
 #define COVERAGE_PATH_PLANNING_APPROXIMATE_DECOMPOSITION_H
 
-#include <coverage_path_planning/coverage_method.h>
+#include "coverage_path_planning/coverage_method.h"
 
 #include <rviz/properties/int_property.h>
 
