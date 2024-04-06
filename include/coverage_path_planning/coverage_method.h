@@ -1,7 +1,9 @@
 #ifndef COVERAGE_PATH_PLANNING_METHOD_H
 #define COVERAGE_PATH_PLANNING_METHOD_H
 
-#include <mrs_lib/safety_zone/polygon.h>
+// TODO: include polygon only
+// #include <mrs_lib/safety_zone/polygon.h>
+#include <mrs_lib/safety_zone/prism.h>
 #include <rviz/properties/property.h>
 #include <OGRE/OgreSceneManager.h>
 #include <QObject>

@@ -3,6 +3,8 @@
 
 #include "coverage_path_planning/coverage_method.h"
 
+#include <utility>
+
 namespace mrs_rviz_plugins{
 
 class DiagonalDecomposition : public CoverageMethod {
@@ -28,6 +30,18 @@ public:
   void setFrame(std::string new_frame, bool update=true) override;
 
 protected:
+  typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
+
+  // Makes one iteration of MP3 algorithm
+  // TODO: Pure function (?) 
+  std::pair<mrs_lib::Polygon, Line> getPartition(mrs_lib::Polygon& border, int index_start);
+
+  // polygon: convex partition with holes
+  // diagonal: initial edge that must become a "true" one
+  // Returns: ring: the hole that contains endpoint of true diagonal
+  //          line: a diagonal that is not intersected by any holes, starts at diagonal[0] 
+  // TODO: Pure function (?) 
+  std::pair<mrs_lib::Polygon::ring_type, Line> drawTrueDiagonal(mrs_lib::Polygon& polygon, Line diagonal);
 
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
