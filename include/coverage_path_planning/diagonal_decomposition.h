@@ -43,6 +43,11 @@ protected:
   // TODO: Pure function (?) 
   std::pair<mrs_lib::Polygon::ring_type, Line> drawTrueDiagonal(mrs_lib::Polygon& polygon, Line diagonal);
 
+  // ang(a, b, c) denotes the angle between 0 and 360 degrees
+  // swept by a counterclockwise rotation from line segment ba to line segment bc.
+  float ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
+
+  // void getPolygonBoundaries(mrs_lib::Polygon& poly, float& max_x, float& min_x,float& max_y, float& min_y);
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 
