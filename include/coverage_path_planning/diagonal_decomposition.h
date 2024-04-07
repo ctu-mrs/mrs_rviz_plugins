@@ -35,6 +35,10 @@ protected:
   // Makes one iteration of MP3 algorithm
   // TODO: Pure function (?) 
   std::pair<mrs_lib::Polygon, Line> getPartition(mrs_lib::Polygon& border, int index_start);
+  
+  // Returns true if terminated
+  bool getPartitionClockwise(const mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res);
+  bool getPartitionCounterClockwise(const mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res);
 
   // polygon: convex partition with holes
   // diagonal: initial edge that must become a "true" one
