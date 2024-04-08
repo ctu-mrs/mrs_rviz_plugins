@@ -34,7 +34,7 @@ protected:
 
   // Makes one iteration of MP3 algorithm
   // TODO: Pure function (?) 
-  std::pair<mrs_lib::Polygon, Line> getPartition(mrs_lib::Polygon& border, int index_start);
+  bool getPartition(mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res_poly, Line& res_line);
   
   // Returns true if terminated
   bool getPartitionClockwise(const mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res);
@@ -50,6 +50,11 @@ protected:
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
   float ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
+
+  // TODO: implement 
+  float signedDistComparable(Line line, mrs_lib::Point2d point);
+
+  bool fits(mrs_lib::Polygon& main, int start, mrs_lib::Polygon& part);
 
   // void getPolygonBoundaries(mrs_lib::Polygon& poly, float& max_x, float& min_x,float& max_y, float& min_y);
 }; // class DiagonalDecomposition

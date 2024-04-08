@@ -18,47 +18,117 @@ void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre
 }
 
 void DiagonalDecomposition::compute() {
-  std::cout << "compute\n";
-  
   // outer
   Polygon poly = mrs_lib::Polygon();
-  {mrs_lib::Point2d p{2, 12};
-    bg::append(poly, p);}
-
-  {mrs_lib::Point2d p{17, 12};
-    bg::append(poly, p);}
-  
-  {mrs_lib::Point2d p{20, 10};
-    bg::append(poly, p);}
-
-  {mrs_lib::Point2d p{20, 0};
-    bg::append(poly, p);}
-
-  {mrs_lib::Point2d p{14, 8};
-    bg::append(poly, p);}
-  
-  {mrs_lib::Point2d p{1.75, 0};
-    bg::append(poly, p);}
-  
-  {mrs_lib::Point2d p{0, 10};
-    bg::append(poly, p);}
-
-  {mrs_lib::Point2d p{2, 12};
-    bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 10}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 0}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{5, 0}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{5, 20}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{30, 20}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{30, 0}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 0}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 10}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{25, 10}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{25, 15}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 15}; bg::append(poly, p);}
+  {mrs_lib::Point2d p{15, 10}; bg::append(poly, p);}
 
   // bg::correct(poly);
   std::string msg;
   bg::is_valid(poly, msg);
   std::cout << msg << std::endl;
 
-    getPartition(poly, 0);
-  for(int i=0; i<7; i++){
-    // std::cout << "got a partition\n";
+  current_polygon_ = poly;
+
+  int start = 0;
+  Polygon cur_p = current_polygon_;
+  std::vector<Polygon> decomposition;
+  std::vector<Line> diagonals;
+  bool terminated = false;
+  while(!terminated){
+    std::cout << "\ncur_polygon: " << bg::wkt(cur_p) << std::endl;
+    std::cout << "\tstart point: " << bg::wkt(cur_p.outer()[start]) << std::endl;
+    Polygon partition;
+    Line diagonal;
+    terminated = getPartition(cur_p, start, partition, diagonal);
+
+    if(terminated){
+      decomposition.push_back(partition);
+      diagonals.push_back(diagonal);
+      break;
+    }
+
+    std::cout << "found partition polygon: " << bg::wkt(partition) << std::endl;
+
+    // If L has then more than two vertices, and at least one of the
+    // vertices of the diagonal joining the last and first vertices in L is a notch, it generates
+    // one of the polygons of the partition.
+    bool is_notch = false;
+    for(int i=1; i<cur_p.outer().size(); i++){
+      Point2d cur_vertex = cur_p.outer()[i];
+      Point2d prev_vertex = cur_p.outer()[i-1];
+      Point2d next_vertex = cur_p.outer()[(i + 1)  % (cur_p.outer().size() - 1)];
+
+      if(ang(prev_vertex, cur_vertex, next_vertex) <= M_PI){
+        continue;
+      }
+
+      if(!bg::equals(cur_vertex, diagonal[0]) && !bg::equals(cur_vertex, diagonal[1])){
+        continue;
+      }
+
+      if(!fits(cur_p, i, partition)){
+        continue;
+      }
+
+      is_notch = true;
+      break;
+    }
+
+    std::cout << "\t" << (is_notch ? "Notch found" : "No notch") << std::endl;
+    if(partition.outer().size() <= 3 || !is_notch){
+      start = (start + 1) % cur_p.outer().size();
+      std::cout << "\tdiagonal:" <<bg::wkt(diagonal) << std::endl;
+      std::cout << "\tnext start: " << start << std::endl;
+      continue;
+    }
+
+    decomposition.push_back(partition);
+    diagonals.push_back(diagonal);
+
+    // Delete the vertices from cur_p
+    bool cleaned = false;
+    for(int i=0; i<cur_p.outer().size() && !cleaned; i++){
+      bool start_cleaning = fits(cur_p, i, partition);
+
+      if(!start_cleaning){
+        continue;
+      }
+
+      cur_p.outer().erase(cur_p.outer().begin() + cur_p.outer().size() - 1);
+      int index = (i+1) % cur_p.outer().size();
+      for(int j=1; j<partition.outer().size() - 2; j++){
+        std::cout << "\ti: " << i << " index: " << index << std::endl;
+        std::cout << "\tdeleting vertices " << bg::wkt(cur_p.outer()[index]) << " " << bg::wkt(partition.outer()[j]) << std::endl;
+        cur_p.outer().erase(cur_p.outer().begin() + index);
+        index = index % cur_p.outer().size();
+      }
+      cleaned = true;
+    } 
+    start = 0;
+
+    bg::append(cur_p, cur_p.outer().front());
+    
+    std::cout << "after cleanup " << bg::wkt(cur_p)  << cur_p.outer().size() << std::endl;
+  }
+
+  std::cout << "\nDECOMPOSED!\n";
+  for(auto& p : decomposition){
+    std::cout << bg::wkt(p) << std::endl;
   }
 }
 
-std::pair<mrs_lib::Polygon, DiagonalDecomposition::Line> DiagonalDecomposition::getPartition(Polygon& border, int index_start) {
-  // Todo: implement me
+bool DiagonalDecomposition::getPartition(Polygon& border, int index_start, Polygon& res_poly, Line& res_line) {
   Polygon::ring_type outer = border.outer();
 
   // the first and last points of ring must be equal, 
@@ -66,51 +136,30 @@ std::pair<mrs_lib::Polygon, DiagonalDecomposition::Line> DiagonalDecomposition::
   if(index_start == outer.size()-1){
     index_start = 0; 
   }
-  // This is for iterating in counter-clockwise direction
-  // std::vector<size_t> indices(outer.size()-1);
-  // for(size_t i=0; i<indices.size(); ++i){
-  //   int cur = index_start - i;
-  //   indices[i] = cur < 0 ? indices.size() + cur : cur;
-  // }
-
-  std::vector<size_t> indices(outer.size()-1);
-  for(size_t i=0; i<indices.size(); ++i){
-    int cur = index_start + i;
-    indices[i] = cur % indices.size();
-  }
-  std::cout << std::endl;
 
   // |---------------- MP3 algorithm ----------------|
 
   // Initially, the list consists of one vertex.
   Polygon cur_part;
-  bg::append(cur_part, outer[indices[0]]);
+  bg::append(cur_part, outer[index_start]);
 
-  getPartitionClockwise(border, index_start, cur_part);
+  bool terminated = getPartitionClockwise(border, index_start, cur_part);
+  if(!terminated){
+    getPartitionCounterClockwise(border, index_start, cur_part);
+  }
 
-  getPartitionCounterClockwise(border, index_start, cur_part);
+  res_line = Line{cur_part.outer().front(), cur_part.outer().back()};
+  bg::append(cur_part, cur_part.outer().front());
 
-  std::cout << bg::wkt(cur_part) << std::endl;
+  res_poly = cur_part;
 
-
-
-
-
-  Polygon res1;
-  Line res2;
-  return std::pair<Polygon, Line>(res1, res2);
+  return terminated;
 }
 
 bool DiagonalDecomposition::getPartitionClockwise(const Polygon& border, int index_start, Polygon& res){
-  std::cout<<"\n started " << "clockwise"  << std::endl;
+  std::cout<<"\tstarted " << "clockwise"  << std::endl;
   // Todo: implement me
   Polygon::ring_type outer = border.outer();
-
-  // the first and last points of ring must be equal, 
-  // the following is done for prettier computations
-  if(index_start == outer.size()-1){
-    index_start = 0; 
-  }
 
   // Note: the points in Polygon are stored in clockwise order
   std::vector<size_t> indices(outer.size()-1);
@@ -122,11 +171,13 @@ bool DiagonalDecomposition::getPartitionClockwise(const Polygon& border, int ind
 
   // We add the next consecutive vertex (in clockwise order only) of P
   bg::append(res, outer[indices[1]]);
+  std::cout << "\t\tadded " << bg::wkt(outer[indices[1]]) << std::endl;
   
   bool is_outer_convex = true;
 
   // We go on adding new vertices to L until all the vertices of P are in L...
-  for(int i=1; i<indices.size()-1; i++){
+  int last_i = 1;
+  for(int i=1; i<indices.size()-1; i++, last_i++){
     // ... or until we first find a vertex failing one of the three conditions.
     // Note: indices[i] is the index of last vertex in res and we consider adding indices[i+1]
     
@@ -135,59 +186,53 @@ bool DiagonalDecomposition::getPartitionClockwise(const Polygon& border, int ind
       ang(outer[indices[i]], outer[indices[i+1]], res.outer()[0]) > M_PI    ||
       ang(outer[indices[i+1]], res.outer()[0], res.outer()[1]) > M_PI)
     {
-      std::cout << "clockwise break\n";
       is_outer_convex = false;
       break;
     }
 
     bg::append(res, outer[indices[i+1]]);
-    std::cout << "appended " << bg::wkt(outer[indices[i+1]]) << std::endl;
+    std::cout << "\t\tadded " << bg::wkt(outer[indices[i+1]]) << std::endl;
   }
 
   // If the convex polygon generated is the whole polygon P, the algorithm stops
   if(is_outer_convex){
     Line res_line = {outer[index_start], outer[index_start]};
-    std::cout << "terminating\n";
-    std::cout << bg::wkt(res) << std::endl;
-    // res = res;
+    std::cout << "whole convex found: " << bg::wkt(res) << std::endl;
+    std::cout << indices.size() << std::endl;
+    for(int i=0; i<indices.size()-1; i++){
+      std::cout << " " << indices[i];
+    }
+    std::cout << std::endl;
+    for(int i=0; i<indices.size()-1; i++){
+      std::cout << " " << bg::wkt(outer[indices[i+1]]);
+    }
     return true;
   }
 
   // If k > 2, then we have to check whether the convex polygon
   // generated by the diagonal v_k v_1 contains vertices of P \ L.
   if(res.outer().size() > 2){
-    std::cout<< "size > 2\n";
-    Polygon tmp_complete = res;
-    bg::append(tmp_complete, res.outer()[0]);
-    bg::correct(tmp_complete);
 
-    std::cout << std::endl << std::endl;
-    for(int i=res.outer().size(); i<indices.size(); i++){ // iterating over vertices of P \ L.
+    for(int i=last_i; i<indices.size(); i++){ // iterating over vertices of P \ L.
+      Polygon tmp_complete = res;
+      bg::append(tmp_complete, res.outer()[0]);
+      bg::correct(tmp_complete);
       // If a vertex v is found to be in the polygon generated by L, then 
       // we remove from L its last vertex v_k and all the vertices of L in 
       // the half-plane generated by [v_1, v] containing v_k .
       if(bg::within(outer[indices[i]], tmp_complete)){
+        std::cout << "\t\tpoint within: " << bg::wkt(outer[indices[i]]) << std::endl;
         Point2d v_1 = border.outer()[index_start];
         Point2d v_k = res.outer().back();
         Point2d v = outer[indices[i]];
 
-        std::cout << "v_1: " << bg::wkt(v_1) << std::endl;
-        std::cout << "v_k: " << bg::wkt(v_k) << std::endl;
-        std::cout << "v: " << bg::wkt(v) << std::endl;
-
-        float a = (bg::get<1>(v) - bg::get<1>(v_1)) / (bg::get<0>(v) - bg::get<0>(v_1));
-        float b = -1;
-        float c = bg::get<1>(v_1) - (a * bg::get<0>(v_1));
-
-        // Note: we only consider sign of distance, so the denominator is not needed
-        // float abs_w = std::sqrt(std::pow(a, 2) + std::pow(b, 2));
-        float dist_v_k = (a * bg::get<0>(v_k)) + (b * bg::get<1>(v_k)) + c ; //  / abs_w;
+        float dist_v_k = signedDistComparable(Line{v_1, v}, v_k); 
 
         // Starting from 1 in order not to delete the first vertex because of inaccuracy
         for(int j=1; j<res.outer().size();){
-          float cur_dist =  (a * bg::get<0>(res.outer()[j])) + (b * bg::get<1>(res.outer()[j])) + c;
+          float cur_dist =  signedDistComparable(Line{v_1, v}, res.outer()[j]);
           if((cur_dist > 0 && dist_v_k > 0) || (cur_dist < 0 && dist_v_k < 0)){
-            std::cout << "removing " << bg::wkt(res.outer()[j]) << std::endl;
+            std::cout << "\t\tremoving " << bg::wkt(res.outer()[j]) << std::endl;
             res.outer().erase(res.outer().begin() + j);
           }else{
             ++j;
@@ -202,15 +247,8 @@ bool DiagonalDecomposition::getPartitionClockwise(const Polygon& border, int ind
 }
 
 bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, int index_start, Polygon& res){
-  std::cout<<"\n started " << "counter clockwise"  << std::endl;
-  // Todo: implement me
+  std::cout<<"\tstarted " << "counter clockwise"  << std::endl;
   Polygon::ring_type outer = border.outer();
-
-  // the first and last points of ring must be equal, 
-  // the following is done for prettier computations
-  if(index_start == outer.size()-1){
-    index_start = 0; 
-  }
 
   // Note: the points in Polygon are stored in clockwise order
   std::vector<size_t> indices(outer.size()-1);
@@ -225,18 +263,11 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, 
   Point2d D = res.outer().back();
   Point2d G = outer[indices[1]];
 
-  // std::cout << "A: " << bg::wkt(A) << std::endl;
-  // std::cout << "B: " << bg::wkt(B) << std::endl;
-  // std::cout << "C: " << bg::wkt(C) << std::endl;
-  // std::cout << "D: " << bg::wkt(D) << std::endl;
-  // std::cout << "G: " << bg::wkt(G) << std::endl;
-
   // We add the next consecutive vertex if it is suitable
   if(ang(G, A, B) < M_PI &&
     ang(D, G, A) < M_PI &&
     ang(C, D, G) < M_PI)
   {
-    std::cout << "counter clockwise appended next\n";
     res.outer().insert(res.outer().begin(), outer[indices[1]]);
   }else{
     // If it does not fit, no reason to continue
@@ -255,20 +286,16 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, 
       ang(res.outer().back(), outer[indices[i+1]], outer[indices[i]]) > M_PI    ||
       ang(res.outer()[res.outer().size() - 2], res.outer().back(), outer[indices[i+1]]) > M_PI)
     {
-      std::cout << "counter clockwise break\n";
       // is_outer_convex = false;
       break;
     }
 
     res.outer().insert(res.outer().begin(), outer[indices[i+1]]);
-    std::cout << "appended " << bg::wkt(outer[indices[i+1]]) << std::endl;
   }
 
   // If the convex polygon generated is the whole polygon P, the algorithm stops
   // if(is_outer_convex){
   //   Line res_line = {outer[index_start], outer[index_start]};
-  //   std::cout << "terminating\n";
-  //   std::cout << bg::wkt(res) << std::endl;
   //   // res = res;
   //   return true;
   // }
@@ -276,13 +303,11 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, 
   // If k > 2, then we have to check whether the convex polygon
   // generated by the diagonal v_k v_1 contains vertices of P \ L.
   if(res.outer().size() > 2){
-    std::cout<< "size > 2\n";
-    Polygon tmp_complete = res;
-    bg::append(tmp_complete, res.outer()[0]);
-    bg::correct(tmp_complete);
 
-    std::cout << std::endl << std::endl;
     for(int i=last_i; i<indices.size(); i++){ // iterating over vertices of P \ L.
+      Polygon tmp_complete = res;
+      bg::append(tmp_complete, res.outer()[0]);
+      bg::correct(tmp_complete);
       // If a vertex v is found to be in the polygon generated by L, then 
       // we remove from L its last vertex v_k and all the vertices of L in 
       // the half-plane generated by [v_1, v] containing v_k .
@@ -291,22 +316,11 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, 
         Point2d v_k = res.outer().front();
         Point2d v = outer[indices[i]];
 
-        std::cout << "v_1: " << bg::wkt(v_1) << std::endl;
-        std::cout << "v_k: " << bg::wkt(v_k) << std::endl;
-        std::cout << "v: " << bg::wkt(v) << std::endl;
-
-        float a = (bg::get<1>(v) - bg::get<1>(v_1)) / (bg::get<0>(v) - bg::get<0>(v_1));
-        float b = -1;
-        float c = bg::get<1>(v_1) - (a * bg::get<0>(v_1));
-
-        // Note: we only consider sign of distance, so the denominator is not needed
-        // float abs_w = std::sqrt(std::pow(a, 2) + std::pow(b, 2));
-        float dist_v_k = (a * bg::get<0>(v_k)) + (b * bg::get<1>(v_k)) + c ; //  / abs_w;
+        float dist_v_k = signedDistComparable(Line{v_1, v}, v_k);
 
         for(int j=0; j<res.outer().size();){
-          float cur_dist =  (a * bg::get<0>(res.outer()[j])) + (b * bg::get<1>(res.outer()[j])) + c;
+          float cur_dist =  signedDistComparable(Line{v_1, v}, res.outer()[j]);
           if((cur_dist > 0 && dist_v_k > 0) || (cur_dist < 0 && dist_v_k < 0)){
-            std::cout << "removing " << bg::wkt(res.outer()[j]) << std::endl;
             res.outer().erase(res.outer().begin() + j);
           }else{
             ++j;
@@ -405,9 +419,6 @@ float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   float cos_a = bg::get<0>(a) / bg::distance(a, zero);
   float cos_c = bg::get<0>(c) / bg::distance(c, zero);
 
-  // std::cout << "cos_a: " << cos_a << std::endl;
-  // std::cout << "cos_c: " << cos_c << std::endl;
-
   float a1 = std::acos(cos_a);
   if(bg::get<1>(a) < 0){
     a1 = 2 * M_PI - a1;
@@ -418,34 +429,27 @@ float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
     c1 = 2 * M_PI - c1;
   }
 
-  // std::cout << "a1: " << a1 << std::endl;
-  // std::cout << "c1: " << c1 << std::endl;
-
   return fmod(2 * M_PI - a1 + c1, 2*M_PI);
 }
 
-// void DiagonalDecomposition::getPolygonBoundaries(Polygon& polyg, float& max_x, float& min_x,
-//                                                     float& max_y, float& min_y){
-//   // Initialize values
-//   max_x = std::numeric_limits<float>::lowest();
-//   min_x = std::numeric_limits<float>::max();
-//   max_y = std::numeric_limits<float>::lowest();
-//   min_y = std::numeric_limits<float>::max();
-//   auto outer_ring = current_polygon_.outer();
+float DiagonalDecomposition::signedDistComparable(Line line, Point2d point) {
+  float A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
+  float B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
+  float C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
 
-//   for(size_t i=0; i<outer_ring.size(); ++i){
-//     // Get position in original axes
-//     float tmp_x = bg::get<0>(outer_ring[i]);
-//     float tmp_y = bg::get<1>(outer_ring[i]);
+  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
+}
 
-//     // Update extrems
-//     max_x = max_x < tmp_x ? tmp_x : max_x;
-//     min_x = min_x > tmp_x ? tmp_x : min_x;
+bool DiagonalDecomposition::fits(Polygon& main, int start, Polygon& part){
+  for(int j=0; j<part.outer().size()-1; j++){
+    int index = (start + j) % (main.outer().size()-1);
+    if(!bg::equals(main.outer()[index], part.outer()[j])){
+      return false;
+    }
+  }
+  return true;
+}
 
-//     max_y = max_y < tmp_y ? tmp_y : max_y;
-//     min_y = min_y > tmp_y ? tmp_y : min_y;
-//   }
-// }
 
 void DiagonalDecomposition::start() {
   std::cout << "start\n";
