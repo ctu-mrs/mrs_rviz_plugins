@@ -47,7 +47,7 @@ protected:
   bool getPartitionClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
   bool getPartitionCounterClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
 
-  std::pair<Ring, line_t> drawTrueDiagonal(mrs_lib::Polygon& polygon, line_t diagonal);
+  std::pair<Ring, line_t> drawTrueDiagonal(std::vector<std::vector<point_t>>& holes, line_t diagonal);
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
@@ -59,7 +59,16 @@ protected:
 
   bool fits(mrs_lib::Polygon& main, int start, mrs_lib::Polygon& part);
 
-  mrs_lib::Point2d getClosestPoint(Ring& ring, mrs_lib::Point2d point);
+  point_t getClosestPoint(std::vector<std::vector<point_t>>& holes, point_t point);
+
+  bool equals(point_t a, point_t b);
+
+  bool intersects(std::vector<point_t>& ring1, std::vector<point_t>& ring2);
+
+  bool intersects(std::vector<point_t>& ring, line_t& line);
+
+  std::string printPolygon(std::vector<point_t>& poly);
+  std::string printPoint(point_t& point);
 
   // void getPolygonBoundaries(mrs_lib::Polygon& poly, float& max_x, float& min_x,float& max_y, float& min_y);
 }; // class DiagonalDecomposition

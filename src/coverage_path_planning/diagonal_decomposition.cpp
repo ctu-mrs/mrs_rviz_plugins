@@ -2,6 +2,7 @@
 
 #include <boost/geometry.hpp>
 
+#include <sstream>
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -23,6 +24,36 @@ void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre
 
 void DiagonalDecomposition::compute() {
   Polygon poly = mrs_lib::Polygon();
+
+
+  // // Polygon with a hole inside (wirks fine)
+  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 10};   bg::append(poly, p);}
+  // {mrs_lib::Point2d p{10, 10};  bg::append(poly, p);}
+  // {mrs_lib::Point2d p{10, 0};   bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
+
+  // bg::interior_rings(poly).resize(1);
+  // {mrs_lib::Point2d p{5,   7.5};  bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{7.5, 5};    bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{5,   2.5};  bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{2.5, 5};    bg::append(poly, p, 0);}  
+  // {mrs_lib::Point2d p{5,   7.5};  bg::append(poly, p, 0);}
+
+  // // Polygon with crossing diagonal (works fine)
+  // {mrs_lib::Point2d p{0, 5};    bg::append(poly, p);}
+  // {mrs_lib::Point2d p{3, 3};   bg::append(poly, p);}
+  // {mrs_lib::Point2d p{6, 5};  bg::append(poly, p);}
+  // {mrs_lib::Point2d p{6, 0};   bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 5};    bg::append(poly, p);}
+
+  // bg::interior_rings(poly).resize(1);
+  // {mrs_lib::Point2d p{4, 2};    bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{5, 2};    bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{5, 1};    bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{4, 1};    bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{4, 2};    bg::append(poly, p, 0);}
 
   // Complex polygon with 2 holes
   {mrs_lib::Point2d p{4.14361, 8.02656};  bg::append(poly, p);}//A
@@ -55,56 +86,281 @@ void DiagonalDecomposition::compute() {
   {mrs_lib::Point2d p{6.30947, 4.26071};  bg::append(poly, p, 1);}//V
   {mrs_lib::Point2d p{7.38264, 5.19729};  bg::append(poly, p, 1);}//Q
 
+
+
+  bg::correct(poly);
+
   std::string msg;
   std::cout << bg::wkt(poly) << std::endl;
   bg::is_valid(poly, msg);
   std::cout << msg << std::endl;
 
-  std::cout << "testing getPartition()\n";
-  vector<point_t> outer_ring;
-  for(int i=0; i<poly.outer().size() - 1; i++){
+  current_polygon_ = poly;
+
+  // std::cout << "testing getPartition()\n";
+  // vector<point_t> outer_ring;
+  // for(int i=0; i<poly.outer().size() - 1; i++){
+  //   point_t tmp;
+  //   tmp.point = poly.outer()[i];
+  //   tmp.ring_index = -1;
+  //   tmp.id = i;
+  //   outer_ring.push_back(tmp);
+  // }
+
+  // vector<point_t> res_poly;
+  // line_t res_line;
+
+  // bool res_bool = getPartition(outer_ring, 0, res_poly, res_line);
+
+  // std::cout << (res_bool ? "terminated" : "not terminated") << std::endl;
+  // for(point_t& p : res_poly){
+  //   std::cout << p.ring_index << " " << p.id << " " << bg::wkt(p.point) << std::endl;
+  // }
+
+  // {
+
+  // std::cout << "\ntesting drawTrueDiagonal() crossing\n";
+  // line_t diagonal;
+  // diagonal.first = outer_ring[3];
+  // diagonal.second = outer_ring[7];
+
+  // std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
+  // std::cout << "hole: " << bg::wkt(res.first) << std::endl;
+  // std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
+  // std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
+  // }
+
+  // {
+  // std::cout << "\ntesting drawTrueDiagonal() not crossing\n";
+  // line_t diagonal;
+  // diagonal.first = outer_ring[3];
+  // diagonal.second.ring_index = 1;
+  // diagonal.second.id = 1;
+  // diagonal.second.point = Point2d {8.88508, 5.19729};
+
+  // std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
+  // std::cout << "hole: " << bg::wkt(res.first) << std::endl;
+  // std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
+  // std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
+  // }
+
+  vector<point_t> cur_p;
+  for(int i=0; i<current_polygon_.outer().size() - 1; i++){
     point_t tmp;
-    tmp.point = poly.outer()[i];
+    tmp.point = current_polygon_.outer()[i];
     tmp.ring_index = -1;
     tmp.id = i;
-    outer_ring.push_back(tmp);
+    cur_p.push_back(tmp);
   }
 
-  vector<point_t> res_poly;
-  line_t res_line;
-
-  bool res_bool = getPartition(outer_ring, 0, res_poly, res_line);
-
-  std::cout << (res_bool ? "terminated" : "not terminated") << std::endl;
-  for(point_t& p : res_poly){
-    std::cout << p.ring_index << " " << p.id << " " << bg::wkt(p.point) << std::endl;
+  vector<Ring> holes = bg::interior_rings(current_polygon_);
+  vector<vector<point_t>> cur_holes;
+  for(int i=0; i<holes.size(); i++){
+    vector<point_t> tmp_hole;
+    for(int j=0; j<holes[i].size() - 1; j++){
+      point_t tmp;
+      tmp.point = holes[i][j];
+      tmp.ring_index = i;
+      tmp.id = j;
+      tmp_hole.push_back(tmp);
+    }
+    cur_holes.push_back(tmp_hole);
   }
 
-  {
+  std::cout << printPolygon(cur_holes[0]) << std::endl;
 
-  std::cout << "\ntesting drawTrueDiagonal() crossing\n";
-  line_t diagonal;
-  diagonal.first = outer_ring[3];
-  diagonal.second = outer_ring[7];
+  int start = 0;
+  vector<vector<point_t>> decomposition; // array of polygons
+  vector<line_t> diagonals;
+  bool terminated = false;
+  int it_num =0;
+  while(!terminated && it_num<500){
+    it_num ++;
+    std::cout << std::endl;
+    std::cout << "cur_p: " << printPolygon(cur_p) << std::endl;
+    
+    vector<point_t> partition;
+    line_t diagonal;
+    terminated = getPartition(cur_p, start, partition, diagonal);
+    std::cout << "\tpartition found: " << printPolygon(partition) << std::endl;
+    std::cout << "\tdiagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
 
-  std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
-  std::cout << "hole: " << bg::wkt(res.first) << std::endl;
-  std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
-  std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
+    // If L has then more than two vertices, and at least one of the
+    // vertices of the diagonal joining the last and first vertices in L is a notch, it generates
+    // one of the polygons of the partition.
+    bool is_notch = false;
+    
+    // Notch can only be at diagonal
+    // Going clockwise to find vertex of diagonal
+    point_t prev_vertex;
+    point_t cur_vertex = cur_p[start];
+    point_t next_vertex;
+    for(int i=start+1; i!=start; i = (i+1) % cur_p.size()){
+      prev_vertex = cur_vertex;
+      cur_vertex = cur_p[i];
+      next_vertex = cur_p[i+1];
+
+
+      if(!equals(cur_vertex, diagonal.second)){
+        continue;
+      }
+      std::cout << "\tclockwise:\n";
+      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << std::endl;
+      std::cout <<  "\t" <<ang(prev_vertex, cur_vertex, next_vertex) << std::endl;
+      if(ang(prev_vertex, cur_vertex, next_vertex) <= M_PI){
+        break;
+      }
+      is_notch = true;
+    }
+
+    // Going counter-clockwise to find vertex of diagonal
+    cur_vertex = cur_p[start];
+    for(int i=start-1; i!=start; --i){
+      if(i<0){
+        i = cur_p.size() + i;
+      }
+      prev_vertex = cur_vertex;
+      cur_vertex = cur_p[i];
+      int next_i = (i-1) < 0 ? (i-1) : cur_p.size() + i - 1;
+      next_vertex = cur_p[next_i];
+
+      if(!equals(cur_vertex, diagonal.first)){
+        continue;
+      }
+
+      std::cout << "\tcounterclockwise:\n";
+      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << std::endl;
+      std::cout <<"\t" <<  ang(next_vertex, cur_vertex, prev_vertex) << std::endl;
+      if(ang(next_vertex, cur_vertex, prev_vertex) <= M_PI){
+        break;
+      }
+      is_notch = true;
+    }
+
+    std::cout << "\t" << (is_notch ? "Notch found" : "No notch") << std::endl;
+    std::cout << "\t" << (terminated ? "terminated" : "Not terminated") << std::endl;
+    if((partition.size() <= 2 || !is_notch) && !terminated){
+      start = (start + 1) % cur_p.size();
+      // std::cout << "\tdiagonal:" <<bg::wkt(diagonal.first) << " " << bg::wkt(diagonal.second) << std::endl;
+      // std::cout << "\tnext start: " << start << std::endl;
+      continue;
+    }
+
+
+    // -----------------------------------------------------------------
+    // |--------------------- AbsHol modification ---------------------|
+    std::cout << "\tabsorption modification\n";
+    bool is_cond_true = false;
+    bool is_d_cut_by_hole = false;
+    for(auto& hole : cur_holes){
+      if(intersects(hole, partition)){
+        is_cond_true = true;
+      }
+      if(intersects(hole, diagonal)){
+        is_d_cut_by_hole = true;
+      }
+    }
+
+    if(is_cond_true){
+      std::cout << "\tcond_true\n";
+    }
+    if(is_d_cut_by_hole){
+        std::cout << "\td_cut_by_hole\n";
+    }
+
+    // if d is cut by a hole or there is a hole inside C
+    if(is_cond_true){
+      // if d is not cut by a hole
+      if(!is_d_cut_by_hole){
+        // d <- [v_i, v] hole where v hole is a vertex of one of the holes inside C.
+        diagonal.second = getClosestPoint(cur_holes, diagonal.first);
+      }
+
+      auto tmp = drawTrueDiagonal(cur_holes, diagonal);
+      diagonal = tmp.second;
+      // diagonals.push_back(diagonal);
+
+      std::cout << "\ttrue diagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
+
+      // Absorption of H
+      vector<point_t> new_border;
+      int inserted = 0;
+      for(int i=0; i<cur_p.size(); i++){
+        point_t& point = cur_p[i];
+        point.id = inserted;
+        new_border.push_back(point);
+        inserted++;
+
+        if(!equals(point, diagonal.first)){
+          continue;
+        }
+        
+        // absorb the hole
+        int hole_index = diagonal.second.ring_index;
+        for(int j=0; j<cur_holes[hole_index].size(); j++){
+          int cur_index = (j + diagonal.second.id) % cur_holes[hole_index].size();
+          point_t cur_point = cur_holes[hole_index][cur_index];
+          cur_point.ring_index = -1;
+          cur_point.id = inserted;
+          new_border.push_back(cur_point);
+          inserted++;
+        }
+        // add first vertex of the hole again
+        point_t cur_point = cur_holes[hole_index][diagonal.second.id];
+        cur_point.ring_index = -1;
+        cur_point.id = inserted;
+        new_border.push_back(cur_point);
+        inserted++;
+        // add diagonal.first again
+        cur_point = diagonal.first;
+        cur_point.ring_index = -1;
+        cur_point.id = inserted;
+        new_border.push_back(cur_point);
+        inserted++;
+      }
+      cur_p = new_border;
+
+      // Delete the absorbed hole
+      for(int i=0; i<cur_holes.size(); i++){
+        if(cur_holes[i].front().ring_index == diagonal.second.ring_index){
+          cur_holes.erase(cur_holes.begin() + i);
+          continue;
+        }
+        for(int j=0; j<cur_holes[i].size(); j++){
+          cur_holes[i][j].ring_index = i;
+        }
+      }
+      terminated = false;
+      start = 0;
+      continue;
+    }
+    // |------------------- AbsHol modification end -------------------|
+    // -----------------------------------------------------------------
+
+    decomposition.push_back(partition);
+    diagonals.push_back(diagonal);
+
+    // Delete the vertices from cur_p
+    for(int i=1; i<partition.size()-1; i++){
+      for(int j=0; j<cur_p.size(); j++){
+        if(equals(partition[i], cur_p[j])){
+          cur_p.erase(cur_p.begin() + j);
+          continue;
+        }
+      }
+    }
+    for(int i=0; i<cur_p.size(); i++){
+      cur_p[i].id = i;
+    }
+    start = 0;
   }
 
-  {
-  std::cout << "\ntesting drawTrueDiagonal() not crossing\n";
-  line_t diagonal;
-  diagonal.first = outer_ring[3];
-  diagonal.second.ring_index = 1;
-  diagonal.second.id = 1;
-  diagonal.second.point = Point2d {8.88508, 5.19729};
 
-  std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
-  std::cout << "hole: " << bg::wkt(res.first) << std::endl;
-  std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
-  std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
+  std::cout << "\nDECOMPOSED!\n";
+  int alsdkfj = 1;
+  for(auto& p : decomposition){
+    std::cout << alsdkfj << " " << printPolygon(p) << std::endl;
+    alsdkfj++;
   }
 
 }
@@ -311,8 +567,16 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
 // }
 
 // Algorithm 2: Procedure DrawTrueDiagonal
-std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDecomposition::drawTrueDiagonal(Polygon& polygon, line_t diagonal){
-  auto holes = bg::interior_rings(polygon);
+std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDecomposition::drawTrueDiagonal(vector<vector<point_t>>& _holes, line_t diagonal){
+  vector<Ring> holes;
+  for(int i=0; i<_holes.size(); i++){
+    Ring tmp;
+    for(int j=0; j<_holes[i].size(); j++){
+      tmp.push_back(_holes[i][j].point);
+    }
+    tmp.push_back(_holes[i].front().point);
+    holes.push_back(tmp);
+  }
 
   // 1. Read the diagonal and the vertices of partition
   line_t res_line = diagonal;
@@ -431,18 +695,80 @@ bool DiagonalDecomposition::fits(Polygon& main, int start, Polygon& part){
   return true;
 }
 
-Point2d DiagonalDecomposition::getClosestPoint(Polygon::ring_type& ring, Point2d point){
+DiagonalDecomposition::point_t DiagonalDecomposition::getClosestPoint(vector<vector<point_t>>& holes, point_t point){
   float min_dist = std::numeric_limits<float>::max();
-  Point2d res;
-  for(Point2d& cur : ring){
-    float cur_dist = bg::distance(cur, point);
-    if(cur_dist < min_dist){
-      min_dist = cur_dist;
-      res = cur;
+  point_t res;
+
+  for(auto& hole : holes){
+    for(point_t& cur : hole){
+      float cur_dist = bg::distance(cur.point, point.point);
+      if(cur_dist < min_dist){
+        min_dist = cur_dist;
+        res = cur;
+      }
     }
   }
   return res;
 }
+
+bool DiagonalDecomposition::equals(point_t a, point_t b){
+  return bg::equals(a.point, b.point) && a.id == b.id && a.ring_index == b.ring_index;
+}
+
+bool DiagonalDecomposition::intersects(std::vector<point_t>& ring1, std::vector<point_t>& ring2){
+  Ring bg_ring1;
+  for(point_t& p : ring1){
+    bg_ring1.push_back(p.point);
+  }
+  bg_ring1.push_back(ring1.front().point);
+
+  Ring bg_ring2;
+  for(point_t& p : ring2){
+    bg_ring2.push_back(p.point);
+  }
+  bg_ring2.push_back(ring2.front().point);
+
+  return bg::intersects(bg_ring1, bg_ring2);
+}
+
+bool DiagonalDecomposition::intersects(std::vector<point_t>& ring, line_t& line){
+  Ring bg_ring1;
+  for(point_t& p : ring){
+    bg_ring1.push_back(p.point);
+  }
+
+  Line bg_line{line.first.point, line.second.point};
+
+  return bg::intersects(bg_ring1, bg_line);
+}
+
+std::string DiagonalDecomposition::printPolygon(std::vector<point_t>& poly) {
+  if(poly.size() == 0){
+    return "the polygon is empty";
+  }
+
+  std::stringstream ss;
+  int ring_id = poly.front().ring_index;
+  std::string error = "";
+  ss << "(";
+  for(point_t& p : poly){
+    ss << bg::get<0>(p.point) << " " << bg::get<1>(p.point) << ", ";
+    if(p.ring_index != ring_id){
+      error = "ring id is not consistent!";
+    }
+  }
+  ss << ")";
+  ss << " ring: " << ring_id << " " << error;
+  return ss.str();
+}
+
+
+std::string DiagonalDecomposition::printPoint(point_t& point){
+  std::stringstream ss;
+  ss << bg::wkt(point.point) << " r:" << point.ring_index << " i:" << point.id << " ";
+  return ss.str();
+}
+
 
 void DiagonalDecomposition::start() {
   std::cout << "start\n";
