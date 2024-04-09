@@ -365,9 +365,11 @@ add_library(MrsRvizPlugins_CoveragePlannerPlugins
   include/coverage_path_planning/approximate_decomposition.h
   include/coverage_path_planning/stride_method.h
   include/coverage_path_planning/diagonal_decomposition.h
+  include/coverage_path_planning/exact_decomposition.h
   src/coverage_path_planning/approximate_decomposition.cpp
   src/coverage_path_planning/stride_method.cpp
   src/coverage_path_planning/diagonal_decomposition.cpp
+  src/coverage_path_planning/exact_decomposition.cpp
 )
 
 add_dependencies(MrsRvizPlugins_CoveragePlannerPlugins

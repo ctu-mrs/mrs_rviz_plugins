@@ -63,7 +63,6 @@ protected:
   Ogre::SceneNode* grid_node_;
 
   mrs_lib::Transformer transformer_;
-  ros::NodeHandle      nh_;
 };
 } // namespace mrs_rviz_plugins
 

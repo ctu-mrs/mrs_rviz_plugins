@@ -25,7 +25,6 @@ void ApproximateDecomposition::initialize(rviz::Property* property_container, Og
   twist_property_->setMax(180);
   twist_property_->setMin(0);
   cell_num_property_->setReadOnly(true);
-  transformer_ = mrs_lib::Transformer(nh_);
 }
 
 void ApproximateDecomposition::drawGrid(){

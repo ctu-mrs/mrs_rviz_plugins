@@ -19,131 +19,17 @@ using std::vector;
 namespace mrs_rviz_plugins {
 
 void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
-
+  ExactDecomposition::initialize(property_container, scene_manager, root_node);
 }
 
 void DiagonalDecomposition::compute() {
-  Polygon poly = mrs_lib::Polygon();
-
-
-  // // Polygon with a hole inside (wirks fine)
-  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
-  // {mrs_lib::Point2d p{0, 10};   bg::append(poly, p);}
-  // {mrs_lib::Point2d p{10, 10};  bg::append(poly, p);}
-  // {mrs_lib::Point2d p{10, 0};   bg::append(poly, p);}
-  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
-
-  // bg::interior_rings(poly).resize(1);
-  // {mrs_lib::Point2d p{5,   7.5};  bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{7.5, 5};    bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{5,   2.5};  bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{2.5, 5};    bg::append(poly, p, 0);}  
-  // {mrs_lib::Point2d p{5,   7.5};  bg::append(poly, p, 0);}
-
-  // // Polygon with crossing diagonal (works fine)
-  // {mrs_lib::Point2d p{0, 5};    bg::append(poly, p);}
-  // {mrs_lib::Point2d p{3, 3};   bg::append(poly, p);}
-  // {mrs_lib::Point2d p{6, 5};  bg::append(poly, p);}
-  // {mrs_lib::Point2d p{6, 0};   bg::append(poly, p);}
-  // {mrs_lib::Point2d p{0, 0};    bg::append(poly, p);}
-  // {mrs_lib::Point2d p{0, 5};    bg::append(poly, p);}
-
-  // bg::interior_rings(poly).resize(1);
-  // {mrs_lib::Point2d p{4, 2};    bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{5, 2};    bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{5, 1};    bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{4, 1};    bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{4, 2};    bg::append(poly, p, 0);}
-
-  // Complex polygon with 2 holes
-  {mrs_lib::Point2d p{4.14361, 8.02656};  bg::append(poly, p);}//A
-  {mrs_lib::Point2d p{9.27532, 6.44607};  bg::append(poly, p);}//B
-  {mrs_lib::Point2d p{9.60703, 7.42168};  bg::append(poly, p);}//C
-  {mrs_lib::Point2d p{11.168, 5.56802};   bg::append(poly, p);}//D
-  {mrs_lib::Point2d p{11, 3};             bg::append(poly, p);}//E
-  {mrs_lib::Point2d p{9.29483, 0.98266};  bg::append(poly, p);}//F
-  {mrs_lib::Point2d p{1.29483, 0.63144};  bg::append(poly, p);}//G
-  {mrs_lib::Point2d p{0.768, 5.64607};    bg::append(poly, p);}//H
-  {mrs_lib::Point2d p{4.14361, 8.02656};  bg::append(poly, p);}//A
-
-  bg::interior_rings(poly).resize(2);
-
-  {mrs_lib::Point2d p{2.62166, 6.58266};  bg::append(poly, p, 0);}//I
-  {mrs_lib::Point2d p{3.53873, 6.44607};  bg::append(poly, p, 0);}//J
-  {mrs_lib::Point2d p{4.00703, 4.35827};  bg::append(poly, p, 0);}//K
-  {mrs_lib::Point2d p{4.33873, 2.40705};  bg::append(poly, p, 0);}//L
-  {mrs_lib::Point2d p{5.74361, 3.59729};  bg::append(poly, p, 0);}//M
-  {mrs_lib::Point2d p{5.78264, 1.62656};  bg::append(poly, p, 0);}//N
-  {mrs_lib::Point2d p{2.60215, 1.19729};  bg::append(poly, p, 0);}//O
-  {mrs_lib::Point2d p{1.4119, 3.67534};  bg::append(poly, p, 0);}//P
-  {mrs_lib::Point2d p{2.62166, 6.58266};  bg::append(poly, p, 0);}//I
-
-  {mrs_lib::Point2d p{7.38264, 5.19729};  bg::append(poly, p, 1);}//Q
-  {mrs_lib::Point2d p{8.88508, 5.19729};  bg::append(poly, p, 1);}//R
-  {mrs_lib::Point2d p{9.568, 3.49973};  bg::append(poly, p, 1);}//S
-  {mrs_lib::Point2d p{7.07044, 1.86071};  bg::append(poly, p, 1);}//T
-  {mrs_lib::Point2d p{7.55825, 3.6168};  bg::append(poly, p, 1);}//U
-  {mrs_lib::Point2d p{6.30947, 4.26071};  bg::append(poly, p, 1);}//V
-  {mrs_lib::Point2d p{7.38264, 5.19729};  bg::append(poly, p, 1);}//Q
-
-
-
-  bg::correct(poly);
-
   std::string msg;
-  std::cout << bg::wkt(poly) << std::endl;
-  bg::is_valid(poly, msg);
-  std::cout << msg << std::endl;
+  if(!bg::is_valid(current_polygon_, msg)){
+    ROS_WARN("[DiagonalDecomposition]: Current polygon is invalid. Cannot perform the decomposition. Msg: %s", msg.c_str());
+    return;
+  }
 
-  current_polygon_ = poly;
-
-  // std::cout << "testing getPartition()\n";
-  // vector<point_t> outer_ring;
-  // for(int i=0; i<poly.outer().size() - 1; i++){
-  //   point_t tmp;
-  //   tmp.point = poly.outer()[i];
-  //   tmp.ring_index = -1;
-  //   tmp.id = i;
-  //   outer_ring.push_back(tmp);
-  // }
-
-  // vector<point_t> res_poly;
-  // line_t res_line;
-
-  // bool res_bool = getPartition(outer_ring, 0, res_poly, res_line);
-
-  // std::cout << (res_bool ? "terminated" : "not terminated") << std::endl;
-  // for(point_t& p : res_poly){
-  //   std::cout << p.ring_index << " " << p.id << " " << bg::wkt(p.point) << std::endl;
-  // }
-
-  // {
-
-  // std::cout << "\ntesting drawTrueDiagonal() crossing\n";
-  // line_t diagonal;
-  // diagonal.first = outer_ring[3];
-  // diagonal.second = outer_ring[7];
-
-  // std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
-  // std::cout << "hole: " << bg::wkt(res.first) << std::endl;
-  // std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
-  // std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
-  // }
-
-  // {
-  // std::cout << "\ntesting drawTrueDiagonal() not crossing\n";
-  // line_t diagonal;
-  // diagonal.first = outer_ring[3];
-  // diagonal.second.ring_index = 1;
-  // diagonal.second.id = 1;
-  // diagonal.second.point = Point2d {8.88508, 5.19729};
-
-  // std::pair<Ring, line_t> res = drawTrueDiagonal(poly, diagonal);
-  // std::cout << "hole: " << bg::wkt(res.first) << std::endl;
-  // std::cout << res.second.first.ring_index << " " << res.second.first.id << " " << bg::wkt(res.second.first.point) << std::endl;
-  // std::cout << res.second.second.ring_index << " " << res.second.second.id << " " << bg::wkt(res.second.second.point) << std::endl;
-  // }
-
+  std::cout << "polygon is valid\n";
   vector<point_t> cur_p;
   for(int i=0; i<current_polygon_.outer().size() - 1; i++){
     point_t tmp;
@@ -167,15 +53,11 @@ void DiagonalDecomposition::compute() {
     cur_holes.push_back(tmp_hole);
   }
 
-  std::cout << printPolygon(cur_holes[0]) << std::endl;
-
   int start = 0;
   vector<vector<point_t>> decomposition; // array of polygons
   vector<line_t> diagonals;
   bool terminated = false;
-  int it_num =0;
-  while(!terminated && it_num<500){
-    it_num ++;
+  while(!terminated){
     std::cout << std::endl;
     std::cout << "cur_p: " << printPolygon(cur_p) << std::endl;
     
@@ -241,8 +123,6 @@ void DiagonalDecomposition::compute() {
     std::cout << "\t" << (terminated ? "terminated" : "Not terminated") << std::endl;
     if((partition.size() <= 2 || !is_notch) && !terminated){
       start = (start + 1) % cur_p.size();
-      // std::cout << "\tdiagonal:" <<bg::wkt(diagonal.first) << " " << bg::wkt(diagonal.second) << std::endl;
-      // std::cout << "\tnext start: " << start << std::endl;
       continue;
     }
 
@@ -363,6 +243,15 @@ void DiagonalDecomposition::compute() {
     alsdkfj++;
   }
 
+  vector<Ring> rings(decomposition.size());
+  for(int i=0; i<decomposition.size(); i++){
+    for(auto& p : decomposition[i]){
+      rings[i].push_back(p.point);
+    }
+    rings[i].push_back(decomposition[i].front().point);
+  }
+  drawDecomposition(rings);
+
 }
 
 bool DiagonalDecomposition::getPartition(vector<point_t>& border, int index_start, vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line){
@@ -478,15 +367,6 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
   point_t D = res.back();
   point_t G = border[indices[1]];
 
-  // std::cout << "A "<< A.ring_index << " " << A.id << " " << bg::wkt(A.point) << std::endl;
-  // std::cout << "B "<< B.ring_index << " " << B.id << " " << bg::wkt(B.point) << std::endl;
-  // std::cout << "C "<< C.ring_index << " " << C.id << " " << bg::wkt(C.point) << std::endl;
-  // std::cout << "D "<< D.ring_index << " " << D.id << " " << bg::wkt(D.point) << std::endl;
-  // std::cout << "G "<< G.ring_index << " " << G.id << " " << bg::wkt(G.point) << std::endl;
-  // std::cout << "ang(GAB) " << ang(G, A, B) << std::endl;
-  // std::cout << "ang(DGA) " << ang(D, G, A) << std::endl;
-  // std::cout << "ang(CDG) " << ang(C, D, G) << std::endl;
-
   // We add the next consecutive vertex if it is suitable
   if(ang(G, A, B) < M_PI &&
     ang(D, G, A) < M_PI &&
@@ -561,10 +441,6 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
   
   return false;
 }
-
-// bool DiagonalDecomposition::getPartitionCounterClockwise(const Polygon& border, int index_start, Polygon& res){
-  
-// }
 
 // Algorithm 2: Procedure DrawTrueDiagonal
 std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDecomposition::drawTrueDiagonal(vector<vector<point_t>>& _holes, line_t diagonal){
@@ -774,29 +650,29 @@ void DiagonalDecomposition::start() {
   std::cout << "start\n";
 }
 
-void DiagonalDecomposition::setStart(Ogre::Vector3 position){
-  std::cout << "setStart\n";
-}
+// void DiagonalDecomposition::setStart(Ogre::Vector3 position){
+//   std::cout << "setStart\n";
+// }
 
-void DiagonalDecomposition::setPolygon(std::string frame_id, Polygon &new_polygon, bool update){
-  std::cout << "setPolygon\n";
-}
+// void DiagonalDecomposition::setPolygon(std::string frame_id, Polygon &new_polygon, bool update){
+//   std::cout << "setPolygon\n";
+// }
 
-void DiagonalDecomposition::setAngle(int angle, bool update){
-  std::cout << "setAngle\n";
-}
+// void DiagonalDecomposition::setAngle(int angle, bool update){
+//   std::cout << "setAngle\n";
+// }
 
-void DiagonalDecomposition::setOverlap(float percentage, bool update){
-  std::cout << "setOverlap\n";
-}
+// void DiagonalDecomposition::setOverlap(float percentage, bool update){
+//   std::cout << "setOverlap\n";
+// }
 
-void DiagonalDecomposition::setHeight(float height, bool update){
-  std::cout << "setHeight\n";
-}
+// void DiagonalDecomposition::setHeight(float height, bool update){
+//   std::cout << "setHeight\n";
+// }
 
-void DiagonalDecomposition::setFrame(std::string new_frame, bool update){
-  std::cout << "setFrame\n";
-}
+// void DiagonalDecomposition::setFrame(std::string new_frame, bool update){
+//   std::cout << "setFrame\n";
+// }
 
 } // namespace mrs_rviz_plugins
 

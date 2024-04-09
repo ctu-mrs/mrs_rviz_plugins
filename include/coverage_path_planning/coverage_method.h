@@ -17,6 +17,8 @@ public:
     property_container_ = property_container;
     scene_manager_ = scene_manager;
     root_node_ = root_node;
+
+    transformer_ = mrs_lib::Transformer(nh_);
   }
 
   virtual void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) = 0;
@@ -43,6 +45,10 @@ protected:
   Ogre::SceneManager* scene_manager_;
   // All the scene nodes created by this plugin must be children of root_node.
   Ogre::SceneNode*    root_node_;
+
+  // ROS
+  ros::NodeHandle nh_;
+  mrs_lib::Transformer transformer_;
 
   // Math
   mrs_lib::Polygon current_polygon_;
