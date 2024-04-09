@@ -30,31 +30,36 @@ public:
   void setFrame(std::string new_frame, bool update=true) override;
 
 protected:
+  typedef struct{
+    mrs_lib::Point2d point;
+    int ring_index;
+    int id;
+  } point_t;
+  typedef std::pair<point_t, point_t> line_t;
   typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
+  typedef mrs_lib::Polygon::ring_type Ring;
 
   // Makes one iteration of MP3 algorithm
   // TODO: Pure function (?) 
-  bool getPartition(mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res_poly, Line& res_line);
+  bool getPartition(std::vector<point_t>& border, int index_start, std::vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line);
   
   // Returns true if terminated
-  bool getPartitionClockwise(const mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res);
-  bool getPartitionCounterClockwise(const mrs_lib::Polygon& border, int index_start, mrs_lib::Polygon& res);
+  bool getPartitionClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
+  bool getPartitionCounterClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
 
-  // polygon: convex partition with holes
-  // diagonal: initial edge that must become a "true" one
-  // Returns: ring: the hole that contains endpoint of true diagonal
-  //          line: a diagonal that is not intersected by any holes, starts at diagonal[0] 
-  // TODO: Pure function (?) 
-  std::pair<mrs_lib::Polygon::ring_type, Line> drawTrueDiagonal(mrs_lib::Polygon& polygon, Line diagonal);
+  std::pair<Ring, line_t> drawTrueDiagonal(mrs_lib::Polygon& polygon, line_t diagonal);
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
   float ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
+  float ang(point_t a, point_t b, point_t c);
 
   // TODO: implement 
   float signedDistComparable(Line line, mrs_lib::Point2d point);
 
   bool fits(mrs_lib::Polygon& main, int start, mrs_lib::Polygon& part);
+
+  mrs_lib::Point2d getClosestPoint(Ring& ring, mrs_lib::Point2d point);
 
   // void getPolygonBoundaries(mrs_lib::Polygon& poly, float& max_x, float& min_x,float& max_y, float& min_y);
 }; // class DiagonalDecomposition
