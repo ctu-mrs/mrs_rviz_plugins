@@ -2,11 +2,13 @@
 
 #include <boost/geometry.hpp>
 
+#include <algorithm>
+#include <optional>
 #include <sstream>
 #include <vector>
 #include <limits>
 #include <cmath>
-#include <optional>
+#include <set>
 
 namespace bg = boost::geometry;
 
@@ -36,27 +38,37 @@ void DiagonalDecomposition::compute() {
   {mrs_lib::Point2d p{6.5, 1};   bg::append(poly, p);}
   {mrs_lib::Point2d p{2, 6};    bg::append(poly, p);}
 
-  {
-  vector<point_t> cur_p;
-  for(int i=0; i<poly.outer().size() - 1; i++){
-    point_t tmp;
-    tmp.point = poly.outer()[i];
-    tmp.ring_index = -1;
-    tmp.id = i;
-    cur_p.push_back(tmp);
-  }
-  vector<vector<point_t>> final;
-  final.push_back(cur_p);
+  // {
+  // vector<point_t> cur_p;
+  // for(int i=0; i<poly.outer().size() - 1; i++){
+  //   point_t tmp;
+  //   tmp.point = poly.outer()[i];
+  //   tmp.ring_index = -1;
+  //   tmp.id = i;
+  //   cur_p.push_back(tmp);
+  // }
+  // vector<vector<point_t>> final;
+  // final.push_back(cur_p);
 
-  vector<cell_t> res = fillCells(final);
-  for(cell_t& cell : res){
-    std::cout << cell.polygon_id << std::endl;
-    for(auto& p : cell.waypoints){
-      std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
-    }
-  }
-  return;
-  }
+  // vector<cell_t> res = fillCells(final);
+  // fixCells(res);
+  
+  // for(cell_t& cell : res){
+  //   std::cout << cell.polygon_id << std::endl;
+  //   for(auto& p : cell.waypoints){
+  //     std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
+  //   }
+  // }
+
+  // Point2d s;
+  // Point2d f;
+  // Point2d prev{0, 0};
+  // getStartAndFinish(prev, res[0], s, f);
+  // std::cout << "\tstart:  " << bg::wkt(s) << std::endl;
+  // std::cout << "\tfinish: " << bg::wkt(f) << std::endl;
+
+  // return;
+  // }
 
   std::string msg;
   if(!bg::is_valid(current_polygon_, msg)){
@@ -287,6 +299,63 @@ void DiagonalDecomposition::compute() {
   }
   drawDecomposition(rings);
 
+
+  // Find the best cell permutation
+  vector<cell_t> cells = fillCells(decomposition);
+  vector<int> shortest_path;
+  Point2d best_start;
+  float min_total_len = std::numeric_limits<float>::max();
+  for(int i=0; i<cells.size(); i++){
+    vector<int> path(cells.size());
+    std::set<int> visited;
+
+    Point2d prev_point = cells[i].waypoints.front().first;
+    Point2d start_point, finish_point;
+    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
+    float total_path_len = 0;
+    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    if(total_path_len < min_total_len){
+      shortest_path = path;
+      best_start = prev_point;
+      min_total_len = total_path_len;
+    }
+
+    visited.clear();
+    prev_point = cells[i].waypoints.front().second;
+    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
+    total_path_len = 0;
+    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    if(total_path_len < min_total_len){
+      shortest_path = path;
+      best_start = prev_point;
+      min_total_len = total_path_len;
+    }
+
+    visited.clear();
+    prev_point = cells[i].waypoints.back().first;
+    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
+    total_path_len = 0;
+    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    if(total_path_len < min_total_len){
+      shortest_path = path;
+      best_start = prev_point;
+      min_total_len = total_path_len;
+    }
+
+    visited.clear();
+    prev_point = cells[i].waypoints.back().second;
+    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
+    total_path_len = 0;
+    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    if(total_path_len < min_total_len){
+      shortest_path = path;
+      best_start = prev_point;
+      min_total_len = total_path_len;
+    }
+  }
+
+  mrs_msgs::PathSrv path = genereatePath(cells, shortest_path, best_start);
+  drawPath(path);
 }
 
   //|------------------------------------------------------------------|
@@ -572,8 +641,8 @@ vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<ve
   float angle_rad = (((float)angle_) / 180) * M_PI;
   float camera_width = (std::tan(angle_rad / 2) * height_);
   // todo: distance
-  // float distance = camera_width * (1 - overlap_);
-  float distance = 0.5;
+  float distance = camera_width * (1 - overlap_);
+  // float distance = 0.5;
 
   vector<cell_t> result;
 
@@ -696,9 +765,188 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
   return std::nullopt;
 }
 
+bool DiagonalDecomposition::findPath(
+      vector<DiagonalDecomposition::cell_t>& cells, 
+      Point2d prev_point,
+      std::set<int> visited, 
+      int cur_cell_index, 
+      int path_len, 
+      vector<int>& path,
+      float& total_path_len){
+  visited.insert(cur_cell_index);
+  path[path_len] = cur_cell_index;
+  // Finish condition
+  if(visited.size() == cells.size()){
+    return true;
+  }
+
+  // All the found paths
+  vector<vector<int>> paths;
+  vector<float> path_total_lens;
+
+  bool found_adjacent = false;
+
+  // Continue search with adjacent cells
+  for(int next : cells[cur_cell_index].adjacent_polygons){
+    if(visited.find(next) != visited.end()){
+      continue;
+    }
+    cell_t cur_cell = cells[next];
+    found_adjacent = true;
+
+    // Get finish point of cur polygon
+    Point2d start_point;
+    Point2d finish_point;
+    getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
+    float new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+
+    if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
+      paths.push_back(path);
+      path_total_lens.push_back(new_total_path_len);
+    }
+  }
+
+  if(!found_adjacent){
+    // Continue search with every unvisited cell
+    for(int next=0; next<cells.size(); next++){
+      if(visited.find(next) != visited.end()){
+        continue;
+      }
+      cell_t cur_cell = cells[next];
+
+      // Get finish point of cur polygon
+      Point2d start_point;
+      Point2d finish_point;
+      getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
+      float new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+
+      if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
+        paths.push_back(path);
+        path_total_lens.push_back(new_total_path_len);
+      }
+    }
+  }
+
+  int index=0;
+  float min_total_path_len = std::numeric_limits<float>::max();
+  for(int i=0; i<paths.size(); i++){
+    if(path_total_lens[i] < min_total_path_len){
+      min_total_path_len = path_total_lens[i];
+      index = i;
+    }
+  }
+  path = paths[index];
+  return true;
+}
+
+void DiagonalDecomposition::getStartAndFinish(Point2d prev_point, DiagonalDecomposition::cell_t& cur_cell, Point2d& start_point, Point2d& finish_point){
+  start_point = cur_cell.waypoints.front().first;
+  finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.back().first : cur_cell.waypoints.back().second;
+  if(bg::comparable_distance(prev_point, cur_cell.waypoints.front().second) < bg::comparable_distance(prev_point, start_point)){
+    start_point = cur_cell.waypoints.front().second;
+    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.back().second : cur_cell.waypoints.back().first;
+  }
+  if(bg::comparable_distance(prev_point, cur_cell.waypoints.back().first) < bg::comparable_distance(prev_point, start_point)){
+    start_point = cur_cell.waypoints.back().first;
+    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.front().first : cur_cell.waypoints.front().second;
+  }
+  if(bg::comparable_distance(prev_point, cur_cell.waypoints.back().second) < bg::comparable_distance(prev_point, start_point)){
+    start_point = cur_cell.waypoints.back().second;
+    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.front().second : cur_cell.waypoints.front().first;
+  }
+}
+
+void DiagonalDecomposition::fixCells(vector<DiagonalDecomposition::cell_t>& cells){
+  for(cell_t& cell : cells){
+    Point2d cur_point = cells[0].waypoints[0].first;
+    for(std::pair<Point2d, Point2d>& pair : cell.waypoints){
+      if(bg::comparable_distance(cur_point, pair.first) > bg::comparable_distance(cur_point, pair.second)){
+        Point2d tmp = pair.first;
+        pair.first = pair.second;
+        pair.second = tmp;
+      }
+      cur_point = pair.first;
+    }
+  }
+}
+
 // |---------------------------------------------------------------|
 // |-------------------- Tools for convenience --------------------|
 // |---------------------------------------------------------------|
+
+mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cells, std::vector<int> path, Point2d start){
+  mrs_msgs::PathSrv result;
+  result.request.path.header.frame_id = polygon_frame_;
+  result.request.path.stop_at_waypoints = false;
+  result.request.path.use_heading = true;
+  result.request.path.loop = false;
+  
+  Point2d cur_point = start;
+  bool is_front;
+  bool is_first;
+  std::cout << "\nGENERATING PATH\n";
+  for(int cell_index : path){
+    // Find the first waypoint of the cell 
+    cell_t& cur_cell = cells[cell_index];
+    Point2d start_point = cur_cell.waypoints.front().first;
+    is_front = true;
+    is_first = true;
+    if(bg::comparable_distance(cur_point, cur_cell.waypoints.front().second) < bg::comparable_distance(cur_point, start_point)){
+      start_point = cur_cell.waypoints.front().second;
+      is_front = true;
+      is_first = false;
+    }
+    if(bg::comparable_distance(cur_point, cur_cell.waypoints.back().first) < bg::comparable_distance(cur_point, start_point)){
+      start_point = cur_cell.waypoints.back().first;
+      is_front = false;
+      is_first = true;
+    }
+    if(bg::comparable_distance(cur_point, cur_cell.waypoints.back().second) < bg::comparable_distance(cur_point, start_point)){
+      start_point = cur_cell.waypoints.back().second;
+      is_front = false;
+      is_first = false;
+    }
+
+    auto waypoints = cells[cell_index].waypoints;
+    if(!is_front){
+      std::reverse(waypoints.begin(), waypoints.end());
+    }
+    for(auto& pair : waypoints){
+      geometry_msgs::Point cur_waypoint1;
+      geometry_msgs::Point cur_waypoint2;
+      if(is_first){
+        std::cout << bg::wkt(pair.first) << std::endl;
+        std::cout << bg::wkt(pair.second) << std::endl;
+        cur_waypoint1.x = bg::get<0>(pair.first);
+        cur_waypoint1.y = bg::get<1>(pair.first);
+        cur_waypoint2.x = bg::get<0>(pair.second);
+        cur_waypoint2.y = bg::get<1>(pair.second);
+      }else{
+        std::cout << bg::wkt(pair.second) << std::endl;
+        std::cout << bg::wkt(pair.first) << std::endl;
+        cur_waypoint1.x = bg::get<0>(pair.second);
+        cur_waypoint1.y = bg::get<1>(pair.second);
+        cur_waypoint2.x = bg::get<0>(pair.first);
+        cur_waypoint2.y = bg::get<1>(pair.first);
+      }
+      is_first = !is_first;
+      cur_waypoint1.z = height_;
+      cur_waypoint2.z = height_;
+
+      // TODO: add heading
+      mrs_msgs::Reference r1;
+      mrs_msgs::Reference r2;
+      r1.position = cur_waypoint1;
+      r2.position = cur_waypoint2;
+
+      result.request.path.points.push_back(r1);
+      result.request.path.points.push_back(r2);
+    }
+    cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
+  }
+
+  return result;
+}
 
 float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   bg::subtract_point(a, b);

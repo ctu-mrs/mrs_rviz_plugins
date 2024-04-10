@@ -5,6 +5,7 @@
 
 #include <utility>
 #include <optional>
+#include <mrs_msgs/PathSrv.h>
 
 namespace mrs_rviz_plugins{
 
@@ -52,12 +53,27 @@ protected:
   std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
 
   std::vector<int> getAdjacentPolygons(std::vector<std::vector<point_t>>& polygons, int index);
+  void fixCells(std::vector<DiagonalDecomposition::cell_t>& cells);
 
   // Returns vector which defines infinite line normal to 
   // sweep direction in sence of the publication (i.e. vector.x vector.y define sweep direction)
   Ogre::Vector3 getSweepDirection(std::vector<point_t>& polygon);
+  bool findPath(std::vector<cell_t>& cells, 
+                mrs_lib::Point2d prev_point,
+                std::set<int> visited, 
+                int cur_index, 
+                int path_len, 
+                std::vector<int>& path,
+                float& total_path_len);
+
+  void getStartAndFinish(mrs_lib::Point2d prev_point, 
+                        cell_t& cur_cell, 
+                        mrs_lib::Point2d& start_point, 
+                        mrs_lib::Point2d& finish_point);
+
 
   //|------------------------------ Tools------------------------------|
+  mrs_msgs::PathSrv genereatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.

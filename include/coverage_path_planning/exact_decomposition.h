@@ -5,6 +5,8 @@
 
 #include <utility>
 
+#include <mrs_msgs/PathSrv.h>
+
 namespace mrs_rviz_plugins{
 
 class ExactDecomposition : public CoverageMethod {
@@ -26,10 +28,12 @@ public:
 protected:
   void drawDecomposition(std::vector<mrs_lib::Polygon::ring_type>& polygons);
   void drawRing(mrs_lib::Polygon::ring_type& ring, geometry_msgs::TransformStamped tf, Ogre::SceneNode* node);
+  void drawPath(mrs_msgs::PathSrv& path);
   void drawCurrentPolygon();
 
   Ogre::SceneNode* boundaries_node_ = nullptr;
   Ogre::SceneNode* decomposition_node_ = nullptr;
+  Ogre::SceneNode* path_node_ = nullptr;
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 
