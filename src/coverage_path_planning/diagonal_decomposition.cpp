@@ -6,6 +6,7 @@
 #include <vector>
 #include <limits>
 #include <cmath>
+#include <optional>
 
 namespace bg = boost::geometry;
 
@@ -22,7 +23,41 @@ void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre
   ExactDecomposition::initialize(property_container, scene_manager, root_node);
 }
 
+void DiagonalDecomposition::start() {
+  std::cout << "start\n";
+}
+
 void DiagonalDecomposition::compute() {
+
+  Polygon poly = mrs_lib::Polygon();
+  {mrs_lib::Point2d p{2, 6};    bg::append(poly, p);}
+  {mrs_lib::Point2d p{5.5, 6};   bg::append(poly, p);}
+  {mrs_lib::Point2d p{8, 4.5};  bg::append(poly, p);}
+  {mrs_lib::Point2d p{6.5, 1};   bg::append(poly, p);}
+  {mrs_lib::Point2d p{2, 6};    bg::append(poly, p);}
+
+  {
+  vector<point_t> cur_p;
+  for(int i=0; i<poly.outer().size() - 1; i++){
+    point_t tmp;
+    tmp.point = poly.outer()[i];
+    tmp.ring_index = -1;
+    tmp.id = i;
+    cur_p.push_back(tmp);
+  }
+  vector<vector<point_t>> final;
+  final.push_back(cur_p);
+
+  vector<cell_t> res = fillCells(final);
+  for(cell_t& cell : res){
+    std::cout << cell.polygon_id << std::endl;
+    for(auto& p : cell.waypoints){
+      std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
+    }
+  }
+  return;
+  }
+
   std::string msg;
   if(!bg::is_valid(current_polygon_, msg)){
     ROS_WARN("[DiagonalDecomposition]: Current polygon is invalid. Cannot perform the decomposition. Msg: %s", msg.c_str());
@@ -254,10 +289,11 @@ void DiagonalDecomposition::compute() {
 
 }
 
+  //|------------------------------------------------------------------|
+  //|------------------- Procedures of MP3 algorithm-------------------|
+  //|------------------------------------------------------------------|
+
 bool DiagonalDecomposition::getPartition(vector<point_t>& border, int index_start, vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line){
-
-  // |---------------- MP3 algorithm ----------------|
-
   // Initially, the list consists of one vertex.
   res_poly.push_back(border[index_start]);
 
@@ -528,6 +564,142 @@ std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDe
   return std::pair<Ring, line_t>(holes[res_line.second.ring_index], res_line);
 }
 
+// |---------------------------------------------------------------|
+// |---------------- Searching for exhaustive path ----------------|
+// |---------------------------------------------------------------|
+
+vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<vector<point_t>>& polygons){
+  float angle_rad = (((float)angle_) / 180) * M_PI;
+  float camera_width = (std::tan(angle_rad / 2) * height_);
+  // todo: distance
+  // float distance = camera_width * (1 - overlap_);
+  float distance = 0.5;
+
+  vector<cell_t> result;
+
+  for(int i=0; i<polygons.size(); i++){
+    cell_t new_cell;
+    new_cell.polygon_id = i;
+    new_cell.adjacent_polygons = getAdjacentPolygons(polygons, i);
+
+    // Filling waypoints
+    Ogre::Vector3 sweep_dir = getSweepDirection(polygons[i]);
+    for(float c=sweep_dir.z-distance; ; c-=distance){
+      sweep_dir.z = c;
+      std::pair<Point2d, Point2d> waypoint_pair;
+      if(getWaypointPair(polygons[i], sweep_dir, distance, waypoint_pair)){
+        new_cell.waypoints.push_back(waypoint_pair);
+        continue;
+      }
+      break;
+    }
+    result.push_back(new_cell);
+  }
+
+  return result;
+}
+
+vector<int> DiagonalDecomposition::getAdjacentPolygons(vector<vector<point_t>>& polygons, int index){
+  vector<int> res;
+  for(int j=0;j<polygons.size(); j++){
+    if(j==index){
+      continue;
+    }
+
+    bool found = false;
+    for(point_t& vertex1 : polygons[j]){
+      for(point_t& vertex2 : polygons[index]){
+        if(bg::equals(vertex1.point, vertex2.point)){
+          res.push_back(j);
+          found = true;
+          break;
+        }
+      }
+      if(found){
+        break;
+      }
+    }
+  }
+  return res;
+}
+
+bool DiagonalDecomposition::getWaypointPair(vector<point_t>& polygon, Ogre::Vector3 sweep_dir, float distance, std::pair<Point2d, Point2d>& res){
+  int found_num = 0;
+  Point2d first;
+  Point2d second;
+  for(int j=0; j<polygon.size(); j++){
+    Point2d e1 = polygon[j].point;
+    Point2d e2 = polygon[(j+1)%polygon.size()].point;
+    
+    auto point = getIntersection(sweep_dir, Line{e1, e2});
+    if(!point){
+      continue;
+    }
+
+    if(found_num == 0){
+      first = point.value();
+      found_num ++;
+    }else{
+      second = point.value();
+      found_num ++;
+      break;
+    }
+  }
+  if(found_num != 2){
+    return false;
+  }
+  res.first = first;
+  res.second = second;
+  return true;
+}
+
+std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line, DiagonalDecomposition::Line edge){
+  Ogre::Vector3 line2;
+  line2.x =   (bg::get<1>(edge[1]) - bg::get<1>(edge[0]));
+  line2.y =  -(bg::get<0>(edge[1]) - bg::get<0>(edge[0]));
+  line2.z = bg::get<1>(edge[0]) * bg::get<0>(edge[1]) - bg::get<1>(edge[1]) * bg::get<0>(edge[0]);
+
+  if(line.x == 0 && line2.x == 0){
+    return std::nullopt;
+  }
+  
+  if(line.x == 0){
+    Ogre::Vector3 tmp = line;
+    line = line2;
+    line2 = tmp;
+  }
+
+  float a = line.x;
+  float b = line.y;
+  float c = line.z;
+  float v = line2.x;
+  float w = line2.y;
+  float u = line2.z;
+
+  float y0 = (c*v/a - u) / (w - (b*v/a));
+  float x0 = -(b/a)*y0 - (c/a);
+
+  float min_x = bg::get<0>(edge[0]) < bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
+  float min_y = bg::get<1>(edge[0]) < bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
+
+  float max_x = bg::get<0>(edge[0]) > bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
+  float max_y = bg::get<1>(edge[0]) > bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
+
+  if(y0 > max_y || y0 < min_y){
+    return std::nullopt;
+  }
+
+  if(x0 <= max_x && x0 >= min_x){
+    return Point2d{x0, y0};
+  }
+
+  return std::nullopt;
+}
+
+// |---------------------------------------------------------------|
+// |-------------------- Tools for convenience --------------------|
+// |---------------------------------------------------------------|
+
 float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   bg::subtract_point(a, b);
   bg::subtract_point(c, b);
@@ -638,41 +810,41 @@ std::string DiagonalDecomposition::printPolygon(std::vector<point_t>& poly) {
   return ss.str();
 }
 
-
 std::string DiagonalDecomposition::printPoint(point_t& point){
   std::stringstream ss;
   ss << bg::wkt(point.point) << " r:" << point.ring_index << " i:" << point.id << " ";
   return ss.str();
 }
 
+Ogre::Vector3 DiagonalDecomposition::getSweepDirection(vector<point_t>& polygon) {
+  float optimal_dist = std::numeric_limits<float>::max();
+  Ogre::Vector3 line_sweep;
+  for(int i=0; i<polygon.size(); i++){
+    int next_i = (i+1) % polygon.size();
+    Line edge{polygon[i].point, polygon[next_i].point};
+    float max_dist_edge = 0;
+    Point2d opposed_vertex;
+    for(int j=0; j<polygon.size(); j++){
+      float distance = std::abs(signedDistComparable(edge, polygon[j].point));
+      if(distance > max_dist_edge){
+        max_dist_edge = distance;
+        opposed_vertex = polygon[j].point;
+      }
+    }
 
-void DiagonalDecomposition::start() {
-  std::cout << "start\n";
+    if(max_dist_edge < optimal_dist || i==0){
+      optimal_dist = max_dist_edge;
+      line_sweep.x =   (bg::get<1>(edge[1]) - bg::get<1>(edge[0]));
+      line_sweep.y =  -(bg::get<0>(edge[1]) - bg::get<0>(edge[0]));
+
+      line_sweep.z = bg::get<1>(edge[0]) * bg::get<0>(edge[1]) - bg::get<1>(edge[1]) * bg::get<0>(edge[0]);
+
+      float normalizer = std::pow((line_sweep.x * line_sweep.x) + (line_sweep.y * line_sweep.y), 0.5);
+      line_sweep = line_sweep / normalizer;
+    }
+  }
+  return line_sweep;
 }
-
-// void DiagonalDecomposition::setStart(Ogre::Vector3 position){
-//   std::cout << "setStart\n";
-// }
-
-// void DiagonalDecomposition::setPolygon(std::string frame_id, Polygon &new_polygon, bool update){
-//   std::cout << "setPolygon\n";
-// }
-
-// void DiagonalDecomposition::setAngle(int angle, bool update){
-//   std::cout << "setAngle\n";
-// }
-
-// void DiagonalDecomposition::setOverlap(float percentage, bool update){
-//   std::cout << "setOverlap\n";
-// }
-
-// void DiagonalDecomposition::setHeight(float height, bool update){
-//   std::cout << "setHeight\n";
-// }
-
-// void DiagonalDecomposition::setFrame(std::string new_frame, bool update){
-//   std::cout << "setFrame\n";
-// }
 
 } // namespace mrs_rviz_plugins
 

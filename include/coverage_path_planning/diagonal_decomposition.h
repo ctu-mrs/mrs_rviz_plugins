@@ -4,6 +4,7 @@
 #include "coverage_path_planning/exact_decomposition.h"
 
 #include <utility>
+#include <optional>
 
 namespace mrs_rviz_plugins{
 
@@ -17,18 +18,6 @@ public:
 
   void initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) override;
 
-  // void setStart(Ogre::Vector3 position) override;
-
-  // void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) override;
-
-  // void setAngle(int angle, bool update=true) override;
-
-  // void setOverlap(float percentage, bool update=true) override;
-
-  // void setHeight(float height, bool update=true) override;
-
-  // void setFrame(std::string new_frame, bool update=true) override;
-
 protected:
   typedef struct{
     mrs_lib::Point2d point;
@@ -39,27 +28,48 @@ protected:
   typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
   typedef mrs_lib::Polygon::ring_type Ring;
 
-  // Makes one iteration of MP3 algorithm
+  //|------------------- Procedures of MP3 algorithm-------------------|
+  // Returns true if terminated
   // TODO: Pure function (?) 
+  // Makes one iteration of MP3 algorithm
   bool getPartition(std::vector<point_t>& border, int index_start, std::vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line);
   
-  // Returns true if terminated
   bool getPartitionClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
   bool getPartitionCounterClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
 
   std::pair<Ring, line_t> drawTrueDiagonal(std::vector<std::vector<point_t>>& holes, line_t diagonal);
+
+
+  //|----------------- Searching for exhaustive path ------------------|
+  typedef struct{
+    std::vector<std::pair<mrs_lib::Point2d, mrs_lib::Point2d>> waypoints;
+    std::vector<int> adjacent_polygons;
+    int polygon_id = 0;
+  } cell_t;
+
+  std::vector<cell_t> fillCells(std::vector<std::vector<point_t>>& polygons);
+  bool getWaypointPair(std::vector<point_t>& polygon, Ogre::Vector3 sweep_dir, float distance, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
+  std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
+
+  std::vector<int> getAdjacentPolygons(std::vector<std::vector<point_t>>& polygons, int index);
+
+  // Returns vector which defines infinite line normal to 
+  // sweep direction in sence of the publication (i.e. vector.x vector.y define sweep direction)
+  Ogre::Vector3 getSweepDirection(std::vector<point_t>& polygon);
+
+  //|------------------------------ Tools------------------------------|
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
   float ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
   float ang(point_t a, point_t b, point_t c);
 
-  // TODO: implement 
   float signedDistComparable(Line line, mrs_lib::Point2d point);
 
   bool fits(mrs_lib::Polygon& main, int start, mrs_lib::Polygon& part);
 
   point_t getClosestPoint(std::vector<std::vector<point_t>>& holes, point_t point);
+  // Point2d getClosestPoint(Line line, Point2d point);
 
   bool equals(point_t a, point_t b);
 
@@ -69,8 +79,6 @@ protected:
 
   std::string printPolygon(std::vector<point_t>& poly);
   std::string printPoint(point_t& point);
-
-  // void getPolygonBoundaries(mrs_lib::Polygon& poly, float& max_x, float& min_x,float& max_y, float& min_y);
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 

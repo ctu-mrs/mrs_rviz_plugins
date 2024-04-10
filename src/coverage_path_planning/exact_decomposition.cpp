@@ -62,7 +62,6 @@ void ExactDecomposition::drawRing(mrs_lib::Polygon::ring_type& ring, geometry_ms
   }
 }
 
-
 void ExactDecomposition::drawDecomposition(std::vector<mrs_lib::Polygon::ring_type>& polygons){
   if(decomposition_node_){
     scene_manager_->destroySceneNode(decomposition_node_);
