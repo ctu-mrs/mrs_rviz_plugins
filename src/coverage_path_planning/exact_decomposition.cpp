@@ -116,6 +116,19 @@ void ExactDecomposition::drawPath(mrs_msgs::PathSrv& path){
   }
 }
 
+// |----------------------- Public methods -----------------------|
+
+void ExactDecomposition::initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) {
+  CoverageMethod::initialize(property_container, scene_manager, root_node);
+
+  boundaries_property_    = new rviz::BoolProperty("Show boundaries", true, "Enable to show", property_container, SLOT(boundariesChanged()), this);
+  decomposition_property_ = new rviz::BoolProperty("Show decomposition", true, "Enable to show", property_container, SLOT(decompositionChanged()), this);
+  path_property_          = new rviz::BoolProperty("Show path", true, "Enable to show", property_container, SLOT(pathChanged()), this);
+  turn_num_property_  = new rviz::IntProperty("Turns", 0, "Number of turns in path", property_container);
+
+  turn_num_property_->setReadOnly(true);
+}
+
 void ExactDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
   current_polygon_ = new_polygon;
   polygon_frame_ = frame_id;
@@ -154,6 +167,20 @@ void ExactDecomposition::setFrame(std::string new_frame, bool update){
   if(update){
     drawCurrentPolygon();
   }
+}
+
+// |--------------------- Slots ---------------------|
+
+void ExactDecomposition::decompositionChanged() {
+  decomposition_node_->setVisible(decomposition_property_->getBool());
+}
+
+void ExactDecomposition::boundariesChanged() {
+  boundaries_node_->setVisible(boundaries_property_->getBool());
+}
+
+void ExactDecomposition::pathChanged() {
+  path_node_->setVisible(path_property_->getBool());
 }
 
 } // namespace mrs_rviz_plugins

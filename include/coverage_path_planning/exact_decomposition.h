@@ -7,11 +7,15 @@
 
 #include <mrs_msgs/PathSrv.h>
 
+#include <rviz/properties/bool_property.h>
+#include <rviz/properties/int_property.h>
+
 namespace mrs_rviz_plugins{
 
 class ExactDecomposition : public CoverageMethod {
 Q_OBJECT
 public: 
+  void initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) override;
 
   void setStart(Ogre::Vector3 position) override;
 
@@ -25,6 +29,11 @@ public:
 
   void setFrame(std::string new_frame, bool update=true) override;
 
+protected Q_SLOTS:
+  void boundariesChanged();
+  void decompositionChanged();
+  void pathChanged();
+
 protected:
   void drawDecomposition(std::vector<mrs_lib::Polygon::ring_type>& polygons);
   void drawRing(mrs_lib::Polygon::ring_type& ring, geometry_msgs::TransformStamped tf, Ogre::SceneNode* node);
@@ -34,6 +43,11 @@ protected:
   Ogre::SceneNode* boundaries_node_ = nullptr;
   Ogre::SceneNode* decomposition_node_ = nullptr;
   Ogre::SceneNode* path_node_ = nullptr;
+
+  rviz::BoolProperty* decomposition_property_;
+  rviz::BoolProperty* boundaries_property_;
+  rviz::BoolProperty* path_property_;
+  rviz::IntProperty* turn_num_property_;
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 

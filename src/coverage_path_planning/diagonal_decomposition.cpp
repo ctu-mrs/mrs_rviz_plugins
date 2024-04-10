@@ -32,13 +32,14 @@ void DiagonalDecomposition::start() {
 void DiagonalDecomposition::compute() {
 
   Polygon poly = mrs_lib::Polygon();
-  {mrs_lib::Point2d p{2, 6};    bg::append(poly, p);}
-  {mrs_lib::Point2d p{5.5, 6};   bg::append(poly, p);}
-  {mrs_lib::Point2d p{8, 4.5};  bg::append(poly, p);}
-  {mrs_lib::Point2d p{6.5, 1};   bg::append(poly, p);}
-  {mrs_lib::Point2d p{2, 6};    bg::append(poly, p);}
+  {mrs_lib::Point2d p{50, -50};    bg::append(poly, p);}
+  {mrs_lib::Point2d p{-50, -50};   bg::append(poly, p);}
+  {mrs_lib::Point2d p{-50, 0};  bg::append(poly, p);}
+  {mrs_lib::Point2d p{3.434330, -0.235263};   bg::append(poly, p);}
+  {mrs_lib::Point2d p{50, -50};    bg::append(poly, p);}
 
   // {
+  // current_polygon_ = poly;
   // vector<point_t> cur_p;
   // for(int i=0; i<poly.outer().size() - 1; i++){
   //   point_t tmp;
@@ -47,25 +48,38 @@ void DiagonalDecomposition::compute() {
   //   tmp.id = i;
   //   cur_p.push_back(tmp);
   // }
-  // vector<vector<point_t>> final;
-  // final.push_back(cur_p);
 
-  // vector<cell_t> res = fillCells(final);
-  // fixCells(res);
-  
-  // for(cell_t& cell : res){
-  //   std::cout << cell.polygon_id << std::endl;
-  //   for(auto& p : cell.waypoints){
-  //     std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
-  //   }
+
+  // Ogre::Vector3 sweep_dir = getSweepDirection(cur_p);
+
+  // int num = 0;
+  // std::cout << sweep_dir.x << " " << sweep_dir.y << " " << sweep_dir.z << std::endl;
+  // sweep_dir.z = sweep_dir.z - 0.5;
+  // std::pair<Point2d, Point2d> waypoint_pair;
+  // if(getWaypointPair(cur_p, sweep_dir, 1, waypoint_pair)){
+  //   std::cout << "waypoint received\n";
+
   // }
 
-  // Point2d s;
-  // Point2d f;
-  // Point2d prev{0, 0};
-  // getStartAndFinish(prev, res[0], s, f);
-  // std::cout << "\tstart:  " << bg::wkt(s) << std::endl;
-  // std::cout << "\tfinish: " << bg::wkt(f) << std::endl;
+  // // vector<vector<point_t>> final;
+  // // final.push_back(cur_p);
+
+  // // vector<cell_t> res = fillCells(final);
+  // // fixCells(res);
+  
+  // // for(cell_t& cell : res){
+  // //   std::cout << cell.polygon_id << std::endl;
+  // //   for(auto& p : cell.waypoints){
+  // //     std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
+  // //   }
+  // // }
+
+  // // Point2d s;
+  // // Point2d f;
+  // // Point2d prev{0, 0};
+  // // getStartAndFinish(prev, res[0], s, f);
+  // // std::cout << "\tstart:  " << bg::wkt(s) << std::endl;
+  // // std::cout << "\tfinish: " << bg::wkt(f) << std::endl;
 
   // return;
   // }
@@ -202,10 +216,9 @@ void DiagonalDecomposition::compute() {
         // d <- [v_i, v] hole where v hole is a vertex of one of the holes inside C.
         diagonal.second = getClosestPoint(cur_holes, diagonal.first);
       }
-
-      auto tmp = drawTrueDiagonal(cur_holes, diagonal);
-      diagonal = tmp.second;
-      // diagonals.push_back(diagonal);
+      std::cout << "drawing true diag\n";
+      diagonal = drawTrueDiagonal(cur_holes, diagonal);
+      // diagonal = tmp.second;
 
       std::cout << "\ttrue diagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
 
@@ -299,13 +312,16 @@ void DiagonalDecomposition::compute() {
   }
   drawDecomposition(rings);
 
-
   // Find the best cell permutation
   vector<cell_t> cells = fillCells(decomposition);
   vector<int> shortest_path;
   Point2d best_start;
   float min_total_len = std::numeric_limits<float>::max();
   for(int i=0; i<cells.size(); i++){
+    if(cells[i].waypoints.size() == 0){
+      continue;
+    }
+
     vector<int> path(cells.size());
     std::set<int> visited;
 
@@ -354,7 +370,9 @@ void DiagonalDecomposition::compute() {
     }
   }
 
+  std::cout << "Generating the path\n";
   mrs_msgs::PathSrv path = genereatePath(cells, shortest_path, best_start);
+  std::cout << "Drawing the path\n";
   drawPath(path);
 }
 
@@ -548,7 +566,7 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
 }
 
 // Algorithm 2: Procedure DrawTrueDiagonal
-std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDecomposition::drawTrueDiagonal(vector<vector<point_t>>& _holes, line_t diagonal){
+DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vector<point_t>>& _holes, line_t diagonal){
   vector<Ring> holes;
   for(int i=0; i<_holes.size(); i++){
     Ring tmp;
@@ -562,7 +580,9 @@ std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDe
   // 1. Read the diagonal and the vertices of partition
   line_t res_line = diagonal;
 
+  std::cout << "entering loop\n";
   while(true){
+    std::cout << "processing 2\n";
     // 2. While the diagonal is intersected by the holes, do
     bool intersects = false;
     int intersected_hole_i = -1;
@@ -583,6 +603,7 @@ std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDe
 
     // 3. Find all the edges of holes which intersect d, and calculate the
     // corresponding intersection points.
+    std::cout << "processing 3\n";
     vector<Point2d> intersections;
     vector<line_t> intersected_lines;
     for(int j=0; j<holes.size(); j++){
@@ -607,6 +628,7 @@ std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDe
 
     // 4. Find the intersection point closest to diagonal[0], and endpoint
     // of intersected edge closest to diagonal[0]
+    std::cout << "processing 4\n";
     point_t endpoint;
     size_t hole_index = 0;
     float min = std::numeric_limits<float>::max();
@@ -627,10 +649,12 @@ std::pair<DiagonalDecomposition::Ring, DiagonalDecomposition::line_t> DiagonalDe
     }
 
     // 5. Update diagonal
+    std::cout << "processing 5\n";
     res_line.second = endpoint;
   }
 
-  return std::pair<Ring, line_t>(holes[res_line.second.ring_index], res_line);
+  std::cout << "returning\n";
+  return res_line;
 }
 
 // |---------------------------------------------------------------|
@@ -653,14 +677,20 @@ vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<ve
 
     // Filling waypoints
     Ogre::Vector3 sweep_dir = getSweepDirection(polygons[i]);
+    int num = 0;
     for(float c=sweep_dir.z-distance; ; c-=distance){
       sweep_dir.z = c;
       std::pair<Point2d, Point2d> waypoint_pair;
       if(getWaypointPair(polygons[i], sweep_dir, distance, waypoint_pair)){
         new_cell.waypoints.push_back(waypoint_pair);
+        num++;
         continue;
       }
       break;
+    }
+    if(num == 0){
+      std::cout << printPolygon(polygons[i]) << std::endl;
+
     }
     result.push_back(new_cell);
   }
@@ -738,23 +768,35 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
     line2 = tmp;
   }
 
-  float a = line.x;
-  float b = line.y;
-  float c = line.z;
-  float v = line2.x;
-  float w = line2.y;
-  float u = line2.z;
+  double a = line.x;
+  double b = line.y;
+  double c = line.z;
+  double v = line2.x;
+  double w = line2.y;
+  double u = line2.z;
 
-  float y0 = (c*v/a - u) / (w - (b*v/a));
-  float x0 = -(b/a)*y0 - (c/a);
+  double y0 = (c*v/a - u) / (w - (b*v/a));
+  double x0 = -(b/a)*y0 - (c/a);
 
-  float min_x = bg::get<0>(edge[0]) < bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
-  float min_y = bg::get<1>(edge[0]) < bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
+  double min_x = bg::get<0>(edge[0]) < bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
+  double min_y = bg::get<1>(edge[0]) < bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
 
-  float max_x = bg::get<0>(edge[0]) > bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
-  float max_y = bg::get<1>(edge[0]) > bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
+  double max_x = bg::get<0>(edge[0]) > bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
+  double max_y = bg::get<1>(edge[0]) > bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
+
+  std::cout << "\n\t\tgetIntersection: " << x0 << " " << y0 << std::endl;
+  std::cout << "\t\tmin_x:" << min_x << " min_y:" << min_y << " max_x:" << max_x << " max_y:" << max_y << std::endl;
+
+  if(bg::get<0>(edge[0]) == bg::get<0>(edge[1]) && y0 <= max_y && y0 >= min_y){
+    return Point2d{x0, y0};
+  }
+
+  if(bg::get<1>(edge[0]) == bg::get<1>(edge[1]) && x0 <= max_x && x0 >= min_x){
+    return Point2d{x0, y0};
+  }
 
   if(y0 > max_y || y0 < min_y){
+    std::cout << "\t\treturning null\n";
     return std::nullopt;
   }
 
@@ -762,6 +804,7 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
     return Point2d{x0, y0};
   }
 
+  std::cout << "\t\treturning null\n";
   return std::nullopt;
 }
 
@@ -773,6 +816,7 @@ bool DiagonalDecomposition::findPath(
       int path_len, 
       vector<int>& path,
       float& total_path_len){
+  std::cout << "findPath(). path_len: " << path_len << std::endl<< std::flush;
   visited.insert(cur_cell_index);
   path[path_len] = cur_cell_index;
   // Finish condition
@@ -796,9 +840,12 @@ bool DiagonalDecomposition::findPath(
 
     // Get finish point of cur polygon
     Point2d start_point;
-    Point2d finish_point;
-    getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-    float new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+    Point2d finish_point = prev_point;
+    float new_total_path_len = total_path_len;
+    if(cur_cell.waypoints.size() != 0){
+      getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
+      new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+    }
 
     if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
       paths.push_back(path);
@@ -807,6 +854,7 @@ bool DiagonalDecomposition::findPath(
   }
 
   if(!found_adjacent){
+    std::cout << "adjacent was not found\n";
     // Continue search with every unvisited cell
     for(int next=0; next<cells.size(); next++){
       if(visited.find(next) != visited.end()){
@@ -816,9 +864,12 @@ bool DiagonalDecomposition::findPath(
 
       // Get finish point of cur polygon
       Point2d start_point;
-      Point2d finish_point;
-      getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-      float new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+      Point2d finish_point = prev_point;
+      float new_total_path_len = total_path_len;
+      if(cur_cell.waypoints.size() != 0){
+        getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
+        new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+      }
 
       if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
         paths.push_back(path);
@@ -948,20 +999,20 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
   return result;
 }
 
-float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
+double DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   bg::subtract_point(a, b);
   bg::subtract_point(c, b);
   Point2d zero{0, 0};
 
-  float cos_a = bg::get<0>(a) / bg::distance(a, zero);
-  float cos_c = bg::get<0>(c) / bg::distance(c, zero);
+  double cos_a = bg::get<0>(a) / bg::distance(a, zero);
+  double cos_c = bg::get<0>(c) / bg::distance(c, zero);
 
-  float a1 = std::acos(cos_a);
+  double a1 = std::acos(cos_a);
   if(bg::get<1>(a) < 0){
     a1 = 2 * M_PI - a1;
   }
 
-  float c1 = std::acos(cos_c);
+  double c1 = std::acos(cos_c);
   if(bg::get<1>(c) < 0){
     c1 = 2 * M_PI - c1;
   }
@@ -969,14 +1020,14 @@ float DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   return fmod(2 * M_PI - a1 + c1, 2*M_PI);
 }
 
-float DiagonalDecomposition::ang(point_t a, point_t b, point_t c){
+double DiagonalDecomposition::ang(point_t a, point_t b, point_t c){
   return ang(a.point, b.point, c.point);
 }
 
-float DiagonalDecomposition::signedDistComparable(Line line, Point2d point) {
-  float A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
-  float B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
-  float C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
+double DiagonalDecomposition::signedDistComparable(Line line, Point2d point) {
+  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
+  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
+  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
 
   return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
 }

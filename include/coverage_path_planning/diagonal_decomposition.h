@@ -38,7 +38,7 @@ protected:
   bool getPartitionClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
   bool getPartitionCounterClockwise(const std::vector<point_t>& border, int index_start, std::vector<point_t>& res);
 
-  std::pair<Ring, line_t> drawTrueDiagonal(std::vector<std::vector<point_t>>& holes, line_t diagonal);
+  line_t drawTrueDiagonal(std::vector<std::vector<point_t>>& holes, line_t diagonal);
 
 
   //|----------------- Searching for exhaustive path ------------------|
@@ -77,10 +77,10 @@ protected:
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
-  float ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
-  float ang(point_t a, point_t b, point_t c);
+  double ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
+  double ang(point_t a, point_t b, point_t c);
 
-  float signedDistComparable(Line line, mrs_lib::Point2d point);
+  double signedDistComparable(Line line, mrs_lib::Point2d point);
 
   bool fits(mrs_lib::Polygon& main, int start, mrs_lib::Polygon& part);
 
