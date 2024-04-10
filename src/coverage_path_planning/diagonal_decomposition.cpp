@@ -141,7 +141,7 @@ void DiagonalDecomposition::compute() {
     for(int i=start+1; i!=start; i = (i+1) % cur_p.size()){
       prev_vertex = cur_vertex;
       cur_vertex = cur_p[i];
-      next_vertex = cur_p[i+1];
+      next_vertex = cur_p[(i+1) % cur_p.size()];
 
 
       if(!equals(cur_vertex, diagonal.second)){
@@ -164,7 +164,7 @@ void DiagonalDecomposition::compute() {
       }
       prev_vertex = cur_vertex;
       cur_vertex = cur_p[i];
-      int next_i = (i-1) < 0 ? (i-1) : cur_p.size() + i - 1;
+      int next_i = (i-1) < 0 ? (cur_p.size() + i - 1): (i-1);
       next_vertex = cur_p[next_i];
 
       if(!equals(cur_vertex, diagonal.first)){
@@ -172,7 +172,7 @@ void DiagonalDecomposition::compute() {
       }
 
       std::cout << "\tcounterclockwise:\n";
-      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << std::endl;
+      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << " " << next_i << std::endl;
       std::cout <<"\t" <<  ang(next_vertex, cur_vertex, prev_vertex) << std::endl;
       if(ang(next_vertex, cur_vertex, prev_vertex) <= M_PI){
         break;
@@ -214,13 +214,20 @@ void DiagonalDecomposition::compute() {
       // if d is not cut by a hole
       if(!is_d_cut_by_hole){
         // d <- [v_i, v] hole where v hole is a vertex of one of the holes inside C.
+        std::cout << "\td is not cut by hole\n";
         diagonal.second = getClosestPoint(cur_holes, diagonal.first);
+      }else{
+        std::cout << "\td is cut by hole\n";
       }
       std::cout << "drawing true diag\n";
       diagonal = drawTrueDiagonal(cur_holes, diagonal);
       // diagonal = tmp.second;
 
       std::cout << "\ttrue diagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
+      std::cout << "\tcurrent holes:\n";
+      for(auto& hole : cur_holes){
+        std::cout << "\t" << printPolygon(hole) << std::endl;
+      }
 
       // Absorption of H
       vector<point_t> new_border;
@@ -261,14 +268,21 @@ void DiagonalDecomposition::compute() {
       cur_p = new_border;
 
       // Delete the absorbed hole
-      for(int i=0; i<cur_holes.size(); i++){
+      for(int i=0; i<cur_holes.size();){
         if(cur_holes[i].front().ring_index == diagonal.second.ring_index){
           cur_holes.erase(cur_holes.begin() + i);
-          continue;
+        }else{
+          i++;
         }
+      }
+      for(int i=0; i<cur_holes.size(); i++){
         for(int j=0; j<cur_holes[i].size(); j++){
           cur_holes[i][j].ring_index = i;
         }
+      }
+      std::cout << "\tcurrent holes after absorption:\n";
+      for(auto& hole : cur_holes){
+        std::cout << "\t" << printPolygon(hole) << std::endl;
       }
       terminated = false;
       start = 0;
@@ -576,6 +590,7 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
     tmp.push_back(_holes[i].front().point);
     holes.push_back(tmp);
   }
+  std::cout << "holes.size(): " << holes.size() << std::endl;
 
   // 1. Read the diagonal and the vertices of partition
   line_t res_line = diagonal;
@@ -816,7 +831,7 @@ bool DiagonalDecomposition::findPath(
       int path_len, 
       vector<int>& path,
       float& total_path_len){
-  std::cout << "findPath(). path_len: " << path_len << std::endl<< std::flush;
+  // std::cout << "findPath(). path_len: " << path_len << std::endl<< std::flush;
   visited.insert(cur_cell_index);
   path[path_len] = cur_cell_index;
   // Finish condition
@@ -937,8 +952,12 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
   bool is_first;
   std::cout << "\nGENERATING PATH\n";
   for(int cell_index : path){
-    // Find the first waypoint of the cell 
     cell_t& cur_cell = cells[cell_index];
+    std::cout << "waypoints.size(): " << cur_cell.waypoints.size() << std::endl;
+    if(cur_cell.waypoints.size() == 0){
+      continue;
+    }
+    // Find the first waypoint of the cell 
     Point2d start_point = cur_cell.waypoints.front().first;
     is_front = true;
     is_first = true;
@@ -993,9 +1012,12 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
       result.request.path.points.push_back(r1);
       result.request.path.points.push_back(r2);
     }
-    cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
+    if(result.request.path.points.size() != 0){
+      cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
+    }
   }
 
+  std::cout <<"PATH GENERATED\n";
   return result;
 }
 
