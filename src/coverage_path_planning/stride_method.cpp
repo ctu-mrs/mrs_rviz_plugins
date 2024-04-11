@@ -18,7 +18,6 @@ void StrideMethod::initialize (rviz::Property* property_container, Ogre::SceneMa
   turn_num_property_ = new rviz::IntProperty("Turns", 0, "Number of turns in current path", property_container);
   drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
 
-  cell_num_property_->setReadOnly(true);
   turn_num_property_->setReadOnly(true);
 
   std::vector<std::string> drone_names = PlannerTool::getUavNames();

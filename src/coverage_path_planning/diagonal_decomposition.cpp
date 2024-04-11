@@ -1,4 +1,32 @@
-#include <coverage_path_planning/diagonal_decomposition.h>
+// Note for whoever decided to change this code (we feel sorry for you):
+//
+// Point2d, Line, Ring and Polygon are types registered in boost::geometry
+//    (viz https://www.boost.org/doc/libs/1_84_0/libs/geometry/doc/html/index.html)
+// point_t, line_t and cell_t are types defined in coverage_path_planning/diagonal_decomposition.h
+//    for more convenient computations of the algorithm
+// Ogre::Vector3 is only used for denoting infinite lines in 2d plane 
+//    (vector.x * X + vector.y * Y + vector.z = 0)
+//
+// If points are written in std::vector<point_t>, the last and the first vertices
+//     are not equal. They are equal if points are in Polygon or Ring
+// 
+// The following code is an implementation of "A practical algorithm for decomposing polygonal
+//    domains into convex polygons by diagonals" by Jose Fernandez et al. with further
+//    coverage path planning described in "Coverage path planning with unmanned aerial vehicles for 3D terrain
+//    reconstruction" by Marina Torres et al.
+// Polygon decomposition algorithm is MP3 and can be upgraded to MP4 or MP5 both with merging process.
+// Coverage path planning generates all possible permutations of partitions and finds the best one.
+//    Since permutations ABCD and DCBA basically represent the same path, this part can be optimized from
+//    O((n!/2) * 4^n) to O(((n!/2) * 4^n) / 2) where n is number of partitions (cells).
+// The algorithm does not need any start point as it finds the optimal one automatically.
+//
+// Known issues:
+// The function genereatePath() does not consider obstacles and moves exactly along partition's border
+//    without any indent. This may cause the World Manager to stop an UAV during a mission.
+// getIntersection() may return invalid result due to inaccuracy of float type.
+
+#include "coverage_path_planning/diagonal_decomposition.h"
+#include "coverage_path_planning/planner_tool.h"
 
 #include <boost/geometry.hpp>
 
@@ -10,87 +38,73 @@
 #include <cmath>
 #include <set>
 
+// Uncomment this for useful outputs during computation
+// #define DEBUG
+
 namespace bg = boost::geometry;
 
 using Polygon = mrs_lib::Polygon;
 using Point2d = mrs_lib::Point2d;
 using std::vector;
 
-// Note: if points are written in std::vector<point_t>, the last and the first vertices are not equal
-// They are equal if points are in Polygon or Ring
-
 namespace mrs_rviz_plugins {
+
+  //|------------------------------------------------------------------|
+  //|-------------------- Public overriden methods --------------------|
+  //|------------------------------------------------------------------|
 
 void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node){
   ExactDecomposition::initialize(property_container, scene_manager, root_node);
+
+  drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
+  cell_num_property_ = new rviz::IntProperty("Cell number", 0, "Number of cells in current decomposition", property_container);
+  turn_num_property_ = new rviz::IntProperty("Turn number", 0, "Number of turns in current path", property_container);
+
+  cell_num_property_->setReadOnly(true);
+  turn_num_property_->setReadOnly(true);
+
+  std::vector<std::string> drone_names = PlannerTool::getUavNames();
+  for(auto& name : drone_names){
+    drone_name_property_->addOption(name.c_str());
+  }
+
+  if(drone_names.size() > 0){
+    drone_name_property_->setString(drone_names[0].c_str());
+  }else{
+    ROS_WARN("[DiagonalDecomposition]: could not find any uav for coverage mission");
+  }
 }
 
 void DiagonalDecomposition::start() {
-  std::cout << "start\n";
+  if(!is_computed_){
+    ROS_WARN("[DiagonalDecomposition]: Could not start the mission. The path has not been computed yet.");
+    return;
+  }
+  client_ = nh_.serviceClient<mrs_msgs::PathSrv>("/" + drone_name_property_->getStdString() + "/trajectory_generation/path");
+
+  // Make the call
+  if(!client_.call(path_)){
+    ROS_INFO("[DiagonalDecomposition]: Call failed. Service name: %s", client_.getService().c_str());
+    return;
+  }
+  if (!path_.response.success) {
+    ROS_INFO("[DiagonalDecomposition]: Call failed: %s", path_.response.message.c_str());
+    return;
+  } 
+  ROS_INFO("[DiagonalDecomposition]: Call processed successfully");
 }
 
 void DiagonalDecomposition::compute() {
-
-  Polygon poly = mrs_lib::Polygon();
-  {mrs_lib::Point2d p{50, -50};    bg::append(poly, p);}
-  {mrs_lib::Point2d p{-50, -50};   bg::append(poly, p);}
-  {mrs_lib::Point2d p{-50, 0};  bg::append(poly, p);}
-  {mrs_lib::Point2d p{3.434330, -0.235263};   bg::append(poly, p);}
-  {mrs_lib::Point2d p{50, -50};    bg::append(poly, p);}
-
-  // {
-  // current_polygon_ = poly;
-  // vector<point_t> cur_p;
-  // for(int i=0; i<poly.outer().size() - 1; i++){
-  //   point_t tmp;
-  //   tmp.point = poly.outer()[i];
-  //   tmp.ring_index = -1;
-  //   tmp.id = i;
-  //   cur_p.push_back(tmp);
-  // }
-
-
-  // Ogre::Vector3 sweep_dir = getSweepDirection(cur_p);
-
-  // int num = 0;
-  // std::cout << sweep_dir.x << " " << sweep_dir.y << " " << sweep_dir.z << std::endl;
-  // sweep_dir.z = sweep_dir.z - 0.5;
-  // std::pair<Point2d, Point2d> waypoint_pair;
-  // if(getWaypointPair(cur_p, sweep_dir, 1, waypoint_pair)){
-  //   std::cout << "waypoint received\n";
-
-  // }
-
-  // // vector<vector<point_t>> final;
-  // // final.push_back(cur_p);
-
-  // // vector<cell_t> res = fillCells(final);
-  // // fixCells(res);
-  
-  // // for(cell_t& cell : res){
-  // //   std::cout << cell.polygon_id << std::endl;
-  // //   for(auto& p : cell.waypoints){
-  // //     std::cout << "\t" << bg::wkt(p.first) << " " << bg::wkt(p.second) << std::endl;
-  // //   }
-  // // }
-
-  // // Point2d s;
-  // // Point2d f;
-  // // Point2d prev{0, 0};
-  // // getStartAndFinish(prev, res[0], s, f);
-  // // std::cout << "\tstart:  " << bg::wkt(s) << std::endl;
-  // // std::cout << "\tfinish: " << bg::wkt(f) << std::endl;
-
-  // return;
-  // }
-
   std::string msg;
   if(!bg::is_valid(current_polygon_, msg)){
     ROS_WARN("[DiagonalDecomposition]: Current polygon is invalid. Cannot perform the decomposition. Msg: %s", msg.c_str());
     return;
   }
-
+  #ifdef DEBUG
   std::cout << "polygon is valid\n";
+  #endif // DEBUG
+
+  // Convert current_polygon_ border from Polygon to vector<point_t>
   vector<point_t> cur_p;
   for(int i=0; i<current_polygon_.outer().size() - 1; i++){
     point_t tmp;
@@ -100,6 +114,7 @@ void DiagonalDecomposition::compute() {
     cur_p.push_back(tmp);
   }
 
+  // Convert holes of current_polygon_ border from Polygon to vector<point_t>
   vector<Ring> holes = bg::interior_rings(current_polygon_);
   vector<vector<point_t>> cur_holes;
   for(int i=0; i<holes.size(); i++){
@@ -114,209 +129,20 @@ void DiagonalDecomposition::compute() {
     cur_holes.push_back(tmp_hole);
   }
 
-  int start = 0;
-  vector<vector<point_t>> decomposition; // array of polygons
-  vector<line_t> diagonals;
-  bool terminated = false;
-  while(!terminated){
-    std::cout << std::endl;
-    std::cout << "cur_p: " << printPolygon(cur_p) << std::endl;
-    
-    vector<point_t> partition;
-    line_t diagonal;
-    terminated = getPartition(cur_p, start, partition, diagonal);
-    std::cout << "\tpartition found: " << printPolygon(partition) << std::endl;
-    std::cout << "\tdiagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
+  // Decompose
+  vector<vector<point_t>> decomposition = decompose(cur_p, cur_holes);
+  cell_num_property_->setInt(decomposition.size());
 
-    // If L has then more than two vertices, and at least one of the
-    // vertices of the diagonal joining the last and first vertices in L is a notch, it generates
-    // one of the polygons of the partition.
-    bool is_notch = false;
-    
-    // Notch can only be at diagonal
-    // Going clockwise to find vertex of diagonal
-    point_t prev_vertex;
-    point_t cur_vertex = cur_p[start];
-    point_t next_vertex;
-    for(int i=start+1; i!=start; i = (i+1) % cur_p.size()){
-      prev_vertex = cur_vertex;
-      cur_vertex = cur_p[i];
-      next_vertex = cur_p[(i+1) % cur_p.size()];
-
-
-      if(!equals(cur_vertex, diagonal.second)){
-        continue;
-      }
-      std::cout << "\tclockwise:\n";
-      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << std::endl;
-      std::cout <<  "\t" <<ang(prev_vertex, cur_vertex, next_vertex) << std::endl;
-      if(ang(prev_vertex, cur_vertex, next_vertex) <= M_PI){
-        break;
-      }
-      is_notch = true;
-    }
-
-    // Going counter-clockwise to find vertex of diagonal
-    cur_vertex = cur_p[start];
-    for(int i=start-1; i!=start; --i){
-      if(i<0){
-        i = cur_p.size() + i;
-      }
-      prev_vertex = cur_vertex;
-      cur_vertex = cur_p[i];
-      int next_i = (i-1) < 0 ? (cur_p.size() + i - 1): (i-1);
-      next_vertex = cur_p[next_i];
-
-      if(!equals(cur_vertex, diagonal.first)){
-        continue;
-      }
-
-      std::cout << "\tcounterclockwise:\n";
-      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << " " << next_i << std::endl;
-      std::cout <<"\t" <<  ang(next_vertex, cur_vertex, prev_vertex) << std::endl;
-      if(ang(next_vertex, cur_vertex, prev_vertex) <= M_PI){
-        break;
-      }
-      is_notch = true;
-    }
-
-    std::cout << "\t" << (is_notch ? "Notch found" : "No notch") << std::endl;
-    std::cout << "\t" << (terminated ? "terminated" : "Not terminated") << std::endl;
-    if((partition.size() <= 2 || !is_notch) && !terminated){
-      start = (start + 1) % cur_p.size();
-      continue;
-    }
-
-
-    // -----------------------------------------------------------------
-    // |--------------------- AbsHol modification ---------------------|
-    std::cout << "\tabsorption modification\n";
-    bool is_cond_true = false;
-    bool is_d_cut_by_hole = false;
-    for(auto& hole : cur_holes){
-      if(intersects(hole, partition)){
-        is_cond_true = true;
-      }
-      if(intersects(hole, diagonal)){
-        is_d_cut_by_hole = true;
-      }
-    }
-
-    if(is_cond_true){
-      std::cout << "\tcond_true\n";
-    }
-    if(is_d_cut_by_hole){
-        std::cout << "\td_cut_by_hole\n";
-    }
-
-    // if d is cut by a hole or there is a hole inside C
-    if(is_cond_true){
-      // if d is not cut by a hole
-      if(!is_d_cut_by_hole){
-        // d <- [v_i, v] hole where v hole is a vertex of one of the holes inside C.
-        std::cout << "\td is not cut by hole\n";
-        diagonal.second = getClosestPoint(cur_holes, diagonal.first);
-      }else{
-        std::cout << "\td is cut by hole\n";
-      }
-      std::cout << "drawing true diag\n";
-      diagonal = drawTrueDiagonal(cur_holes, diagonal);
-      // diagonal = tmp.second;
-
-      std::cout << "\ttrue diagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
-      std::cout << "\tcurrent holes:\n";
-      for(auto& hole : cur_holes){
-        std::cout << "\t" << printPolygon(hole) << std::endl;
-      }
-
-      // Absorption of H
-      vector<point_t> new_border;
-      int inserted = 0;
-      for(int i=0; i<cur_p.size(); i++){
-        point_t& point = cur_p[i];
-        point.id = inserted;
-        new_border.push_back(point);
-        inserted++;
-
-        if(!equals(point, diagonal.first)){
-          continue;
-        }
-        
-        // absorb the hole
-        int hole_index = diagonal.second.ring_index;
-        for(int j=0; j<cur_holes[hole_index].size(); j++){
-          int cur_index = (j + diagonal.second.id) % cur_holes[hole_index].size();
-          point_t cur_point = cur_holes[hole_index][cur_index];
-          cur_point.ring_index = -1;
-          cur_point.id = inserted;
-          new_border.push_back(cur_point);
-          inserted++;
-        }
-        // add first vertex of the hole again
-        point_t cur_point = cur_holes[hole_index][diagonal.second.id];
-        cur_point.ring_index = -1;
-        cur_point.id = inserted;
-        new_border.push_back(cur_point);
-        inserted++;
-        // add diagonal.first again
-        cur_point = diagonal.first;
-        cur_point.ring_index = -1;
-        cur_point.id = inserted;
-        new_border.push_back(cur_point);
-        inserted++;
-      }
-      cur_p = new_border;
-
-      // Delete the absorbed hole
-      for(int i=0; i<cur_holes.size();){
-        if(cur_holes[i].front().ring_index == diagonal.second.ring_index){
-          cur_holes.erase(cur_holes.begin() + i);
-        }else{
-          i++;
-        }
-      }
-      for(int i=0; i<cur_holes.size(); i++){
-        for(int j=0; j<cur_holes[i].size(); j++){
-          cur_holes[i][j].ring_index = i;
-        }
-      }
-      std::cout << "\tcurrent holes after absorption:\n";
-      for(auto& hole : cur_holes){
-        std::cout << "\t" << printPolygon(hole) << std::endl;
-      }
-      terminated = false;
-      start = 0;
-      continue;
-    }
-    // |------------------- AbsHol modification end -------------------|
-    // -----------------------------------------------------------------
-
-    decomposition.push_back(partition);
-    diagonals.push_back(diagonal);
-
-    // Delete the vertices from cur_p
-    for(int i=1; i<partition.size()-1; i++){
-      for(int j=0; j<cur_p.size(); j++){
-        if(equals(partition[i], cur_p[j])){
-          cur_p.erase(cur_p.begin() + j);
-          continue;
-        }
-      }
-    }
-    for(int i=0; i<cur_p.size(); i++){
-      cur_p[i].id = i;
-    }
-    start = 0;
-  }
-
-
+  #ifdef DEBUG
   std::cout << "\nDECOMPOSED!\n";
-  int alsdkfj = 1;
+  int p_index = 1;
   for(auto& p : decomposition){
-    std::cout << alsdkfj << " " << printPolygon(p) << std::endl;
-    alsdkfj++;
+    std::cout << p_index << " " << printPolygon(p) << std::endl;
+    p_index++;
   }
+  #endif // DEBUG
 
+  // Convert partitions from vector<point_t> to Ring
   vector<Ring> rings(decomposition.size());
   for(int i=0; i<decomposition.size(); i++){
     for(auto& p : decomposition[i]){
@@ -324,9 +150,11 @@ void DiagonalDecomposition::compute() {
     }
     rings[i].push_back(decomposition[i].front().point);
   }
+
+  // Visualise decomposition
   drawDecomposition(rings);
 
-  // Find the best cell permutation
+  // Find the best cell permutation using DFS
   vector<cell_t> cells = fillCells(decomposition);
   vector<int> shortest_path;
   Point2d best_start;
@@ -384,21 +212,264 @@ void DiagonalDecomposition::compute() {
     }
   }
 
+  #ifdef DEBUG
   std::cout << "Generating the path\n";
-  mrs_msgs::PathSrv path = genereatePath(cells, shortest_path, best_start);
+  #endif // DEBUG
+  path_ = genereatePath(cells, shortest_path, best_start);
+  turn_num_property_->setInt(path_.request.path.points.size() - 1);
+  is_computed_ = true;
+  
+  #ifdef DEBUG
   std::cout << "Drawing the path\n";
-  drawPath(path);
+  #endif // DEBUG
+  drawPath(path_);
 }
 
   //|------------------------------------------------------------------|
   //|------------------- Procedures of MP3 algorithm-------------------|
   //|------------------------------------------------------------------|
 
+vector<vector<DiagonalDecomposition::point_t>> DiagonalDecomposition::decompose(vector<point_t> border, vector<vector<point_t>> holes){
+  vector<point_t>& cur_p = border;
+  vector<vector<point_t>>& cur_holes = holes;
+
+  int start = 0;
+  vector<vector<point_t>> decomposition; // array of polygons
+  vector<line_t> diagonals;
+  bool terminated = false;
+  while(!terminated){
+    #ifdef DEBUG
+    std::cout << std::endl;
+    std::cout << "cur_p: " << printPolygon(cur_p) << std::endl;
+    #endif // DEBUG
+    
+    vector<point_t> partition;
+    line_t diagonal;
+    terminated = getPartition(cur_p, start, partition, diagonal);
+
+    #ifdef DEBUG
+    std::cout << "\tpartition found: " << printPolygon(partition) << std::endl;
+    std::cout << "\tdiagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
+    #endif // DEBUG
+
+    // -----------------------------------------------------------------
+    // |------------ Checking if diagonal connects a notch ------------|
+    bool is_notch = false;
+    
+    // Notch can only be at diagonal
+    // Going clockwise to find vertex of diagonal
+    point_t prev_vertex;
+    point_t cur_vertex = cur_p[start];
+    point_t next_vertex;
+    for(int i=start+1; i!=start; i = (i+1) % cur_p.size()){
+      prev_vertex = cur_vertex;
+      cur_vertex = cur_p[i];
+      next_vertex = cur_p[(i+1) % cur_p.size()];
+
+      if(!equals(cur_vertex, diagonal.second)){
+        continue;
+      }
+
+      #ifdef DEBUG
+      std::cout << "\tclockwise:\n";
+      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << std::endl;
+      std::cout <<  "\t" <<ang(prev_vertex, cur_vertex, next_vertex) << std::endl;
+      #endif // DEBUG
+
+      if(ang(prev_vertex, cur_vertex, next_vertex) <= M_PI){
+        break;
+      }
+      is_notch = true;
+    }
+
+    // Going counter-clockwise to find vertex of diagonal
+    cur_vertex = cur_p[start];
+    for(int i=start-1; i!=start; --i){
+      if(i<0){
+        i = cur_p.size() + i;
+      }
+      prev_vertex = cur_vertex;
+      cur_vertex = cur_p[i];
+      int next_i = (i-1) < 0 ? (cur_p.size() + i - 1): (i-1);
+      next_vertex = cur_p[next_i];
+
+      if(!equals(cur_vertex, diagonal.first)){
+        continue;
+      }
+
+      #ifdef DEBUG
+      std::cout << "\tcounterclockwise:\n";
+      std::cout << "\t" << printPoint(prev_vertex) << printPoint(cur_vertex) << printPoint(next_vertex) << " " << next_i << std::endl;
+      std::cout << "\t" <<  ang(next_vertex, cur_vertex, prev_vertex) << std::endl;
+      #endif // DEBUG
+
+      if(ang(next_vertex, cur_vertex, prev_vertex) <= M_PI){
+        break;
+      }
+      is_notch = true;
+    }
+    // |---------- Checking if diagonal connects a notch end ----------|
+    // -----------------------------------------------------------------
+
+    // If L has then more than two vertices, and at least one of the
+    // vertices of the diagonal joining the last and first vertices in L is a notch, it generates
+    // one of the polygons of the partition. Else go to next vertex
+    #ifdef DEBUG
+    std::cout << "\t" << (is_notch ? "Notch found" : "No notch") << std::endl;
+    std::cout << "\t" << (terminated ? "terminated" : "Not terminated") << std::endl;
+    #endif // DEBUG
+    if((partition.size() <= 2 || !is_notch) && !terminated){
+      start = (start + 1) % cur_p.size();
+      continue;
+    }
+
+    // -----------------------------------------------------------------
+    // |--------------------- AbsHol modification ---------------------|
+    #ifdef DEBUG
+    std::cout << "\tabsorption modification start\n";
+    #endif // DEBUG
+    bool is_cond_true = false;
+    bool is_d_cut_by_hole = false;
+    for(auto& hole : cur_holes){
+      if(intersects(hole, partition)){
+        is_cond_true = true;
+      }
+      if(intersects(hole, diagonal)){
+        is_d_cut_by_hole = true;
+      }
+    }
+
+    #ifdef DEBUG
+    if(is_cond_true){
+      std::cout << "\tcond_true\n";
+    }
+    if(is_d_cut_by_hole){
+        std::cout << "\td_cut_by_hole\n";
+    }
+    #endif // DEBUG
+
+    // if d is cut by a hole or there is a hole inside C
+    if(is_cond_true){
+      // if d is not cut by a hole
+      if(!is_d_cut_by_hole){
+        // d <- [v_i, v] hole where v hole is a vertex of one of the holes inside C.
+
+        #ifdef DEBUG
+        std::cout << "\td is not cut by hole\n";
+        #endif // DEBUG
+        diagonal.second = getClosestPoint(cur_holes, diagonal.first);
+      }
+      #ifdef DEBUG
+      else{
+        std::cout << "\td is cut by hole\n";
+      }
+      std::cout << "drawing true diag\n";
+      #endif // DEBUG
+      diagonal = drawTrueDiagonal(cur_holes, diagonal);
+
+      #ifdef DEBUG
+      std::cout << "\ttrue diagonal: " << printPoint(diagonal.first) << " " << printPoint(diagonal.second) << std::endl; 
+      std::cout << "\tcurrent holes:\n";
+      for(auto& hole : cur_holes){
+        std::cout << "\t" << printPolygon(hole) << std::endl;
+      }
+      #endif // DEBUG
+
+      // Absorption of H
+      vector<point_t> new_border;
+      int inserted = 0;
+      for(int i=0; i<cur_p.size(); i++){
+        point_t& point = cur_p[i];
+        point.id = inserted;
+        new_border.push_back(point);
+        inserted++;
+
+        // Check if it's time to insert hole's vertices
+        if(!equals(point, diagonal.first)){
+          continue;
+        }
+        
+        // absorb the hole
+        int hole_index = diagonal.second.ring_index;
+        for(int j=0; j<cur_holes[hole_index].size(); j++){
+          int cur_index = (j + diagonal.second.id) % cur_holes[hole_index].size();
+          point_t cur_point = cur_holes[hole_index][cur_index];
+          cur_point.ring_index = -1;
+          cur_point.id = inserted;
+          new_border.push_back(cur_point);
+          inserted++;
+        }
+        // add first vertex of the hole again
+        point_t cur_point = cur_holes[hole_index][diagonal.second.id];
+        cur_point.ring_index = -1;
+        cur_point.id = inserted;
+        new_border.push_back(cur_point);
+        inserted++;
+        // add diagonal.first again
+        cur_point = diagonal.first;
+        cur_point.ring_index = -1;
+        cur_point.id = inserted;
+        new_border.push_back(cur_point);
+        inserted++;
+      }
+      cur_p = new_border;
+
+      // Delete the absorbed hole
+      for(int i=0; i<cur_holes.size();){
+        if(cur_holes[i].front().ring_index == diagonal.second.ring_index){
+          cur_holes.erase(cur_holes.begin() + i);
+        }else{
+          i++;
+        }
+      }
+      for(int i=0; i<cur_holes.size(); i++){
+        for(int j=0; j<cur_holes[i].size(); j++){
+          cur_holes[i][j].ring_index = i;
+        }
+      }
+
+      #ifdef DEBUG
+      std::cout << "\tcurrent holes after absorption:\n";
+      for(auto& hole : cur_holes){
+        std::cout << "\t" << printPolygon(hole) << std::endl;
+      }
+      #endif // DEBUG
+      terminated = false;
+      start = 0;
+      continue;
+    }
+    // |------------------- AbsHol modification end -------------------|
+    // -----------------------------------------------------------------
+
+    decomposition.push_back(partition);
+    diagonals.push_back(diagonal);
+
+    // Delete the vertices from cur_p
+    for(int i=1; i<partition.size()-1; i++){
+      for(int j=0; j<cur_p.size(); j++){
+        if(equals(partition[i], cur_p[j])){
+          cur_p.erase(cur_p.begin() + j);
+          continue;
+        }
+      }
+    }
+    for(int i=0; i<cur_p.size(); i++){
+      cur_p[i].id = i;
+    }
+    start = 0;
+  }
+
+  return decomposition;
+}
+
 bool DiagonalDecomposition::getPartition(vector<point_t>& border, int index_start, vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line){
   // Initially, the list consists of one vertex.
   res_poly.push_back(border[index_start]);
 
+  // Try to find as big convex partition as possible hoing clockwise
   bool terminated = getPartitionClockwise(border, index_start, res_poly);
+
+  // Algorithm terminates iff. the hole polygon has been generated
   if(!terminated){
     getPartitionCounterClockwise(border, index_start, res_poly);
   }
@@ -409,7 +480,9 @@ bool DiagonalDecomposition::getPartition(vector<point_t>& border, int index_star
 }
 
 bool DiagonalDecomposition::getPartitionClockwise(const vector<point_t>& border, int index_start, vector<point_t>& res) {
+  #ifdef DEBUG
   std::cout<<"\tstarted clockwise"  << std::endl;
+  #endif // DEBUG
 
   // Note: the points in Polygon are stored in clockwise order
   std::vector<size_t> indices(border.size());
@@ -421,7 +494,9 @@ bool DiagonalDecomposition::getPartitionClockwise(const vector<point_t>& border,
 
   // We add the next consecutive vertex (in clockwise order only) of P
   res.push_back(border[indices[1]]);
+  #ifdef DEBUG
   std::cout << "\t\tadded " << bg::wkt(border[indices[1]].point) << std::endl;
+  #endif // DEBUG
 
   bool is_outer_convex = true;
 
@@ -440,10 +515,12 @@ bool DiagonalDecomposition::getPartitionClockwise(const vector<point_t>& border,
       break;
     }
     res.push_back(border[indices[i+1]]);
+    #ifdef DEBUG
     std::cout << "\t\tadded " << bg::wkt(border[indices[i+1]].point) << std::endl;
+    #endif // DEBUG
   }
 
-  // If the convex polygon generated is the whole polygon P, the algorithm stops
+  // If the convex polygon generated is the whole polygon P, the algorithm stops (terminates)
   if(is_outer_convex){
     return true;
   }
@@ -465,18 +542,22 @@ bool DiagonalDecomposition::getPartitionClockwise(const vector<point_t>& border,
     // we remove from L its last vertex v_k and all the vertices of L in 
     // the half-plane generated by [v_1, v] containing v_k .
     if(bg::within(border[indices[i]].point, tmp_complete)){
+      #ifdef DEBUG
       std::cout << "\t\tpoint within: " << bg::wkt(border[indices[i]].point) << std::endl;
+      #endif // DEBUG
       Point2d v_1 = border[index_start].point;
       Point2d v_k = res.back().point;
       Point2d v = border[indices[i]].point;
 
       float dist_v_k = signedDistComparable(Line{v_1, v}, v_k); 
 
-      // Starting from 1 in order not to delete the first vertex because of inaccuracy
+      // Starting from index 1 in order not to delete the first vertex because of inaccuracy
       for(int j=1; j<res.size();){
         float cur_dist =  signedDistComparable(Line{v_1, v}, res[j].point);
         if((cur_dist > 0 && dist_v_k > 0) || (cur_dist < 0 && dist_v_k < 0)){
+          #ifdef DEBUG
           std::cout << "\t\tremoving " << bg::wkt(res[j].point) << std::endl;
+          #endif // DEBUG
           res.erase(res.begin() + j);
         }else{
           ++j;
@@ -489,7 +570,9 @@ bool DiagonalDecomposition::getPartitionClockwise(const vector<point_t>& border,
 }
 
 bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& border, int index_start, vector<point_t>& res){
+  #ifdef DEBUG
   std::cout<<"\tstarted counter clockwise"  << std::endl;
+  #endif // DEBUG
 
   // Note: the points in Polygon are stored in clockwise order
   std::vector<size_t> indices(border.size());
@@ -509,10 +592,12 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
     ang(D, G, A) < M_PI &&
     ang(C, D, G) < M_PI)
   {
+    #ifdef DEBUG
     std::cout << "\t\tadded " << bg::wkt(border[indices[1]].point) << std::endl;
+    #endif // DEBUG
     res.insert(res.begin(), border[indices[1]]);
   }else{
-    // If it does not fit, no reason to continue
+    // If it does not fit, there is no reason to continue
     return false;
   }
 
@@ -530,13 +615,15 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
       // is_outer_convex = false;
       break;
     }
+    #ifdef DEBUG
     std::cout << "\t\tadded " << bg::wkt(border[indices[i+1]].point) << std::endl;
+    #endif // DEBUG
     res.insert(res.begin(), border[indices[i+1]]);
   }
 
 
-  // The counter-clockwise version is always called after 
-  // clockwise, so full polygon can not be generated
+  // The counter-clockwise version is always called after
+  // the clockwise one, so full polygon can not be generated
 
 
   // If k > 2, then we have to check whether the convex polygon
@@ -557,7 +644,9 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
     // we remove from L its last vertex v_k and all the vertices of L in 
     // the half-plane generated by [v_1, v] containing v_k .
     if(bg::within(border[indices[i]].point, tmp_complete)){
+      #ifdef DEBUG
       std::cout << "\t\tpoint within: " << bg::wkt(border[indices[i]].point) << std::endl;
+      #endif // DEBUG
       Point2d v_1 = res.back().point;
       Point2d v_k = res.front().point;
       Point2d v = border[indices[i]].point;
@@ -567,7 +656,9 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
       for(int j=0; j<res.size();){
         float cur_dist =  signedDistComparable(Line{v_1, v}, res[j].point);
         if((cur_dist > 0 && dist_v_k > 0) || (cur_dist < 0 && dist_v_k < 0)){
+          #ifdef DEBUG
           std::cout << "\t\tremoving " << bg::wkt(res[j].point) << std::endl;
+          #endif // DEBUG
           res.erase(res.begin() + j);
         }else{
           ++j;
@@ -581,6 +672,9 @@ bool DiagonalDecomposition::getPartitionCounterClockwise(const vector<point_t>& 
 
 // Algorithm 2: Procedure DrawTrueDiagonal
 DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vector<point_t>>& _holes, line_t diagonal){
+  #ifdef DEBUG
+  std::cout << "\tstarted drawing true diagonal\n";
+  #endif // DEBUG
   vector<Ring> holes;
   for(int i=0; i<_holes.size(); i++){
     Ring tmp;
@@ -590,15 +684,19 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
     tmp.push_back(_holes[i].front().point);
     holes.push_back(tmp);
   }
-  std::cout << "holes.size(): " << holes.size() << std::endl;
+
+  #ifdef DEBUG
+  std::cout << "\t\tholes.size(): " << holes.size() << std::endl;
+  #endif // DEBUG
 
   // 1. Read the diagonal and the vertices of partition
   line_t res_line = diagonal;
 
-  std::cout << "entering loop\n";
   while(true){
-    std::cout << "processing 2\n";
     // 2. While the diagonal is intersected by the holes, do
+    #ifdef DEBUG
+    std::cout << "\t\tprocessing 2\n";
+    #endif // DEBUG
     bool intersects = false;
     int intersected_hole_i = -1;
     for(int i=0; i<holes.size(); i++){
@@ -618,7 +716,9 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
 
     // 3. Find all the edges of holes which intersect d, and calculate the
     // corresponding intersection points.
-    std::cout << "processing 3\n";
+    #ifdef DEBUG
+    std::cout << "\t\tprocessing 3\n";
+    #endif // DEBUG
     vector<Point2d> intersections;
     vector<line_t> intersected_lines;
     for(int j=0; j<holes.size(); j++){
@@ -643,7 +743,9 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
 
     // 4. Find the intersection point closest to diagonal[0], and endpoint
     // of intersected edge closest to diagonal[0]
-    std::cout << "processing 4\n";
+    #ifdef DEBUG
+    std::cout << "\t\tprocessing 4\n";
+    #endif // DEBUG
     point_t endpoint;
     size_t hole_index = 0;
     float min = std::numeric_limits<float>::max();
@@ -664,11 +766,12 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
     }
 
     // 5. Update diagonal
-    std::cout << "processing 5\n";
+    #ifdef DEBUG
+    std::cout << "\t\tprocessing 5\n";
+    #endif // DEBUG
     res_line.second = endpoint;
   }
 
-  std::cout << "returning\n";
   return res_line;
 }
 
@@ -679,9 +782,7 @@ DiagonalDecomposition::line_t DiagonalDecomposition::drawTrueDiagonal(vector<vec
 vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<vector<point_t>>& polygons){
   float angle_rad = (((float)angle_) / 180) * M_PI;
   float camera_width = (std::tan(angle_rad / 2) * height_);
-  // todo: distance
   float distance = camera_width * (1 - overlap_);
-  // float distance = 0.5;
 
   vector<cell_t> result;
 
@@ -703,10 +804,12 @@ vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<ve
       }
       break;
     }
-    if(num == 0){
-      std::cout << printPolygon(polygons[i]) << std::endl;
 
+    #ifdef DEBUG
+    if(num == 0){
+      std::cout << "polygon without any waypoint: " << printPolygon(polygons[i]) << std::endl;
     }
+    #endif // DEBUG
     result.push_back(new_cell);
   }
 
@@ -799,19 +902,16 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
   double max_x = bg::get<0>(edge[0]) > bg::get<0>(edge[1]) ? bg::get<0>(edge[0]) : bg::get<0>(edge[1]);
   double max_y = bg::get<1>(edge[0]) > bg::get<1>(edge[1]) ? bg::get<1>(edge[0]) : bg::get<1>(edge[1]);
 
-  std::cout << "\n\t\tgetIntersection: " << x0 << " " << y0 << std::endl;
-  std::cout << "\t\tmin_x:" << min_x << " min_y:" << min_y << " max_x:" << max_x << " max_y:" << max_y << std::endl;
-
+  // Computations may fail due to inaccuracy of float and 
+  // double formats, so edge cases are processed separately
   if(bg::get<0>(edge[0]) == bg::get<0>(edge[1]) && y0 <= max_y && y0 >= min_y){
     return Point2d{x0, y0};
   }
-
   if(bg::get<1>(edge[0]) == bg::get<1>(edge[1]) && x0 <= max_x && x0 >= min_x){
     return Point2d{x0, y0};
   }
 
   if(y0 > max_y || y0 < min_y){
-    std::cout << "\t\treturning null\n";
     return std::nullopt;
   }
 
@@ -819,7 +919,6 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
     return Point2d{x0, y0};
   }
 
-  std::cout << "\t\treturning null\n";
   return std::nullopt;
 }
 
@@ -831,9 +930,9 @@ bool DiagonalDecomposition::findPath(
       int path_len, 
       vector<int>& path,
       float& total_path_len){
-  // std::cout << "findPath(). path_len: " << path_len << std::endl<< std::flush;
   visited.insert(cur_cell_index);
   path[path_len] = cur_cell_index;
+
   // Finish condition
   if(visited.size() == cells.size()){
     return true;
@@ -869,7 +968,6 @@ bool DiagonalDecomposition::findPath(
   }
 
   if(!found_adjacent){
-    std::cout << "adjacent was not found\n";
     // Continue search with every unvisited cell
     for(int next=0; next<cells.size(); next++){
       if(visited.find(next) != visited.end()){
@@ -950,11 +1048,15 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
   Point2d cur_point = start;
   bool is_front;
   bool is_first;
+  #ifdef DEBUG
   std::cout << "\nGENERATING PATH\n";
+  #endif // DEBUG
   for(int cell_index : path){
     cell_t& cur_cell = cells[cell_index];
-    std::cout << "waypoints.size(): " << cur_cell.waypoints.size() << std::endl;
     if(cur_cell.waypoints.size() == 0){
+      #ifdef DEBUG
+      std::cout << "\tfound a cell without waypoints. cell id: " << cur_cell.polygon_id << std::endl;
+      #endif // DEBUG
       continue;
     }
     // Find the first waypoint of the cell 
@@ -985,15 +1087,11 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
       geometry_msgs::Point cur_waypoint1;
       geometry_msgs::Point cur_waypoint2;
       if(is_first){
-        std::cout << bg::wkt(pair.first) << std::endl;
-        std::cout << bg::wkt(pair.second) << std::endl;
         cur_waypoint1.x = bg::get<0>(pair.first);
         cur_waypoint1.y = bg::get<1>(pair.first);
         cur_waypoint2.x = bg::get<0>(pair.second);
         cur_waypoint2.y = bg::get<1>(pair.second);
       }else{
-        std::cout << bg::wkt(pair.second) << std::endl;
-        std::cout << bg::wkt(pair.first) << std::endl;
         cur_waypoint1.x = bg::get<0>(pair.second);
         cur_waypoint1.y = bg::get<1>(pair.second);
         cur_waypoint2.x = bg::get<0>(pair.first);
@@ -1017,7 +1115,9 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
     }
   }
 
+  #ifdef DEBUG
   std::cout <<"PATH GENERATED\n";
+  #endif // DEBUG
   return result;
 }
 
@@ -1052,16 +1152,6 @@ double DiagonalDecomposition::signedDistComparable(Line line, Point2d point) {
   double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
 
   return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
-}
-
-bool DiagonalDecomposition::fits(Polygon& main, int start, Polygon& part){
-  for(int j=0; j<part.outer().size()-1; j++){
-    int index = (start + j) % (main.outer().size()-1);
-    if(!bg::equals(main.outer()[index], part.outer()[j])){
-      return false;
-    }
-  }
-  return true;
 }
 
 DiagonalDecomposition::point_t DiagonalDecomposition::getClosestPoint(vector<vector<point_t>>& holes, point_t point){

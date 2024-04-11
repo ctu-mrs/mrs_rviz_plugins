@@ -47,7 +47,6 @@ protected:
   rviz::BoolProperty* decomposition_property_;
   rviz::BoolProperty* boundaries_property_;
   rviz::BoolProperty* path_property_;
-  rviz::IntProperty* turn_num_property_;
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 
