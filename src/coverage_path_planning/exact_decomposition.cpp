@@ -26,6 +26,8 @@ void ExactDecomposition::drawCurrentPolygon(){
   for(auto& obstacle : obstacles){
     drawRing(obstacle, tf.value(), boundaries_node_);
   }
+
+  boundaries_node_->setVisible(boundaries_property_->getBool());
 }
 
 void ExactDecomposition::drawRing(mrs_lib::Polygon::ring_type& ring, geometry_msgs::TransformStamped tf, Ogre::SceneNode* node){
@@ -76,6 +78,7 @@ void ExactDecomposition::drawDecomposition(std::vector<mrs_lib::Polygon::ring_ty
   for(auto& polygon : polygons){
     drawRing(polygon, tf.value(), decomposition_node_);
   }
+  decomposition_node_->setVisible(decomposition_property_->getBool());
 }
 
 void ExactDecomposition::drawPath(mrs_msgs::PathSrv& path){
@@ -114,6 +117,7 @@ void ExactDecomposition::drawPath(mrs_msgs::PathSrv& path){
     line->setScale(Ogre::Vector3(1, 1, 1));
     line->setVisible(true);
   }
+  path_node_->setVisible(path_property_->getBool());
 }
 
 // |----------------------- Public methods -----------------------|
