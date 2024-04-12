@@ -98,7 +98,7 @@ protected:
   bool findPath(std::vector<cell_t>& cells, 
                 mrs_lib::Point2d prev_point,
                 std::set<int> visited, 
-                int cur_index, 
+                int cur_cell_index, 
                 int path_len, 
                 std::vector<int>& path,
                 float& total_path_len);
@@ -113,7 +113,7 @@ protected:
                         mrs_lib::Point2d& start_point, 
                         mrs_lib::Point2d& finish_point);
 
-  mrs_msgs::PathSrv genereatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
+  mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
 
   // Shifts p1 and p2 towards each other by dist
   Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);

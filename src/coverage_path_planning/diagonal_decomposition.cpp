@@ -15,14 +15,10 @@
 //    coverage path planning described in "Coverage path planning with unmanned aerial vehicles for 3D terrain
 //    reconstruction" by Marina Torres et al.
 // Polygon decomposition algorithm is MP3 and can be upgraded to MP4 or MP5 both with merging process.
-// Coverage path planning generates all possible permutations of partitions and finds the best one.
-//    Since permutations ABCD and DCBA basically represent the same path, this part can be optimized from
-//    O((n!/2) * 4^n) to O(((n!/2) * 4^n) / 2) where n is number of partitions (cells).
 // The algorithm does not need any start point as it finds the optimal one automatically.
 //
 // Known issues:
 // generatePath() does not add heading to the references
-// findPath() does not find the shortest path
 // getIntersection() may return invalid result due to inaccuracy of float type.
 
 #include "coverage_path_planning/diagonal_decomposition.h"
@@ -216,7 +212,7 @@ void DiagonalDecomposition::compute() {
   #ifdef DEBUG
   std::cout << "Generating the path\n";
   #endif // DEBUG
-  path_ = genereatePath(cells, shortest_path, best_start);
+  path_ = generatePath(cells, shortest_path, best_start);
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
   is_computed_ = true;
   
@@ -1001,6 +997,7 @@ bool DiagonalDecomposition::findPath(
     }
   }
   path = paths[index];
+  total_path_len = min_total_path_len;
   return true;
 }
 
@@ -1039,7 +1036,7 @@ void DiagonalDecomposition::fixCells(vector<DiagonalDecomposition::cell_t>& cell
 // |-------------------- Tools for convenience --------------------|
 // |---------------------------------------------------------------|
 
-mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cells, std::vector<int> path, Point2d start){
+mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells, std::vector<int> path, Point2d start){
   mrs_msgs::PathSrv result;
   result.request.path.header.frame_id = polygon_frame_;
   result.request.path.stop_at_waypoints = false;
