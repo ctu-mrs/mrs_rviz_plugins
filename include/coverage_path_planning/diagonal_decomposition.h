@@ -112,7 +112,11 @@ protected:
                         cell_t& cur_cell, 
                         mrs_lib::Point2d& start_point, 
                         mrs_lib::Point2d& finish_point);
+
   mrs_msgs::PathSrv genereatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
+
+  // Shifts p1 and p2 towards each other by dist
+  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.

@@ -21,8 +21,8 @@
 // The algorithm does not need any start point as it finds the optimal one automatically.
 //
 // Known issues:
-// The function genereatePath() does not consider obstacles and moves exactly along partition's border
-//    without any indent. This may cause the World Manager to stop an UAV during a mission.
+// generatePath() does not add heading to the references
+// findPath() does not find the shortest path
 // getIntersection() may return invalid result due to inaccuracy of float type.
 
 #include "coverage_path_planning/diagonal_decomposition.h"
@@ -156,6 +156,7 @@ void DiagonalDecomposition::compute() {
 
   // Find the best cell permutation using DFS
   vector<cell_t> cells = fillCells(decomposition);
+  fixCells(cells);
   vector<int> shortest_path;
   Point2d best_start;
   float min_total_len = std::numeric_limits<float>::max();
@@ -1044,6 +1045,10 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
   result.request.path.stop_at_waypoints = false;
   result.request.path.use_heading = true;
   result.request.path.loop = false;
+
+  float angle_rad = (((float)angle_) / 180) * M_PI;
+  float camera_width = (std::tan(angle_rad / 2) * height_);
+  float distance = camera_width * (1 - overlap_);
   
   Point2d cur_point = start;
   bool is_front;
@@ -1084,31 +1089,42 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
       std::reverse(waypoints.begin(), waypoints.end());
     }
     for(auto& pair : waypoints){
-      geometry_msgs::Point cur_waypoint1;
-      geometry_msgs::Point cur_waypoint2;
+
+      Point2d cur_waypoint1;
+      Point2d cur_waypoint2;
       if(is_first){
-        cur_waypoint1.x = bg::get<0>(pair.first);
-        cur_waypoint1.y = bg::get<1>(pair.first);
-        cur_waypoint2.x = bg::get<0>(pair.second);
-        cur_waypoint2.y = bg::get<1>(pair.second);
+        cur_waypoint1 = pair.first;
+        cur_waypoint2 = pair.second;
       }else{
-        cur_waypoint1.x = bg::get<0>(pair.second);
-        cur_waypoint1.y = bg::get<1>(pair.second);
-        cur_waypoint2.x = bg::get<0>(pair.first);
-        cur_waypoint2.y = bg::get<1>(pair.first);
+        cur_waypoint1 = pair.second;
+        cur_waypoint2 = pair.first;
+      }
+      if(bg::distance(cur_waypoint1, cur_waypoint2) > 2 * distance){
+        mrs_msgs::Reference r1;
+        mrs_msgs::Reference r2;
+
+        Line shrinked = shrink(cur_waypoint1, cur_waypoint2, distance);
+
+        // TODO: add heading
+        r1.position.x = bg::get<0>(shrinked[0]);
+        r1.position.y = bg::get<1>(shrinked[0]);
+        r2.position.x = bg::get<0>(shrinked[1]);
+        r2.position.y = bg::get<1>(shrinked[1]);
+        r1.position.z = height_;
+        r2.position.z = height_;
+
+        result.request.path.points.push_back(r1);
+        result.request.path.points.push_back(r2);
+      }else{
+        // TODO: add heading
+        mrs_msgs::Reference r;
+        r.position.x = (bg::get<0>(cur_waypoint1) + bg::get<0>(cur_waypoint2)) / 2;
+        r.position.y = (bg::get<1>(cur_waypoint1) + bg::get<1>(cur_waypoint2)) / 2;
+        r.position.z = height_;
+
+        result.request.path.points.push_back(r);
       }
       is_first = !is_first;
-      cur_waypoint1.z = height_;
-      cur_waypoint2.z = height_;
-
-      // TODO: add heading
-      mrs_msgs::Reference r1;
-      mrs_msgs::Reference r2;
-      r1.position = cur_waypoint1;
-      r2.position = cur_waypoint2;
-
-      result.request.path.points.push_back(r1);
-      result.request.path.points.push_back(r2);
     }
     if(result.request.path.points.size() != 0){
       cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
@@ -1119,6 +1135,26 @@ mrs_msgs::PathSrv DiagonalDecomposition::genereatePath(std::vector<cell_t>& cell
   std::cout <<"PATH GENERATED\n";
   #endif // DEBUG
   return result;
+}
+
+DiagonalDecomposition::Line DiagonalDecomposition::shrink(Point2d p1, Point2d p2, float dist) {
+  float as_vector_x = bg::get<0>(p2) - bg::get<0>(p1);
+  float as_vector_y = bg::get<1>(p2) - bg::get<1>(p1);
+
+  float normalizer = std::pow(as_vector_x * as_vector_x + as_vector_y * as_vector_y, 0.5);
+  float subtrahend_vector_x = (as_vector_x / normalizer) * dist;
+  float subtrahend_vector_y = (as_vector_y / normalizer) * dist;
+
+  float res_p1_x = bg::get<0>(p1) + subtrahend_vector_x;
+  float res_p1_y = bg::get<1>(p1) + subtrahend_vector_y;
+
+  float res_p2_x = bg::get<0>(p2) - subtrahend_vector_x;
+  float res_p2_y = bg::get<1>(p2) - subtrahend_vector_y;
+
+  Line res;
+  res.push_back(Point2d{res_p1_x, res_p1_y});
+  res.push_back(Point2d{res_p2_x, res_p2_y});
+  return res;
 }
 
 double DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
