@@ -19,6 +19,7 @@
 //
 // Known issues:
 // generatePath() does not add heading to the references
+// Final path may exceed safety area.
 // getIntersection() may return invalid result due to inaccuracy of float type.
 
 #include "coverage_path_planning/diagonal_decomposition.h"
