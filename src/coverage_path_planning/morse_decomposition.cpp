@@ -36,20 +36,20 @@ void MorseDecomposition::compute() {
 
   Point2d start{6, 2};
 
-  vector<Point2d> cps = getCriticalPoints(start, poly.outer(), 0);
+  vector<point_t> cps = getCriticalPoints(start, poly.outer(), 0, -1);
   std::cout << "critical points: \n";
-  for(Point2d& cp : cps){
-    std::cout << "\t" << bg::wkt(cp) << std::endl; 
+  for(point_t& cp : cps){
+    // std::cout << "\t" << bg::wkt(cp) << std::endl; 
   }
 
-  for(Point2d& cp : cps){
-    Ogre::Vector3 line = toLine(cp, 0);
+  for(point_t& cp : cps){
+    Ogre::Vector3 line = toLine(cp.point, 0);
     auto res = getEdge(poly, cp, line);
-    if(res){
-      std::cout << "edge of cp " << bg::wkt(cp) << " is " << bg::wkt(res.value()  ) << std::endl;
-    }else{
-      std::cout << "edge of cp " << bg::wkt(cp) << " is " << "not found\n";
-    }
+    // if(res){
+    //   std::cout << "edge of cp " << bg::wkt(cp) << " is " << bg::wkt(res.value()  ) << std::endl;
+    // }else{
+    //   std::cout << "edge of cp " << bg::wkt(cp) << " is " << "not found\n";
+    // }
   }
   return;
 }
@@ -62,7 +62,7 @@ void MorseDecomposition::start() {
   //|------------------------ Virtual methods -------------------------|
   //|------------------------------------------------------------------|
 
-vector<Point2d> MorseDecomposition::getCriticalPoints(Point2d start, Ring obstacle, float twist) {
+vector<MorseDecomposition::point_t> MorseDecomposition::getCriticalPoints(Point2d start, Ring obstacle, float twist, int ring_id) {
   // 1. Compute parameters of infinite line (the slice)
   Ogre::Vector3 line = toLine(start, twist);
   std::cout << "line.x:" << line.x << " y:" << line.y << " z:" << line.z << std::endl;
@@ -77,14 +77,18 @@ vector<Point2d> MorseDecomposition::getCriticalPoints(Point2d start, Ring obstac
 
   // 3. Find values that are greater than previous and next ones.
   //    Points of these values are critical ones.
-  vector<Point2d> result;
+  vector<point_t> result;
   float prev = values.back();
   float cur  = values[0];
   float next = values[1];
   for(int i=0; i<values.size(); i++){
     if((cur > prev && cur > next) || (cur < prev && cur < next)){
-      result.push_back(obstacle[i]);
-      std::cout << "value: " << cur << " point: " << bg::wkt(obstacle[i]) << std::endl;
+      point_t crit_point;
+      crit_point.point = obstacle[i];
+      crit_point.id = i;
+      crit_point.ring_id = ring_id;
+      result.push_back(crit_point);
+      std::cout << "value: " << cur << " point: " << bg::wkt(crit_point.point) << std::endl;
     }
     prev = cur;
     cur = next;
@@ -94,8 +98,15 @@ vector<Point2d> MorseDecomposition::getCriticalPoints(Point2d start, Ring obstac
   return result;
 }
 
-vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon polygon, vector<Point2d> crit_points, mrs_lib::Point2d start, float twist) {
+vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon& polygon, vector<MorseDecomposition::point_t>& crit_points, mrs_lib::Point2d start, float twist) {
   // TODO: implement me!
+  // vector<std::optional> edges;
+  // for(Point2d& cp : crit_points){
+  //   Ogre::Vector3 line = toLine(cp, 0);
+  //   edges.push_back(getEdge(poly, cp, line));
+  // }
+
+
   return {};
 }
 
@@ -165,40 +176,66 @@ std::optional<Point2d> MorseDecomposition::getIntersection(Ogre::Vector3 line, M
 }
 
 
-std::optional<MorseDecomposition::Line> MorseDecomposition::getEdge(Polygon& polygon, Point2d crit_point, Ogre::Vector3 line) {
+double MorseDecomposition::signedDistComparable(Line line, Point2d point) {
+  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
+  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
+  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
+
+  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
+}
+
+double MorseDecomposition::signedDistComparable(Ogre::Vector3 line, Point2d point) {
+  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
+}
+
+
+  //|------------------------------------------------------------------|
+  //|---------------------------- Private -----------------------------|
+  //|------------------------------------------------------------------|
+
+std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& polygon, point_t crit_point, Ogre::Vector3 line) {
   // 1. Find all the intersections of line with edges of polygon
-  vector<Point2d> intersections;
+  vector<point_t> intersections;
   for(int i=0; i<polygon.outer().size() - 1; i++){
     Line edge;
     edge.push_back(polygon.outer()[i]);
     edge.push_back(polygon.outer()[i+1]);
 
     // Skip intersections with critical point itself
-    if(bg::equals(edge[0], crit_point) || bg::equals(edge[1], crit_point)){
+    if(bg::equals(edge[0], crit_point.point) || bg::equals(edge[1], crit_point.point)){
       continue;
     }
 
     auto intersection = getIntersection(line, edge);
     if(intersection){
-      intersections.push_back(intersection.value());
+      point_t tmp;
+      tmp.point = intersection.value();
+      tmp.ring_id = -1;
+      tmp.id = -1;
+      intersections.push_back(tmp);
     }
   }
 
   vector<Ring>& obstacles = bg::interior_rings(polygon);
-  for(Ring& obstacle : obstacles){
+  for(int j=0; j<obstacles.size(); j++){
+    Ring& obstacle = obstacles[j];
     for(int i=0; i<obstacle.size() - 1; i++){
       Line edge;
       edge.push_back(obstacle[i]);
       edge.push_back(obstacle[i+1]);
 
       // Skip intersections with critical point itself
-      if(bg::equals(edge[0], crit_point) || bg::equals(edge[1], crit_point)){
+      if(bg::equals(edge[0], crit_point.point) || bg::equals(edge[1], crit_point.point)){
         continue;
       }
 
       auto intersection = getIntersection(line, edge);
       if(intersection){
-        intersections.push_back(intersection.value());
+        point_t tmp;
+        tmp.point = intersection.value();
+        tmp.ring_id = i;
+        tmp.id = -1;
+        intersections.push_back(tmp);
       }
     }
   }
@@ -208,9 +245,9 @@ std::optional<MorseDecomposition::Line> MorseDecomposition::getEdge(Polygon& pol
   Ogre::Vector3 norm_line;
   norm_line.x = line.y;
   norm_line.y = -line.x;
-  norm_line.z = - ( norm_line.x * bg::get<0>(crit_point)  + norm_line.y * bg::get<1>(crit_point) );
+  norm_line.z = - ( norm_line.x * bg::get<0>(crit_point.point)  + norm_line.y * bg::get<1>(crit_point.point) );
   for(int i=0; i<intersections.size(); i++){
-    distances[i] = signedDistComparable(norm_line, intersections[i]);
+    distances[i] = signedDistComparable(norm_line, intersections[i].point);
   }
 
   // 3. Find closest intersections on both sides of line
@@ -218,8 +255,8 @@ std::optional<MorseDecomposition::Line> MorseDecomposition::getEdge(Polygon& pol
   bool found_positive = false;
   float closest_negative_dist = - std::numeric_limits<float>::max();
   float closest_positive_dist = std::numeric_limits<float>::max();
-  Point2d closest_negative_point;
-  Point2d closest_positive_point;
+  point_t closest_negative_point;
+  point_t closest_positive_point;
   for(int i=0; i<distances.size(); i++){
     if(distances[i] > 0){
       if(distances[i] < closest_positive_dist){
@@ -240,22 +277,11 @@ std::optional<MorseDecomposition::Line> MorseDecomposition::getEdge(Polygon& pol
     return std::nullopt;
   }
 
-  Line result;
-  result.push_back(closest_negative_point);
-  result.push_back(closest_positive_point);
+  edge_t result;
+  result.crit_p = crit_point;
+  result.p1 = closest_negative_point;
+  result.p2 = closest_positive_point;
   return result;
-}
-
-double MorseDecomposition::signedDistComparable(Line line, Point2d point) {
-  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
-  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
-  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
-
-  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
-}
-
-double MorseDecomposition::signedDistComparable(Ogre::Vector3 line, Point2d point) {
-  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
 }
 } // namespace mrs_rviz_plugins
 
