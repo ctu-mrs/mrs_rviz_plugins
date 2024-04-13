@@ -13,3 +13,11 @@
     </description>
   </class>
 </library>
+
+<library path="lib/libMrsRvizPlugins_CoveragePlannerPlugins">
+  <class type="mrs_rviz_plugins::MorseDecomposition" base_class_type="mrs_rviz_plugins::CoverageMethod">
+    <description>
+      Analitical algorithm based on Morse function critical points and exact diagonal decomposition. 
+    </description>
+  </class>
+</library>
