@@ -33,6 +33,8 @@ protected:
     mrs_lib::Point2d point;
     int id;
     int ring_id;
+    bool is_new_edge = false;
+    int prev_point;
   } point_t;
 
   virtual std::vector<point_t> getCriticalPoints(mrs_lib::Point2d start, Ring obstacle, float twist, int ring_id);
@@ -58,6 +60,8 @@ private:
     point_t crit_p;
     point_t p2;
   } edge_t;
+
+  // std::vector<point_t> get
 
   // line is the slice containing the crit_point
   std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
