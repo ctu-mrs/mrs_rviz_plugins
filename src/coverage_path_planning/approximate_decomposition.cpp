@@ -25,6 +25,7 @@ void ApproximateDecomposition::initialize(rviz::Property* property_container, Og
   twist_property_->setMax(180);
   twist_property_->setMin(0);
   cell_num_property_->setReadOnly(true);
+
 }
 
 void ApproximateDecomposition::drawGrid(){
@@ -194,6 +195,14 @@ void ApproximateDecomposition::setFrame(std::string new_frame, bool update){
 
 void ApproximateDecomposition::twistChanged(){
   drawGrid();
+}
+
+ApproximateDecomposition::~ApproximateDecomposition(){
+  delete twist_property_;
+  delete cell_num_property_;
+  if(grid_node_){
+    scene_manager_->destroySceneNode(grid_node_);
+  }
 }
 
 } // namespace mrs_rviz_plugins

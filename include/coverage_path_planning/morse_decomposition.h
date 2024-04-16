@@ -29,6 +29,7 @@ protected:
     mrs_lib::Point2d crit_point1;
     mrs_lib::Point2d crit_point2;
   } cell_t;
+  // todo: add is_crit_p to point_t
   typedef struct{
     mrs_lib::Point2d point;
     int id;

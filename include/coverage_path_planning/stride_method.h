@@ -18,6 +18,8 @@ public:
 
   void initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node);
 
+  ~StrideMethod();
+
 private:
   // Supporting types
   typedef struct {

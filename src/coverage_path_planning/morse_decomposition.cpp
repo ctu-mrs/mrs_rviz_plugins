@@ -6,7 +6,6 @@
 #include <limits>
 #include <cmath>
 
-
 namespace bg = boost::geometry;
 
 using Polygon = mrs_lib::Polygon;
@@ -59,11 +58,6 @@ void MorseDecomposition::compute() {
   bg::correct(poly);
   bg::is_valid(poly, msg);
   std::cout << "after correcting: " << msg << std::endl;
-
-  // We need the holes to be defined in clockwise order
-  for(Ring& hole : bg::interior_rings(poly)){
-    std::reverse(hole.begin(), hole.end());
-  }
 
   bg::is_valid(poly, msg);
   std::cout << "after reversing holes" << msg << std::endl;
@@ -167,9 +161,11 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   for(int i=0; i<holes.size(); i++){
     vector<point_t> new_hole(holes[i].size() - 1);
     for(int j=0; j<new_hole.size(); j++){
-      new_hole[j].id = j;
-      new_hole[j].ring_id = i;
-      new_hole[j].point = holes[i][j];
+      // filling from the end to define the hole in clockwise order
+      int cur_index = new_hole.size() - j;
+      new_hole[cur_index].id = cur_index;
+      new_hole[cur_index].ring_id = i;
+      new_hole[cur_index].point = holes[i][cur_index];
     }
     cur_holes[i] = new_hole;
   }
@@ -273,6 +269,26 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     std::cout << std::endl;
   }
   std::cout << "exiting the function\n";
+
+  // 6. Devide the polygon into partitions
+  vector<cell_t> decomposition;
+  vector<bool> big_used(crit_points.size(), false);
+  vector<bool> first_used(crit_points.size(), false);
+  vector<bool> second_used(crit_points.size(), false);
+  for(int i=0; i<crit_points.size(); i++){
+    if(big_used[i] && first_used[i] && second_used[i]){
+      continue;
+    }
+
+    if(!edges[i]){
+      big_used[i] = true;
+      first_used[i] = true;
+      second_used[i] = true;
+    }
+
+
+  }
+
 
   return {};
 }
@@ -455,7 +471,32 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
   result.crit_p = crit_point;
   result.p1 = closest_negative_point;
   result.p2 = closest_positive_point;
-  return result;
+
+
+  // 5. Checking if the edge lies within the polygon
+  // Note: bg::covered_by() does not wjork properly in this case,
+  //    probably because of inacuracy of float type. 
+  Line half1;
+  half1.push_back(result.crit_p.point);
+  half1.push_back(result.p1.point);
+  Line half2;
+  half2.push_back(result.crit_p.point);
+  half2.push_back(result.p2.point);
+  Point2d center1;
+  bg::centroid(half1, center1);
+  Point2d center2;
+  bg::centroid(half1, center2);
+
+  bool is_covered;
+  is_covered = bg::within(center1, polygon) && bg::within(center2, polygon);
+
+  if(is_covered){
+    printf("edge (%.7f %.7f)  (%.7f %.7f) is covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
+    return result;
+  }else{
+    printf("edge (%.7f %.7f)  (%.7f %.7f) is not covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
+    return std::nullopt;
+  }
 }
 } // namespace mrs_rviz_plugins
 

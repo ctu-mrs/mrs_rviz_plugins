@@ -72,6 +72,12 @@ void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre
   }
 }
 
+DiagonalDecomposition::~DiagonalDecomposition(){
+  delete drone_name_property_;
+  delete cell_num_property_;
+  delete turn_num_property_;
+}
+
 void DiagonalDecomposition::start() {
   if(!is_computed_){
     ROS_WARN("[DiagonalDecomposition]: Could not start the mission. The path has not been computed yet.");

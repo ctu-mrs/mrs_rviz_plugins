@@ -29,6 +29,8 @@ public:
 
   void setFrame(std::string new_frame, bool update=true) override;
 
+  ~ApproximateDecomposition();
+
 protected Q_SLOTS:
   void twistChanged();
 
@@ -61,8 +63,6 @@ protected:
   rviz::IntProperty* cell_num_property_;
 
   Ogre::SceneNode* grid_node_;
-
-  mrs_lib::Transformer transformer_;
 };
 } // namespace mrs_rviz_plugins
 

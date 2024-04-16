@@ -190,4 +190,20 @@ void ExactDecomposition::pathChanged() {
   }
 }
 
+ExactDecomposition::~ExactDecomposition(){
+  if(boundaries_node_){
+    scene_manager_->destroySceneNode(boundaries_node_);
+  }
+  if(decomposition_node_){
+    scene_manager_->destroySceneNode(decomposition_node_);
+  }
+  if(path_node_){
+    scene_manager_->destroySceneNode(path_node_);
+  }
+
+  delete decomposition_property_;
+  delete boundaries_property_;
+  delete path_property_;
+}
+
 } // namespace mrs_rviz_plugins

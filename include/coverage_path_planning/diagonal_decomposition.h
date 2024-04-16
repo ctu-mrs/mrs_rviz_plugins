@@ -22,6 +22,8 @@ public:
 
   void start() override;
 
+  ~DiagonalDecomposition();
+
 protected:
   //|----------------------------  Types ----------------------------|
   // For more derailed description view .cpp file

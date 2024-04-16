@@ -29,6 +29,8 @@ public:
 
   void setFrame(std::string new_frame, bool update=true) override;
 
+  ~ExactDecomposition();
+
 protected Q_SLOTS:
   void boundariesChanged();
   void decompositionChanged();

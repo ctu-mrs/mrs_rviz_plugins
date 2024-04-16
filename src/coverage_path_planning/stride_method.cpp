@@ -416,6 +416,15 @@ bool StrideMethod::isLimit(Ogre::Vector2 cell){
   return false;
 }
 
+
+StrideMethod::~StrideMethod(){
+  delete turn_num_property_;
+  delete drone_name_property_;
+  if(path_node_){
+    scene_manager_->destroySceneNode(path_node_);
+  }
+}
+
 } // namespace mrs_rviz_plugins
 
 #include <pluginlib/class_list_macros.hpp>
