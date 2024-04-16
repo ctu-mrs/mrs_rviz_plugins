@@ -23,6 +23,7 @@
 #include <covariance/visual.h>
 #include <covariance/property.h>
 
+
 #include <Eigen/Dense>
 
 namespace mrs_rviz_plugins
@@ -65,11 +66,16 @@ public:
         if (display_->shape_property_->getOptionInt() == Display::Arrow) {
           aabbs.push_back(cur_pose.arrow_->getHead()->getEntity()->getWorldBoundingBox());
           aabbs.push_back(cur_pose.arrow_->getShaft()->getEntity()->getWorldBoundingBox());
-        } else {
+        } else if (display_->shape_property_->getOptionInt() == Display::Axes) {
           aabbs.push_back(cur_pose.axes_->getXShape()->getEntity()->getWorldBoundingBox());
           aabbs.push_back(cur_pose.axes_->getYShape()->getEntity()->getWorldBoundingBox());
           aabbs.push_back(cur_pose.axes_->getZShape()->getEntity()->getWorldBoundingBox());
         }
+        /* else { */
+        /*   aabbs.push_back(cur_pose.fast_arrow_->getShaft()->getEntity()->getWorldBoundingBox()); */
+        /*   aabbs.push_back(cur_pose.fast_arrow_->getHeadL()->getEntity()->getWorldBoundingBox()); */
+        /*   aabbs.push_back(cur_pose.fast_arrow_->getHeadR()->getEntity()->getWorldBoundingBox()); */
+        /* } */
 
         if (display_->covariance_property_->getBool()) {
           if (display_->covariance_property_->getPositionBool()) {
@@ -102,9 +108,10 @@ private:
 };
 
 Display::Display() : pose_valid_(false) {
-  shape_property_ = std::make_unique<rviz::EnumProperty>("Shape", "Arrow", "Shape to display the pose as.", this, SLOT(updateShapeChoice()));
+  shape_property_ = std::make_unique<rviz::EnumProperty>("Shape", "FastArrow", "Shape to display the pose as.", this, SLOT(updateShapeChoice()));
   shape_property_->addOption("Arrow", Arrow);
   shape_property_->addOption("Axes", Axes);
+  shape_property_->addOption("FastArrow", FastArrow);
 
   color_property_ = std::make_unique<rviz::ColorProperty>("Color", QColor(255, 25, 0), "Color to draw the arrow.", this, SLOT(updateColorAndAlpha()));
 
@@ -141,7 +148,15 @@ void Display::onInitialize() {
     // TODO: is it safe to change Arrow to point in +X direction?
     d.arrow_->setOrientation(Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
 
+    Ogre::ColourValue color = color_property_->getOgreColor();
+    color.a                 = alpha_property_->getFloat();
+    d.arrow_->setColor(color);
+
     d.axes_ = boost::make_shared<rviz::Axes>(scene_manager_, scene_node_, axes_length_property_->getFloat(), axes_radius_property_->getFloat());
+
+    d.fast_arrow_ = boost::make_shared<rviz::FastArrow>(scene_manager_, scene_node_, shaft_length_property_->getFloat(), head_length_property_->getFloat(),
+                                        head_radius_property_->getFloat());
+    d.fast_arrow_->setColor(color);
 
     d.covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_);
 
@@ -167,6 +182,7 @@ void Display::updateColorAndAlpha() {
 
   for (auto& d : disp_data) {
     d.arrow_->setColor(color);
+    d.fast_arrow_->setColor(color);
   }
 
   context_->queueRender();
@@ -175,6 +191,7 @@ void Display::updateColorAndAlpha() {
 void Display::updateArrowGeometry() {
   for (auto& d : disp_data) {
     d.arrow_->set(shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(), head_length_property_->getFloat(), head_radius_property_->getFloat());
+    d.fast_arrow_->set(shaft_length_property_->getFloat(), head_length_property_->getFloat(), head_radius_property_->getFloat());
   }
   context_->queueRender();
 }
@@ -187,12 +204,13 @@ void Display::updateAxisGeometry() {
 }
 
 void Display::updateShapeChoice() {
-  bool use_arrow = (shape_property_->getOptionInt() == Arrow);
+  bool use_mesh_arrow = (shape_property_->getOptionInt() == FastArrow);
+  bool use_arrow = use_mesh_arrow || (shape_property_->getOptionInt() == FastArrow);
 
   color_property_->setHidden(!use_arrow);
   alpha_property_->setHidden(!use_arrow);
   shaft_length_property_->setHidden(!use_arrow);
-  shaft_radius_property_->setHidden(!use_arrow);
+  shaft_radius_property_->setHidden(!use_mesh_arrow);
   head_length_property_->setHidden(!use_arrow);
   head_radius_property_->setHidden(!use_arrow);
 
@@ -207,15 +225,44 @@ void Display::updateShapeChoice() {
 void Display::updateShapeVisibility() {
   if (!pose_valid_) {
     for (auto& d : disp_data) {
-      d.arrow_->getSceneNode()->setVisible(false);
-      d.axes_->getSceneNode()->setVisible(false);
-      d.covariance_->setVisible(false);
+      if (d.arrow_)
+        d.arrow_->getSceneNode()->setVisible(false);
+      if (d.axes_)
+        d.axes_->getSceneNode()->setVisible(false);
+      if (d.fast_arrow_)
+        d.fast_arrow_->getSceneNode()->setVisible(false);
+
+      if (d.covariance_)
+        d.covariance_->setVisible(false);
     }
   } else {
-    bool use_arrow = (shape_property_->getOptionInt() == Arrow);
+    /* bool use_arrow = (shape_property_->getOptionInt() == Arrow); */
     for (auto& d : disp_data) {
-      d.arrow_->getSceneNode()->setVisible(use_arrow);
-      d.axes_->getSceneNode()->setVisible(!use_arrow);
+      switch (shape_property_->getOptionInt()){
+        case (Arrow):
+          if (d.arrow_)
+            d.arrow_->getSceneNode()->setVisible(true);
+          if (d.axes_)
+            d.axes_->getSceneNode()->setVisible(false);
+          if (d.fast_arrow_)
+            d.fast_arrow_->getSceneNode()->setVisible(false);
+          break;
+        case (Axes):
+          if (d.arrow_)
+            d.arrow_->getSceneNode()->setVisible(false);
+          if (d.axes_)
+            d.axes_->getSceneNode()->setVisible(true);
+          if (d.fast_arrow_)
+            d.fast_arrow_->getSceneNode()->setVisible(false);
+          break;
+        default:
+          if (d.arrow_)
+            d.arrow_->getSceneNode()->setVisible(false);
+          if (d.axes_)
+            d.axes_->getSceneNode()->setVisible(false);
+          if (d.fast_arrow_)
+            d.fast_arrow_->getSceneNode()->setVisible(true);
+      }
     }
     covariance_property_->updateVisibility();
   }
@@ -258,30 +305,51 @@ void Display::processMessage(const mrs_msgs::PoseWithCovarianceArrayStamped::Con
     disp_data.push_back(display_object());
     auto& d = disp_data.back();
 
-    d.arrow_ = boost::make_shared<rviz::Arrow>(scene_manager_, scene_node_, shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(),
-                                          head_length_property_->getFloat(), head_radius_property_->getFloat());
+    Ogre::ColourValue color = color_property_->getOgreColor();
+    color.a                 = alpha_property_->getFloat();
 
-    d.axes_ = boost::make_shared<rviz::Axes>(scene_manager_, scene_node_, axes_length_property_->getFloat(), axes_radius_property_->getFloat());
+    switch (shape_property_->getOptionInt()){
+      case (Arrow):
+        d.arrow_ = boost::make_shared<rviz::Arrow>(scene_manager_, scene_node_, shaft_length_property_->getFloat(), shaft_radius_property_->getFloat(),
+            head_length_property_->getFloat(), head_radius_property_->getFloat());
 
-    d.covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_);
+        d.arrow_->setColor(color);
 
-    d.axes_->setPosition(position);
-    d.axes_->setOrientation(orientation);
+        d.arrow_->setPosition(position);
+        d.arrow_->setOrientation(orientation * Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
 
-    d.arrow_->setPosition(position);
-    d.arrow_->setOrientation(orientation * Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
+        coll_handler_->addTrackedObjects(d.arrow_->getSceneNode());
+        break;
+      case (Axes):
+        d.axes_ = boost::make_shared<rviz::Axes>(scene_manager_, scene_node_, axes_length_property_->getFloat(), axes_radius_property_->getFloat());
 
-    d.covariance_->setPosition(position);
-    d.covariance_->setOrientation(orientation);
-    geometry_msgs::PoseWithCovariance pwc;
-    pwc.covariance = message->poses[i].covariance;
-    pwc.pose       = message->poses[i].pose;
-    d.covariance_->setCovariance(pwc);
+        d.axes_->setPosition(position);
+        d.axes_->setOrientation(orientation);
 
-    coll_handler_->addTrackedObjects(d.arrow_->getSceneNode());
-    coll_handler_->addTrackedObjects(d.axes_->getSceneNode());
-    coll_handler_->addTrackedObjects(d.covariance_->getPositionSceneNode());
-    coll_handler_->addTrackedObjects(d.covariance_->getOrientationSceneNode());
+        coll_handler_->addTrackedObjects(d.axes_->getSceneNode());
+        break;
+      default:
+        d.fast_arrow_ = boost::make_shared<rviz::FastArrow>(scene_manager_, scene_node_, shaft_length_property_->getFloat(), head_length_property_->getFloat(),
+            head_radius_property_->getFloat());
+        d.fast_arrow_->setColor(color);
+
+
+        d.fast_arrow_->setPosition(position);
+        d.fast_arrow_->setOrientation(orientation * Ogre::Quaternion(Ogre::Degree(-90), Ogre::Vector3::UNIT_Y));
+
+        coll_handler_->addTrackedObjects(d.fast_arrow_->getSceneNode());
+    }
+    if ( covariance_property_->getBool()){
+      geometry_msgs::PoseWithCovariance pwc;
+      pwc.covariance = message->poses[i].covariance;
+      pwc.pose       = message->poses[i].pose;
+      d.covariance_ = covariance_property_->createAndPushBackVisual(scene_manager_, scene_node_);
+      d.covariance_->setPosition(position);
+      d.covariance_->setOrientation(orientation);
+      d.covariance_->setCovariance(pwc);
+      coll_handler_->addTrackedObjects(d.covariance_->getPositionSceneNode());
+      coll_handler_->addTrackedObjects(d.covariance_->getOrientationSceneNode());
+    }
 
     context_->queueRender();
   }

@@ -11,6 +11,8 @@
 #include <covariance/property.h>
 #include <covariance/visual.h>
 
+#include <fast_arrow/fast_arrow.h>
+
 namespace rviz
 {
 class Arrow;
@@ -32,6 +34,7 @@ struct display_object
 {
   boost::shared_ptr<rviz::Arrow> arrow_;
   boost::shared_ptr<rviz::Axes> axes_;
+  boost::shared_ptr<rviz::FastArrow> fast_arrow_;
   boost::shared_ptr<mrs_rviz_plugins::covariance::Visual> covariance_;
 };
 
@@ -44,6 +47,7 @@ public:
   {
     Arrow,
     Axes,
+    FastArrow,
   };
 
   Display();

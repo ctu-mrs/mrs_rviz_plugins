@@ -95,8 +95,8 @@ private:
   std::pair<int, int> getSpawnCoordinates(rviz::Property* property);
   std::pair<int, int> getBottomLine();
   // Meant to take "Global Options" property only!
-  void                setTextColor(rviz::Property* property);
-  bool                getIsInited() {
+  void setTextColor(rviz::Property* property);
+  bool getIsInited() {
     return is_inited;
   }
   QColor getColor(const int code) {
@@ -191,9 +191,7 @@ private:
   double      cmd_z                = 0;
   double      cmd_hdg              = 0;
   std::string odom_frame           = "!NO DATA!";
-  std::string curr_estimator_hori  = "!NO DATA!";
-  std::string curr_estimator_vert  = "!NO DATA!";
-  std::string curr_estimator_hdg   = "!NO DATA!";
+  std::string curr_estimator       = "!NO DATA!";
   bool        odom_update_required = true;
 
   // General info
@@ -205,22 +203,22 @@ private:
   bool   comp_state_update_required = true;
 
   // Hw api state
-  double      hw_api_rate            = 0;
-  double      hw_api_state_rate      = 0;
-  double      hw_api_cmd_rate        = 0;
-  double      hw_api_battery_rate    = 0;
-  bool        hw_api_gnss_ok          = false;
-  bool        hw_api_armed           = false;
-  std::string hw_api_mode            = "";
-  double      battery_volt           = 0;
-  double      battery_curr           = 0;
-  double      battery_wh_drained     = 0;
-  double      thrust                 = 0;
-  double      mass_estimate          = 0;
-  double      mass_set               = 0;
-  double      hw_api_gnss_qual        = 0;
-  double      mag_norm               = 0;
-  double      mag_norm_rate          = 0;
+  double      hw_api_rate                  = 0;
+  double      hw_api_state_rate            = 0;
+  double      hw_api_cmd_rate              = 0;
+  double      hw_api_battery_rate          = 0;
+  bool        hw_api_gnss_ok               = false;
+  bool        hw_api_armed                 = false;
+  std::string hw_api_mode                  = "";
+  double      battery_volt                 = 0;
+  double      battery_curr                 = 0;
+  double      battery_wh_drained           = 0;
+  double      thrust                       = 0;
+  double      mass_estimate                = 0;
+  double      mass_set                     = 0;
+  double      hw_api_gnss_qual             = 0;
+  double      mag_norm                     = 0;
+  double      mag_norm_rate                = 0;
   bool        hw_api_state_update_required = true;
 
   // Custom topics
@@ -237,14 +235,14 @@ private:
   bool                  node_stats_update_required = true;
 
   // | ----------------------- Attributes ----------------------- |
-  ros::NodeHandle nh;
-  ros::Subscriber uav_status_sub;
-  QColor          bg_color = QColor(0, 0, 0, 100);
-  QColor          fg_color = QColor(25, 255, 240, 255);
-  bool            is_inited = false;
-  static int      display_number;
-  int             id;
-  std::string     last_uav_name;
+  ros::NodeHandle                              nh;
+  ros::Subscriber                              uav_status_sub;
+  QColor                                       bg_color  = QColor(0, 0, 0, 100);
+  QColor                                       fg_color  = QColor(25, 255, 240, 255);
+  bool                                         is_inited = false;
+  static int                                   display_number;
+  int                                          id;
+  std::string                                  last_uav_name;
   static std::unordered_map<std::string, bool> taken_uavs;
 
   // | --------------------- Default values --------------------- |
