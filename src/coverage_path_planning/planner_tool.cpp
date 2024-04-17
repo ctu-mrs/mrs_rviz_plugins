@@ -48,6 +48,8 @@ PlannerTool::PlannerTool() : method_loader_("mrs_rviz_plugins", "mrs_rviz_plugin
   overlap_property_->setMax(1);
   overlap_property_->setMin(0);
 
+  transformer_ = mrs_lib::Transformer(nh_);
+
   ROS_INFO("Planner Tool constructed");
 }
 
@@ -58,8 +60,7 @@ void PlannerTool::onInitialize(){
   // Prepare mash resource
   flag_path_ = "package://rviz_plugin_tutorials/media/flag.dae";
   if(rviz::loadMeshFromResource(flag_path_).isNull()){
-    ROS_ERROR( "PlantFlagTool: failed to load model resource '%s'.", flag_path_.c_str() );
-    return;
+    ROS_ERROR( "[PlannerTool]: failed to load model resource '%s'.", flag_path_.c_str() );
   }
 
   std::vector<std::string> drone_names = getUavNames();
@@ -86,6 +87,24 @@ void PlannerTool::onInitialize(){
 
   client_ = nh_.serviceClient<mrs_msgs::GetSafeZoneAtHeight>("/" + drone_name_property_->getStdString() + 
               "/safety_area_manager/get_safety_zone_at_height");
+
+  // Set start
+  geometry_msgs::Point start;
+  start.x = 0;
+  start.y = 0;
+  start.z = 0;
+  std::string from_frame = drone_name_property_->getStdString() + "/fcu";
+  std::string to_frame = context_->getFrameManager()->getFixedFrame();
+  std::optional<geometry_msgs::Point> transformed = transformer_.transformSingle(from_frame, start, to_frame);
+
+  if(!transformed){
+    ROS_WARN("[PlannerTool]: Could not transform start position from %s to %s. Start point is set to 0", from_frame.c_str(), to_frame.c_str());
+  } else{
+    start = transformed.value();
+    ROS_INFO("[PlannerTool]: Transformed successfully: x=%f, y=%f, z=%f", start.x, start.y, start.z);
+  }
+
+  start_property_->setVector(Ogre::Vector3(start.x, start.y, start.z));
 }
 
 std::vector<std::string> PlannerTool::getUavNames(){
@@ -125,12 +144,12 @@ std::vector<std::string> PlannerTool::getUavNames(){
 void PlannerTool::makeFlag( const Ogre::Vector3& position ){
   if(!flag_node_){
     flag_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
-  }
-  Ogre::Entity* entity = scene_manager_->createEntity(flag_path_);
-  if(!entity){
-    ROS_ERROR("[Coverage Path Planning]: Could not create entity of flag!");
-  }else{
-    flag_node_->attachObject( entity );
+    Ogre::Entity* entity = scene_manager_->createEntity(flag_path_);
+    if(!entity){
+      ROS_ERROR("[Coverage Path Planning]: Could not create entity of flag!");
+    }else{
+      flag_node_->attachObject( entity );
+    }
   }
   flag_node_->setVisible( true );
   flag_node_->setPosition( position );
@@ -158,8 +177,6 @@ int PlannerTool::processMouseEvent(rviz::ViewportMouseEvent& event){
       ROS_ERROR("[Coverage Path Planning]: Intersection was not found");
       return res;
     }
-
-    makeFlag(intersection);
 
     start_property_->setVector(intersection);
   }
@@ -341,7 +358,7 @@ void PlannerTool::heightChanged(){
 }
 
 void PlannerTool::startChanged(){
-  flag_node_->setPosition(start_property_->getVector());
+  makeFlag(start_property_->getVector());
   if(current_coverage_method_){
     current_coverage_method_->setFrame(context_->getFrameManager()->getFixedFrame(), false);
     current_coverage_method_->setStart(start_property_->getVector());
