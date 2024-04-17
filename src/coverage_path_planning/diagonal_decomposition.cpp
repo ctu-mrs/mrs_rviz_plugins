@@ -168,6 +168,20 @@ void DiagonalDecomposition::compute() {
       continue;
     }
 
+    Point2d drone_point;
+    geometry_msgs::Point drone_point_gm;
+    drone_point_gm.x = start_position_.x;
+    drone_point_gm.y = start_position_.y;
+    drone_point_gm.z = start_position_.z;
+    const auto& drone_point_trasformed = transformer_.transformSingle(current_frame_, drone_point_gm, polygon_frame_);
+    if(!drone_point_trasformed){
+      ROS_WARN("[DiagonalDecomposition]: Could not transform start position from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
+    } else{
+      drone_point_gm = drone_point_trasformed.value();
+    }
+    bg::set<0>(drone_point, drone_point_gm.x);
+    bg::set<1>(drone_point, drone_point_gm.y);
+
     vector<int> path(cells.size());
     std::set<int> visited;
 
@@ -175,7 +189,7 @@ void DiagonalDecomposition::compute() {
     Point2d start_point, finish_point;
     getStartAndFinish(prev_point, cells[i], start_point, finish_point);
     float total_path_len = 0;
-    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
     if(total_path_len < min_total_len){
       shortest_path = path;
       best_start = prev_point;
@@ -186,7 +200,7 @@ void DiagonalDecomposition::compute() {
     prev_point = cells[i].waypoints.front().second;
     getStartAndFinish(prev_point, cells[i], start_point, finish_point);
     total_path_len = 0;
-    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
     if(total_path_len < min_total_len){
       shortest_path = path;
       best_start = prev_point;
@@ -197,7 +211,7 @@ void DiagonalDecomposition::compute() {
     prev_point = cells[i].waypoints.back().first;
     getStartAndFinish(prev_point, cells[i], start_point, finish_point);
     total_path_len = 0;
-    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
     if(total_path_len < min_total_len){
       shortest_path = path;
       best_start = prev_point;
@@ -208,7 +222,7 @@ void DiagonalDecomposition::compute() {
     prev_point = cells[i].waypoints.back().second;
     getStartAndFinish(prev_point, cells[i], start_point, finish_point);
     total_path_len = 0;
-    findPath(cells, prev_point, visited, i, 0, path, total_path_len);
+    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
     if(total_path_len < min_total_len){
       shortest_path = path;
       best_start = prev_point;
