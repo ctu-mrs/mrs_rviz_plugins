@@ -250,6 +250,7 @@ void PlannerTool::methodChosen() {
 
   root_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
   current_coverage_method_->initialize(getPropertyContainer(), scene_manager_, root_node_);
+  current_coverage_method_->setStart(start_property_->getVector());
   current_coverage_method_->setHeight(height_property->getFloat(), false);
   current_coverage_method_->setAngle(angle_property_->getInt(), false);
   current_coverage_method_->setOverlap(overlap_property_->getFloat(), false);

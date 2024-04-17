@@ -6,6 +6,9 @@
 
 #include <rviz/ogre_helpers/line.h>
 
+#include <limits>
+#include <cmath>
+
 namespace bg = boost::geometry;
 
 namespace mrs_rviz_plugins{
@@ -118,6 +121,111 @@ void ExactDecomposition::drawPath(mrs_msgs::PathSrv& path){
     line->setVisible(true);
   }
   path_node_->setVisible(path_property_->getBool());
+}
+
+std::vector<mrs_lib::Point2d> ExactDecomposition::getPath(mrs_lib::Point2d p1, mrs_lib::Point2d p2){
+  using Point2d = mrs_lib::Point2d;
+  // If the path is straight line
+  bg::model::linestring<Point2d> line;
+  line.push_back(p1);
+  line.push_back(p2);
+  if(bg::within(line, current_polygon_)){
+    return {p1, p2};
+  }
+  
+  float max_x = std::numeric_limits<float>::lowest();
+  float min_x = std::numeric_limits<float>::max();
+  float max_y = std::numeric_limits<float>::lowest();
+  float min_y = std::numeric_limits<float>::max();
+  for(Point2d& point : current_polygon_.outer()){
+    float point_x = bg::get<0>(point);
+    float point_y = bg::get<1>(point);
+    max_x = max_x < point_x ? point_x : max_x;
+    min_x = min_x > point_x ? point_x : min_x;
+    max_y = max_y < point_y ? point_y : max_y;
+    min_y = min_y > point_y ? point_y : min_y;
+  }
+
+  // Define possible movements: up, down, left, right, diagonally
+  int dx[] = {-1, 1, 0, 0, 1, 1, -1, -1};
+  int dy[] = {0, 0, -1, 1, 1, -1, -1, 1};
+
+
+  int numRows = std::ceil(max_x - min_x);
+  int numCols = std::ceil(max_y - min_y);
+  Ogre::Vector2 start_pos;
+  start_pos.x = std::ceil(bg::get<0>(p1) - min_x) - 1;
+  start_pos.y = std::ceil(bg::get<1>(p1) - min_y) - 1;
+
+  // Create a queue for BFS
+  std::queue<std::pair<Ogre::Vector2, std::vector<Point2d>>> q;
+
+  // Mark the start cell as visited and enqueue it with an empty path
+  std::vector<std::vector<bool>> visited(numRows, std::vector<bool>(numCols, false));
+  visited[start_pos.x][start_pos.y] = true;
+  q.push({start_pos, {p1}});
+
+  // Perform BFS
+  while(!q.empty()) {
+    Ogre::Vector2 currCell = q.front().first;
+    std::vector<Point2d> path = q.front().second;
+    q.pop();
+    Point2d cur_point = path.back();
+
+    // Check if p2 point can be reached from the cur_point
+    line[0] = cur_point;
+    if(bg::within(line, current_polygon_)){
+      path.push_back(cur_point);
+      path.push_back(p2);
+      return path;
+    }
+
+    // Explore adjacent cells
+    for (int i = 0; i < 8; i++) {
+      int newRow = currCell.x + dx[i];
+      int newCol = currCell.y + dy[i];
+
+      Point2d new_point{bg::get<0>(cur_point) + dx[i], bg::get<1>(cur_point) + dy[i]};
+
+      bg::model::linestring<Point2d> step;
+      step.push_back(cur_point);
+      step.push_back(new_point);
+
+      bool is_valid = true;
+      is_valid = is_valid && (newRow > 0) && (newRow < numRows);
+      is_valid = is_valid && (newCol > 0) && (newCol < numCols);
+      is_valid = is_valid && bg::within(step, current_polygon_);
+      if(is_valid){
+        is_valid = is_valid && !visited[newRow][newCol];
+      }
+
+
+      // Check if the new cell is valid and not visited
+      if (is_valid) {
+        // std::cout << "step " << bg::wkt(step) << " is " << (bg::within(step, current_polygon_) ? "" : "not ") << "within the polygon\n";
+        // Mark the new cell as visited
+        visited[newRow][newCol] = true;
+        // Enqueue the new cell with the current path plus the new cell
+        std::vector<Point2d> newPath = path;
+        newPath.push_back(new_point);
+        q.push({{newRow, newCol}, newPath});
+      }
+    }
+  }
+
+  return {};
+}
+
+float ExactDecomposition::getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2) {
+  float res = 0;
+  std::vector<mrs_lib::Point2d> path = getPath(p1, p2);
+  if(path.size() == 0){
+    return -1;
+  }
+  for(int i=0; i<path.size() - 1; i++){
+    res += bg::distance(path[i], path[i+1]);
+  }
+  return res;
 }
 
 // |----------------------- Public methods -----------------------|

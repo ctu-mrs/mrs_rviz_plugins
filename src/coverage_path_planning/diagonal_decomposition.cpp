@@ -98,6 +98,32 @@ void DiagonalDecomposition::start() {
 }
 
 void DiagonalDecomposition::compute() {
+// {
+//   std::cout << bg::wkt(current_polygon_) << std::endl;
+//   Point2d start{0, 0};
+//   Point2d finish{start_position_.x, start_position_.y};
+//   std::cout << "start: " << bg::wkt(start) << std::endl;
+//   std::cout << "finish: " << bg::wkt(finish) << std::endl;
+//   std::cout << "starting bfs\n";
+//   vector<Point2d> path = getPath(start, finish);
+//   std::cout << "bfs finished\n";
+//   mrs_msgs::PathSrv path_to_draw;
+//   path_to_draw.request.path.header.frame_id = polygon_frame_;
+//   std::cout << "path: \n";
+//   for(Point2d& point : path){
+//     mrs_msgs::Reference tmp;
+//     tmp.position.x = bg::get<0>(point);
+//     tmp.position.y = bg::get<1>(point);
+//     tmp.position.z = height_;
+//     path_to_draw.request.path.points.push_back(tmp);
+//     std::cout << "\t" << bg::wkt(point) << std::endl;
+//   }
+//   std::cout << "drawing path..\n";
+//   drawPath(path_to_draw);
+//   return;
+// }
+
+
   std::string msg;
   if(!bg::is_valid(current_polygon_, msg)){
     ROS_WARN("[DiagonalDecomposition]: Current polygon is invalid. Cannot perform the decomposition. Msg: %s", msg.c_str());
@@ -968,7 +994,6 @@ bool DiagonalDecomposition::findPath(
       continue;
     }
     cell_t cur_cell = cells[next];
-    found_adjacent = true;
 
     // Get finish point of cur polygon
     Point2d start_point;
@@ -976,12 +1001,13 @@ bool DiagonalDecomposition::findPath(
     float new_total_path_len = total_path_len;
     if(cur_cell.waypoints.size() != 0){
       getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-      new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+      new_total_path_len = total_path_len + bg::distance(prev_point, start_point); // getPath() takes too much time
     }
 
     if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
       paths.push_back(path);
       path_total_lens.push_back(new_total_path_len);
+      found_adjacent = true;
     }
   }
 
@@ -999,7 +1025,7 @@ bool DiagonalDecomposition::findPath(
       float new_total_path_len = total_path_len;
       if(cur_cell.waypoints.size() != 0){
         getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-        new_total_path_len = total_path_len + bg::distance(prev_point, start_point);
+        new_total_path_len = total_path_len + bg::distance(prev_point, start_point); // getPath() takes too much time
       }
 
       if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
@@ -1063,6 +1089,16 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   result.request.path.stop_at_waypoints = false;
   result.request.path.use_heading = true;
   result.request.path.loop = false;
+  mrs_msgs::Reference start_r;
+  start_r.position.x = start_position_.x;
+  start_r.position.y = start_position_.y;
+  start_r.position.z = height_;
+  const auto& tr = transformer_.transformSingle(current_frame_, start_r, polygon_frame_);
+  if(!tr){
+    ROS_WARN("[DiagonalDecomposition]: could not transform start reference from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
+  }else{
+    result.request.path.points.push_back(tr.value());
+  }
 
   float angle_rad = (((float)angle_) / 180) * M_PI;
   float camera_width = (std::tan(angle_rad / 2) * height_);
@@ -1082,7 +1118,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
       #endif // DEBUG
       continue;
     }
-    // Find the first waypoint of the cell 
+    // Find the first waypoint of the cell (getPathLen() takes too much time for)
     Point2d start_point = cur_cell.waypoints.front().first;
     is_front = true;
     is_first = true;
@@ -1148,6 +1184,13 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
       cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
     }
   }
+
+  // todo: if path between 2 points in path does not lie within the polygon, 
+  // add points using getPath()
+
+  // todo: erase points that are equal to the next one
+
+  // todo: erase points that lie on the same [infinite] line
 
   #ifdef DEBUG
   std::cout <<"PATH GENERATED\n";

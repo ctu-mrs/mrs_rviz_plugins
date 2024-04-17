@@ -41,6 +41,10 @@ protected:
   void drawRing(mrs_lib::Polygon::ring_type& ring, geometry_msgs::TransformStamped tf, Ogre::SceneNode* node);
   void drawPath(mrs_msgs::PathSrv& path);
   void drawCurrentPolygon();
+  std::vector<mrs_lib::Point2d> getPath(mrs_lib::Point2d p1, mrs_lib::Point2d p2);
+
+  // Returns -1 if no path has been found
+  float getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2);
 
   Ogre::SceneNode* boundaries_node_ = nullptr;
   Ogre::SceneNode* decomposition_node_ = nullptr;

@@ -257,6 +257,9 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
       int newRow = currCell.x + dx[i];
       int newCol = currCell.y + dy[i];
 
+      // Check if the step lies within the polygon
+      // todo: implement me
+
       // Check if the new cell is valid and not visited
       if (isValid(newRow, newCol, numRows, numCols) && !visited[newRow][newCol] && grid_[newRow][newCol].valid) {
         // Mark the new cell as visited
