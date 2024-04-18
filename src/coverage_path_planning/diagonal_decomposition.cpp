@@ -186,6 +186,7 @@ void DiagonalDecomposition::compute() {
   // Find the best cell permutation using DFS
   vector<cell_t> cells = fillCells(decomposition);
   fixCells(cells);
+
   vector<int> shortest_path;
   Point2d best_start;
   float min_total_len = std::numeric_limits<float>::max();
@@ -194,6 +195,7 @@ void DiagonalDecomposition::compute() {
       continue;
     }
 
+    ROS_INFO("[DiagonalDecomposition]: partition %d out of %d is being processed", i, (int) cells.size());
     Point2d drone_point;
     geometry_msgs::Point drone_point_gm;
     drone_point_gm.x = start_position_.x;
@@ -232,7 +234,7 @@ void DiagonalDecomposition::compute() {
       best_start = prev_point;
       min_total_len = total_path_len;
     }
-
+    
     visited.clear();
     prev_point = cells[i].waypoints.back().first;
     getStartAndFinish(prev_point, cells[i], start_point, finish_point);
@@ -507,7 +509,7 @@ vector<vector<DiagonalDecomposition::point_t>> DiagonalDecomposition::decompose(
 }
 
 bool DiagonalDecomposition::getPartition(vector<point_t>& border, int index_start, vector<point_t>& res_poly, std::pair<point_t, point_t>& res_line){
-  // Initially, the list consists of one vertex.
+  // Initially, the list consistd of one vertex.
   res_poly.push_back(border[index_start]);
 
   // Try to find as big convex partition as possible hoing clockwise
@@ -1067,7 +1069,10 @@ void DiagonalDecomposition::getStartAndFinish(Point2d prev_point, DiagonalDecomp
 
 void DiagonalDecomposition::fixCells(vector<DiagonalDecomposition::cell_t>& cells){
   for(cell_t& cell : cells){
-    Point2d cur_point = cells[0].waypoints[0].first;
+    if(cell.waypoints.size() == 0){
+      continue;
+    }
+    Point2d cur_point = cell.waypoints[0].first;
     for(std::pair<Point2d, Point2d>& pair : cell.waypoints){
       if(bg::comparable_distance(cur_point, pair.first) > bg::comparable_distance(cur_point, pair.second)){
         Point2d tmp = pair.first;
@@ -1184,11 +1189,51 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
       cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
     }
   }
-
+  #ifdef DEBUG
+  std::cout << "Making the path lie in safety area only\n";
+  #endif // DEBUG
+  std::vector<mrs_msgs::Reference> updated_points;
   // todo: if path between 2 points in path does not lie within the polygon, 
   // add points using getPath()
+  for(int i=0; i<result.request.path.points.size()-1; i++){
+    updated_points.push_back(result.request.path.points[i]);
+    Point2d p1 {result.request.path.points[i].position.x, result.request.path.points[i].position.y};
+    Point2d p2 {result.request.path.points[i+1].position.x, result.request.path.points[i+1].position.y};
+    
+    Line line;
+    line.push_back(p1);
+    line.push_back(p2);
+    if(bg::within(line, current_polygon_)){
+      continue;
+    }
+    #ifdef DEBUG
+    std::cout << bg::wkt(line) << " does not lie within the polygon.\n";
+    #endif // DEBUG
 
+    auto new_partial_path = getPath(p1, p2);
+
+    for(Point2d& new_p : new_partial_path){
+      mrs_msgs::Reference new_r;
+      new_r.position.x = bg::get<0>(new_p);
+      new_r.position.y = bg::get<1>(new_p);
+      new_r.position.z = height_;
+      updated_points.push_back(new_r);
+    }
+  }
+  updated_points.push_back(result.request.path.points.back());
+  #ifdef DEBUG
+  std::cout << "erasing same waypoints\n";
+  #endif // DEBUG
   // todo: erase points that are equal to the next one
+  for(int i=0; i<updated_points.size()-1;){
+    if(updated_points[i] == updated_points[i+1]){
+      updated_points.erase(updated_points.begin() + i);
+    } else{
+      i++;
+    }
+  }
+
+  result.request.path.points = updated_points;
 
   // todo: erase points that lie on the same [infinite] line
 
