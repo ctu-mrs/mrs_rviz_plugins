@@ -5,10 +5,16 @@
 
 #include <rviz/ogre_helpers/line.h>
 
+#include <mrs_lib/safety_zone/prism.h>
+
+#include <boost/geometry.hpp>
+
 #include <vector>
 #include <cmath>
 #include <limits>
 #include <queue>
+
+namespace bg = boost::geometry;
 
 namespace mrs_rviz_plugins{
 
@@ -257,11 +263,24 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
       int newRow = currCell.x + dx[i];
       int newCol = currCell.y + dy[i];
 
+      bool is_valid = true;
+
       // Check if the step lies within the polygon
-      // todo: implement me
+      mrs_lib::Point2d p1 {grid_[currCell.x][currCell.y].x, grid_[currCell.x][currCell.y].y};
+      mrs_lib::Point2d p2 {grid_[newRow][newCol].x, grid_[newRow][newCol].y};
+      bg::model::linestring<mrs_lib::Point2d> line;
+      line.push_back(p1);
+      line.push_back(p2);
+      is_valid = is_valid && bg::within(line, current_polygon_);
 
       // Check if the new cell is valid and not visited
-      if (isValid(newRow, newCol, numRows, numCols) && !visited[newRow][newCol] && grid_[newRow][newCol].valid) {
+      is_valid = is_valid && isValid(newRow, newCol, numRows, numCols);
+      if(is_valid){
+        is_valid = is_valid && !visited[newRow][newCol];
+        is_valid = is_valid &&  grid_[newRow][newCol].valid;
+      }
+
+      if (is_valid) {
         // Mark the new cell as visited
         visited[newRow][newCol] = true;
         // Enqueue the new cell with the current path plus the new cell
