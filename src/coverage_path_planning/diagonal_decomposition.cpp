@@ -1211,7 +1211,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
     #endif // DEBUG
 
     auto new_partial_path = getPath(p1, p2);
-
+    std::cout << "partial path len = " << new_partial_path.size() << std::endl;
     for(Point2d& new_p : new_partial_path){
       mrs_msgs::Reference new_r;
       new_r.position.x = bg::get<0>(new_p);

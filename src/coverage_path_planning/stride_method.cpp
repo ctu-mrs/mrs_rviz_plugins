@@ -15,6 +15,7 @@
 #include <queue>
 
 namespace bg = boost::geometry;
+using Line = bg::model::linestring<mrs_lib::Point2d>;
 
 namespace mrs_rviz_plugins{
 
@@ -92,8 +93,22 @@ void StrideMethod::compute(){
       Ogre::Vector2(-1, 0)
     };
     std::vector<size_t> valid_directions;
+    std::cout << "computing valid directions\n";
     for(size_t i=0; i<directions.size(); ++i){
-      if(!isLimit(cur_cell + directions[i])){
+      Ogre::Vector2 neighbor_i = cur_cell + directions[i]; 
+      bool is_valid = true;
+      is_valid = is_valid && !isLimit(neighbor_i);
+
+      if(is_valid){
+        mrs_lib::Point2d p1{grid_[cur_cell.x][cur_cell.y].x, grid_[cur_cell.x][cur_cell.y].x};
+        mrs_lib::Point2d p2{grid_[neighbor_i.x][neighbor_i.y].x, grid_[neighbor_i.x][neighbor_i.y].x};
+        Line step;
+        step.push_back(p1);
+        step.push_back(p2);
+        is_valid = is_valid && bg::within(step, current_polygon_);
+      }
+
+      if(is_valid){
         valid_directions.push_back(i);
       }
     }
@@ -101,6 +116,7 @@ void StrideMethod::compute(){
     // 2.1 If no neighbor has been found, find 
     // the nearest unvisited cell located next to cells already visited.
     if(valid_directions.size() == 0){
+      std::cout << "Neighbor cell was not found, starting bfs..\n";
       std::vector<Ogre::Vector2> path_to_next = getPathToNextCell(cur_cell);
       
       if(path_to_next.size() == 0){
@@ -121,6 +137,7 @@ void StrideMethod::compute(){
       continue;
     }
 
+    std::cout << "computing strides\n";
     // 3. Generate the longest possible stride in the direction
     // of each unvisited neighbor cell.
     std::vector<stride_t> strides;
@@ -128,6 +145,7 @@ void StrideMethod::compute(){
       strides.push_back(computeStride(cur_cell, directions[index]));
     }
 
+    std::cout << "selecting the longes stride\n";
     // 4. Select the longest stride.
     stride_t longest_stride;
     longest_stride.len = 0;
@@ -137,6 +155,7 @@ void StrideMethod::compute(){
       }
     }
 
+    std::cout << "adding stride to the path\n";
     // 5. Add all cells of the stride to the path and mark them
     // as visited.
     Ogre::Vector2 last_cell = longest_stride.start;
@@ -265,17 +284,18 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
 
       bool is_valid = true;
 
-      // Check if the step lies within the polygon
-      mrs_lib::Point2d p1 {grid_[currCell.x][currCell.y].x, grid_[currCell.x][currCell.y].y};
-      mrs_lib::Point2d p2 {grid_[newRow][newCol].x, grid_[newRow][newCol].y};
-      bg::model::linestring<mrs_lib::Point2d> line;
-      line.push_back(p1);
-      line.push_back(p2);
-      is_valid = is_valid && bg::within(line, current_polygon_);
-
       // Check if the new cell is valid and not visited
       is_valid = is_valid && isValid(newRow, newCol, numRows, numCols);
+
       if(is_valid){
+        // Check if the step lies within the polygon
+        mrs_lib::Point2d p1 {grid_[currCell.x][currCell.y].x, grid_[currCell.x][currCell.y].y};
+        mrs_lib::Point2d p2 {grid_[newRow][newCol].x, grid_[newRow][newCol].y};
+        bg::model::linestring<mrs_lib::Point2d> line;
+        line.push_back(p1);
+        line.push_back(p2);
+        is_valid = is_valid && bg::within(line, current_polygon_);
+        
         is_valid = is_valid && !visited[newRow][newCol];
         is_valid = is_valid &&  grid_[newRow][newCol].valid;
       }
@@ -369,6 +389,14 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
       break;
     }
     if(grid_[next_cell.x][next_cell.y].visited || !grid_[next_cell.x][next_cell.y].valid){
+      break;
+    }
+    mrs_lib::Point2d p1{grid_[start.x][start.y].x, grid_[start.x][start.y].x};
+    mrs_lib::Point2d p2{grid_[next_cell.x][next_cell.y].x, grid_[next_cell.x][next_cell.y].x};
+    Line step;
+    step.push_back(p1);
+    step.push_back(p2);
+    if(bg::within(step, current_polygon_)){
       break;
     }
 
