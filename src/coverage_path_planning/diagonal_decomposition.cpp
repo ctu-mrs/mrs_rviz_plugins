@@ -36,7 +36,7 @@
 #include <set>
 
 // Uncomment this for useful outputs during computation
-// #define DEBUG
+#define DEBUG
 
 namespace bg = boost::geometry;
 
@@ -1194,8 +1194,6 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   std::cout << "Making the path lie in safety area only\n";
   #endif // DEBUG
   std::vector<mrs_msgs::Reference> updated_points;
-  // todo: if path between 2 points in path does not lie within the polygon, 
-  // add points using getPath()
   for(int i=0; i<result.request.path.points.size()-1; i++){
     updated_points.push_back(result.request.path.points[i]);
     Point2d p1 {result.request.path.points[i].position.x, result.request.path.points[i].position.y};
@@ -1225,7 +1223,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   #ifdef DEBUG
   std::cout << "erasing same waypoints\n";
   #endif // DEBUG
-  // todo: erase points that are equal to the next one
+
   for(int i=0; i<updated_points.size()-1;){
     if(updated_points[i] == updated_points[i+1]){
       updated_points.erase(updated_points.begin() + i);
@@ -1234,9 +1232,9 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
     }
   }
 
-  result.request.path.points = updated_points;
-
   // todo: erase points that lie on the same [infinite] line
+
+  result.request.path.points = updated_points;
 
   #ifdef DEBUG
   std::cout <<"PATH GENERATED\n";

@@ -157,6 +157,10 @@ std::vector<mrs_lib::Point2d> ExactDecomposition::getPath(mrs_lib::Point2d p1, m
   start_pos.x = std::ceil(bg::get<0>(p1) - min_x) - 1;
   start_pos.y = std::ceil(bg::get<1>(p1) - min_y) - 1;
 
+  if(start_pos.x < 0 || start_pos.x >= numRows || start_pos.y < 0 || start_pos.y >= numCols){
+    return {};
+  }
+
   // Create a queue for BFS
   std::queue<std::pair<Ogre::Vector2, std::vector<Point2d>>> q;
 
