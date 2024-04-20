@@ -100,8 +100,8 @@ void StrideMethod::compute(){
       is_valid = is_valid && !isLimit(neighbor_i);
 
       if(is_valid){
-        mrs_lib::Point2d p1{grid_[cur_cell.x][cur_cell.y].x, grid_[cur_cell.x][cur_cell.y].x};
-        mrs_lib::Point2d p2{grid_[neighbor_i.x][neighbor_i.y].x, grid_[neighbor_i.x][neighbor_i.y].x};
+        mrs_lib::Point2d p1{grid_[cur_cell.x][cur_cell.y].x, grid_[cur_cell.x][cur_cell.y].y};
+        mrs_lib::Point2d p2{grid_[neighbor_i.x][neighbor_i.y].x, grid_[neighbor_i.x][neighbor_i.y].y};
         Line step;
         step.push_back(p1);
         step.push_back(p2);
@@ -374,21 +374,26 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
   next_cell.y = start.y + direction.y;
 
   limit_t limits_start = getLimits(start, direction);
+  std::cout << "direction: " << direction.x << " " << direction.y << std::endl;
+  std::cout << "limits_start: " << (limits_start.first ? "true" : "false") << " " << (limits_start.first ? "true" : "false") << std::endl;
 
   while(true){
     last_cell = next_cell;
-    next_cell.x = next_cell.x + direction.x; 
+    next_cell.x = next_cell.x + direction.x;
     next_cell.y = next_cell.y + direction.y;
 
     // We do not add next_cell if it is already in the generated path or 
     // if it falls outside the boundaries of the area
     if(next_cell.x < 0 || next_cell.x >= grid_.size()) {
+      std::cout << "break x size\n";
       break;
     }
     if(next_cell.y < 0 || next_cell.y >= grid_[next_cell.x].size()){
+      std::cout << "break y size\n";
       break;
     }
     if(grid_[next_cell.x][next_cell.y].visited || !grid_[next_cell.x][next_cell.y].valid){
+      std::cout << "break grid visited or valid \n";
       break;
     }
     mrs_lib::Point2d p1{grid_[start.x][start.y].x, grid_[start.x][start.y].x};
@@ -402,6 +407,8 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
 
     limit_t limits_last = getLimits(last_cell, direction);
     limit_t limits_next = getLimits(next_cell, direction);
+    std::cout << "limits_last: " << (limits_last.first ? "true" : "false") << " " << (limits_last.first ? "true" : "false") << std::endl;
+    std::cout << "limits_next: " << (limits_next.first ? "true" : "false") << " " << (limits_next.first ? "true" : "false") << std::endl;
 
     // If getLimitNum(last_cell) = 2 we always add next_cell, because next_cell
     // is the only possible cell where we can go to from last_cell
@@ -422,7 +429,8 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
     }
 
     if(limits_next.num == 1 &&
-      limits_next.first == limits_start.second && limits_next.second == limits_start.first){
+      limits_next.first == limits_start.second && 
+      limits_next.second == limits_start.first){
       break;
     }
 

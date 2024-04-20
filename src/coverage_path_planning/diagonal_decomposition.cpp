@@ -1093,6 +1093,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   result.request.path.header.frame_id = polygon_frame_;
   result.request.path.stop_at_waypoints = false;
   result.request.path.use_heading = true;
+  result.request.path.fly_now = true;
   result.request.path.loop = false;
   mrs_msgs::Reference start_r;
   start_r.position.x = start_position_.x;
