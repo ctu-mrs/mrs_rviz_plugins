@@ -32,7 +32,7 @@ protected:
   // todo: add is_crit_p to point_t
   typedef struct{
     mrs_lib::Point2d point;
-    int id;
+    int id = -1;
     int ring_id;
     bool is_new_edge = false;
     int prev_point;
@@ -55,17 +55,21 @@ protected:
 
   double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
 
-private:
-  typedef struct{
+// private:
+  typedef struct {
     point_t p1;
+    std::vector<point_t> part1;
     point_t crit_p;
+    std::vector<point_t> part2;
     point_t p2;
+    bool follow_cp;
+
   } edge_t;
 
   // std::vector<point_t> get
 
   // line is the slice containing the crit_point
-  std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
+  virtual std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
 }; // class MorseDecomposition
 } // namespace mrs_rviz_plugins
 

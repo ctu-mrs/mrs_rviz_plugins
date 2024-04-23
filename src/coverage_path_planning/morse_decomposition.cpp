@@ -268,28 +268,28 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     }
     std::cout << std::endl;
   }
+
+  // // 6. Devide the polygon into partitions
+  // vector<cell_t> decomposition;
+  // vector<bool> big_used(crit_points.size(), false);
+  // vector<bool> first_used(crit_points.size(), false);
+  // vector<bool> second_used(crit_points.size(), false);
+  // for(int i=0; i<crit_points.size(); i++){
+  //   if(big_used[i] && first_used[i] && second_used[i]){
+  //     continue;
+  //   }
+
+  //   if(!edges[i]){
+  //     big_used[i] = true;
+  //     first_used[i] = true;
+  //     second_used[i] = true;
+  //   }
+
+
+  // }
+
+
   std::cout << "exiting the function\n";
-
-  // 6. Devide the polygon into partitions
-  vector<cell_t> decomposition;
-  vector<bool> big_used(crit_points.size(), false);
-  vector<bool> first_used(crit_points.size(), false);
-  vector<bool> second_used(crit_points.size(), false);
-  for(int i=0; i<crit_points.size(); i++){
-    if(big_used[i] && first_used[i] && second_used[i]){
-      continue;
-    }
-
-    if(!edges[i]){
-      big_used[i] = true;
-      first_used[i] = true;
-      second_used[i] = true;
-    }
-
-
-  }
-
-
   return {};
 }
 
@@ -398,7 +398,7 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
       tmp.ring_id = -1;
       tmp.id = -1;
       intersections.push_back(tmp);
-      std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
+      // std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
     }
   }
 
@@ -425,7 +425,7 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
         tmp.ring_id = j;
         tmp.id = -1;
         intersections.push_back(tmp);
-        std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
+        // std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
       }
     }
   }
@@ -438,6 +438,10 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
   norm_line.z = - ( norm_line.x * bg::get<0>(crit_point.point)  + norm_line.y * bg::get<1>(crit_point.point) );
   for(int i=0; i<intersections.size(); i++){
     distances[i] = signedDistComparable(norm_line, intersections[i].point);
+  }
+
+  if(intersections.size() == 0){
+    return std::nullopt;
   }
 
   // 4. Find closest intersections on both sides of line
@@ -474,7 +478,7 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
 
 
   // 5. Checking if the edge lies within the polygon
-  // Note: bg::covered_by() does not wjork properly in this case,
+  // Note: bg::covered_by() does not work properly in this case,
   //    probably because of inacuracy of float type. 
   Line half1;
   half1.push_back(result.crit_p.point);
@@ -490,13 +494,28 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
   bool is_covered;
   is_covered = bg::within(center1, polygon) && bg::within(center2, polygon);
 
-  if(is_covered){
-    printf("edge (%.7f %.7f)  (%.7f %.7f) is covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
-    return result;
-  }else{
+  if(!is_covered){
     printf("edge (%.7f %.7f)  (%.7f %.7f) is not covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
     return std::nullopt;
   }
+  printf("edge (%.7f %.7f)  (%.7f %.7f) is covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
+
+  // 6. Define where to go after p1
+  Point2d next_point;
+  if(crit_point.ring_id == -1){
+    next_point = polygon.outer()[crit_point.id + 1];
+  } else{
+    auto& holes = bg::interior_rings(polygon);
+    next_point = holes[crit_point.ring_id][crit_point.id+1];
+  }
+
+  Line tmp_line;
+  tmp_line.push_back(result.p1.point);
+  tmp_line.push_back(result.p2.point);
+  result.follow_cp = signedDistComparable(tmp_line, next_point) > 0;
+  std::cout << "\t" << (result.follow_cp ? "follows cp" : "does not follow cp") << std::endl;
+
+  return result;
 }
 } // namespace mrs_rviz_plugins
 
