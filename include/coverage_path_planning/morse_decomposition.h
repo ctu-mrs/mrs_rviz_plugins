@@ -35,27 +35,9 @@ protected:
     int id = -1;
     int ring_id;
     bool is_new_edge = false;
+    bool is_crit_p = false;
     int prev_point;
   } point_t;
-
-  virtual std::vector<point_t> getCriticalPoints(mrs_lib::Point2d start, Ring obstacle, float twist, int ring_id);
-
-  virtual std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon, 
-                                              std::vector<point_t>& crit_points, 
-                                              mrs_lib::Point2d start,
-                                              float twist);
-
-  // |--------------------- Tools ---------------------|
-  Ogre::Vector3 toLine(mrs_lib::Point2d start, float twist);
-
-  std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
-
-
-  double signedDistComparable(Line line, mrs_lib::Point2d point);
-
-  double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
-
-// private:
   typedef struct {
     point_t p1;
     std::vector<point_t> part1;
@@ -66,7 +48,53 @@ protected:
 
   } edge_t;
 
-  // std::vector<point_t> get
+  virtual std::vector<point_t> getCriticalPoints(mrs_lib::Point2d start, Ring obstacle, float twist, int ring_id);
+
+  virtual std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon, 
+                                              std::vector<point_t>& crit_points, 
+                                              mrs_lib::Point2d start,
+                                              float twist);
+
+  // |--------------------- Tools ---------------------|
+  point_t getNext(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
+  
+  point_t getPrev(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
+
+  void moveToNextAtCritPoint(point_t& next_point,
+                          bool& is_prev_edge,
+                          cell_t& cur_cell,
+                          std::vector<std::optional<edge_t>>& edges,
+                          std::vector<point_t>& crit_points,
+                          std::vector<point_t>& cur_border,
+                          std::vector<std::vector<point_t>>& cur_holes, 
+                          std::vector<bool>& big_used,
+                          std::vector<bool>& first_used,
+                          std::vector<bool>& second_used);
+
+  void moveToNextAtNewEdge(point_t& next_point,
+                          point_t& start_point,
+                          bool& is_prev_edge,
+                          cell_t& cur_cell,
+                          std::vector<std::optional<edge_t>>& edges,
+                          std::vector<point_t>& crit_points,
+                          std::vector<point_t>& cur_border,
+                          std::vector<std::vector<point_t>>& cur_holes, 
+                          std::vector<bool>& big_used,
+                          std::vector<bool>& first_used,
+                          std::vector<bool>& second_used);
+
+  void pushPoints(Ring& ring, std::vector<point_t>& points);
+
+  Ogre::Vector3 toLine(mrs_lib::Point2d start, float twist);
+
+  std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
+
+
+  double signedDistComparable(Line line, mrs_lib::Point2d point);
+
+  double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
+
+// private:
 
   // line is the slice containing the crit_point
   virtual std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);

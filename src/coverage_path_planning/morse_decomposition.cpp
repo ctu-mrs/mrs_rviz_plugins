@@ -71,7 +71,7 @@ void MorseDecomposition::compute() {
     cps.insert(cps.end(), tmp.begin(), tmp.end());
   }
 
-  auto asldkfj = getDecomposition(poly, cps, start, 0);
+  vector<cell_t> asldkfj = getDecomposition(poly, cps, start, 0);
   return;
 }
 
@@ -108,6 +108,7 @@ vector<MorseDecomposition::point_t> MorseDecomposition::getCriticalPoints(Point2
       crit_point.point = obstacle[i];
       crit_point.id = i;
       crit_point.ring_id = ring_id;
+      crit_point.is_crit_p = true;
       result.push_back(crit_point);
       std::cout << "value: " << cur << " point: " << bg::wkt(crit_point.point) << std::endl;
     }
@@ -162,7 +163,8 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     vector<point_t> new_hole(holes[i].size() - 1);
     for(int j=0; j<new_hole.size(); j++){
       // filling from the end to define the hole in clockwise order
-      int cur_index = new_hole.size() - j;
+      // int cur_index = new_hole.size() - j;
+      int cur_index = j;
       new_hole[cur_index].id = cur_index;
       new_hole[cur_index].ring_id = i;
       new_hole[cur_index].point = holes[i][cur_index];
@@ -269,33 +271,405 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     std::cout << std::endl;
   }
 
-  // // 6. Devide the polygon into partitions
-  // vector<cell_t> decomposition;
-  // vector<bool> big_used(crit_points.size(), false);
-  // vector<bool> first_used(crit_points.size(), false);
-  // vector<bool> second_used(crit_points.size(), false);
-  // for(int i=0; i<crit_points.size(); i++){
-  //   if(big_used[i] && first_used[i] && second_used[i]){
-  //     continue;
-  //   }
+  // 6. Update data of edge points
+  std::cout << "Update data of edge points\n";
+  for(int i=0; i<edges.size(); i++){
+    if(!edges[i]){
+      continue;
+    }
+    edge_t& edge = edges[i].value();
 
-  //   if(!edges[i]){
-  //     big_used[i] = true;
-  //     first_used[i] = true;
-  //     second_used[i] = true;
-  //   }
+    // bool updated1 = false;
+    // bool updated2 = false;
+    // bool updated_cp = false;
+
+    for(point_t& cur_p : cur_border){
+      if(bg::equals(cur_p.point, edge.p1.point)){
+        edge.p1 = cur_p;
+      }
+      if(bg::equals(cur_p.point, edge.p2.point)){
+        edge.p2 = cur_p;
+      }
+      if(bg::equals(cur_p.point, edge.crit_p.point)){
+        cur_p.is_crit_p = true;
+        edge.crit_p = cur_p;
+      }
+    }
+
+    for(auto& hole : cur_holes){
+      for(point_t& cur_p : hole){
+        if(bg::equals(cur_p.point, edge.p1.point)){
+          edge.p1 = cur_p;
+        }
+        if(bg::equals(cur_p.point, edge.p2.point)){
+          edge.p2 = cur_p;
+        }
+        if(bg::equals(cur_p.point, edge.crit_p.point)){
+          cur_p.is_crit_p = true;
+          edge.crit_p = cur_p;
+        }
+      }
+    }
+  }
+
+  // 7. Update data of crit_points
+  std::cout << "Update data of crit_points\n";
+  for(int i=0; i<crit_points.size(); i++){
+    point_t& cp = crit_points[i];
+
+    for(point_t& cur_p : cur_border){
+      if(bg::equals(cur_p.point, cp.point)){
+        cur_p.is_crit_p = true;
+        cp = cur_p;
+      }
+    }
+
+    for(auto& hole : cur_holes){
+      for(point_t& cur_p : hole){
+        if(bg::equals(cur_p.point, cp.point)){
+          cur_p.is_crit_p = true;
+          cp = cur_p;
+        }
+      }
+    }
+  }
 
 
-  // }
+  for(int i=0; i<crit_points.size(); i++){
+    std::cout << bg::wkt(crit_points[i].point) << " ";
+    if(!edges[i]){
+      std::cout << "no edge\n";
+    }else{
+      std::cout << bg::wkt(edges[i].value().crit_p.point) << std::endl;
+    }
+  }
 
+
+  // 8. Divide the polygon into partitions
+  std::cout << "Divide the polygon into partitions\n";
+  vector<cell_t> decomposition;
+  vector<bool> big_used(crit_points.size(), false);
+  vector<bool> first_used(crit_points.size(), false);
+  vector<bool> second_used(crit_points.size(), false);
+  // Here the hell begins
+  for(int i=0; i<crit_points.size();){
+    // if critical point generated all 3 partitions, move to the next one
+    if(big_used[i] && first_used[i] && second_used[i]){
+      std::cout << "\nskipping " << bg::wkt(crit_points[i].point) << std::endl;
+      i++;
+      continue;
+    }
+
+    cell_t cur_cell;
+    point_t next_point = crit_points[i];
+    point_t start_point = crit_points[i];
+    bool is_prev_edge = false;
+    
+    std::cout << "\nstarting with " << bg::wkt(crit_points[i].point) << std::endl;
+    // Briefly: find first unused end, insert edge and set next_point on p1 or p2
+    if(!edges[i]){
+      std::cout << "no edge\n";
+      big_used[i] = true;
+      first_used[i] = true;
+      second_used[i] = true;
+    } else if(!big_used[i]){
+      std::cout << "big edge\n";
+      big_used[i] = true;
+      cur_cell.partition.push_back(crit_points[i].point);
+      edge_t edge = edges[i].value();
+      std::vector<point_t> insert;
+      if(edge.follow_cp){
+        insert = edge.part1;
+        std::reverse(insert.begin(), insert.end());
+        // insert.push_back(edge.p1);
+        next_point = edge.p1;
+      } else{
+        insert = edge.part2;
+        // insert.push_back(edge.p2);
+        next_point = edge.p2;
+      }
+      is_prev_edge = true;
+      pushPoints(cur_cell.partition, insert);
+    } else if(!first_used[i]){
+      std::cout << "first edge\n";
+      first_used[i] = true;
+      is_prev_edge = true;
+    } else if(!second_used[i]){
+      std::cout << "second edge\n";
+      second_used[i] = true;
+      is_prev_edge = false;
+    } else{
+      ROS_WARN("[MorseDecomposition]: Smth went wrong. Processing critical point that must be fully processed. Moving to next one");
+      i++;
+      continue;
+    }
+
+    int inserted = 0;
+    while(!bg::equals(next_point.point, crit_points[i].point) || inserted == 0){
+      inserted++;
+      cur_cell.partition.push_back(next_point.point);
+      std::cout << "inserted " << bg::wkt(next_point.point) << " " << next_point.ring_id << " " << next_point.id << std::endl;
+      // std::cout << "is crit: " << (next_point.is_crit_p ? "true" : "false") << std::endl;
+      // std::cout << "second cond: " << ( (next_point.is_new_edge && !is_prev_edge) ? "true" : "false") << std::endl;
+
+      if(next_point.is_crit_p){
+        moveToNextAtCritPoint(next_point, is_prev_edge, cur_cell, edges, crit_points, cur_border, cur_holes, big_used, first_used, second_used);
+      }// end of if(next_point.is_crit_p)
+      else if(next_point.is_new_edge && !is_prev_edge){
+        moveToNextAtNewEdge(next_point, start_point, is_prev_edge, cur_cell, edges, crit_points, cur_border, cur_holes, big_used, first_used, second_used);
+      }
+      else{
+        // std::cout << "moving to next\n";
+        next_point = getNext(cur_border, cur_holes, next_point);
+        // std::cout << "moved to " << bg::wkt(next_point.point) << " " << next_point.ring_id << " " << next_point.id << std::endl;
+        is_prev_edge = false;
+      }
+    } // end of while(!bg:equals(next_point.point, crit_points[i].point))
+
+    std::cout << "pushback cur cell\n";
+    decomposition.push_back(cur_cell);
+
+    // if critical point generated all 3 partitions, move to the next one
+    // if(big_used[i] && first_used[i] && second_used[i]){
+    //   std::cout << "i++\n";
+    //   i++;
+    // }
+  } // end of for(int i=0; i<crit_points.size();)
+
+  std::cout << "\nDECOMPOSED!\n";
+  for(cell_t& cell : decomposition){
+    std::cout << "partition:\n";
+    for(Point2d& p : cell.partition){
+      std::cout << "\t" << bg::wkt(p) << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
   std::cout << "exiting the function\n";
-  return {};
-}
+  return decomposition;
+} // end of getDecomposition()
 
   //|------------------------------------------------------------------|
   //|----------------------------- Tools ------------------------------|
   //|------------------------------------------------------------------|
+
+MorseDecomposition::point_t MorseDecomposition::getNext(vector<point_t>& border, vector<vector<point_t>>& holes, point_t& cur){
+  point_t res;
+  if(cur.ring_id == -1){
+    res = border[(cur.id + 1) % border.size()];
+  } else{
+    vector<point_t>& hole = holes[cur.ring_id];
+    res = hole[(cur.id + 1) % hole.size()];
+  }
+  return res;
+}
+
+MorseDecomposition::point_t MorseDecomposition::getPrev(vector<point_t>& border, vector<vector<point_t>>& holes, point_t& cur){
+  point_t res;
+  int index = cur.id - 1;
+  if(cur.ring_id == -1){
+    if(index < 0){
+      index = border.size() - 1;
+    }
+    res = border[index];
+  } else{
+    vector<point_t>& hole = holes[cur.ring_id];
+    if(index < 0){
+      index = hole.size() - 1;
+    }
+    res = hole[index];
+  }
+  return res;
+}
+
+void MorseDecomposition::pushPoints(Ring& ring, std::vector<MorseDecomposition::point_t>& points){
+  for(point_t& p : points){
+    ring.push_back(p.point);
+  }
+}
+
+
+void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
+                        bool& is_prev_edge,
+                        cell_t& cur_cell,
+                        std::vector<std::optional<edge_t>>& edges,
+                        std::vector<point_t>&crit_points,
+                        std::vector<point_t>& cur_border,
+                        std::vector<std::vector<point_t>>& cur_holes, 
+                        std::vector<bool>& big_used,
+                        std::vector<bool>& first_used,
+                        std::vector<bool>& second_used){
+  edge_t found_edge;
+  size_t found_edge_i = 0;
+  bool found = false;
+  std::cout << "\tentered crit point\n";
+  // Find the edge we bumped into
+  for(int i=0; i<edges.size(); i++){
+    auto& edge_opt = edges[i];
+    if(!edge_opt){
+      continue;
+    }
+    if(bg::equals(next_point.point, edge_opt.value().crit_p.point)){
+      found_edge = edge_opt.value();
+      found = true;
+      found_edge_i = i;
+      break;
+    }
+  }
+
+  if(!found){
+    std::cout << "\t404 not found\n";
+    int cp_index = 0;
+    for(int i=0; i<crit_points.size(); i++){
+      if(bg::equals(crit_points[i].point, next_point.point)){
+        cp_index = i;
+        break;
+      }
+    }
+
+    std::cout << "\t" << bg::wkt(crit_points[cp_index].point) << " has no edge\n";
+
+    big_used[cp_index] = true;
+    first_used[cp_index] = true;
+    second_used[cp_index] = true;
+    next_point = getNext(cur_border, cur_holes, next_point);
+    is_prev_edge = false;
+    return;
+  }
+
+  std::cout << "\tmoving on after crit point\n";
+  std::cout << "\tis_prev_edge is " << (is_prev_edge ? "true" : "false") << std::endl;
+
+  if(is_prev_edge){
+    first_used[found_edge_i] = true;
+    is_prev_edge = false;
+    next_point = getNext(cur_border, cur_holes, next_point);
+  }else{
+    second_used[found_edge_i] = true;
+    is_prev_edge = true;
+    if(found_edge.follow_cp){
+      next_point = found_edge.p2;
+      pushPoints(cur_cell.partition, found_edge.part2);
+    }else{
+      next_point = found_edge.p1;
+      auto to_insert = found_edge.part1;
+      std::reverse(to_insert.begin(), to_insert.end());
+      pushPoints(cur_cell.partition, to_insert);
+    }
+  }
+}
+
+void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point, 
+                        point_t& start_point,
+                        bool& is_prev_edge,
+                        cell_t& cur_cell,
+                        std::vector<std::optional<edge_t>>& edges,
+                        std::vector<point_t>& crit_points,
+                        std::vector<point_t>& cur_border,
+                        std::vector<std::vector<point_t>>& cur_holes, 
+                        std::vector<bool>& big_used,
+                        std::vector<bool>& first_used,
+                        std::vector<bool>& second_used){
+  edge_t found_edge;
+  size_t found_edge_i = 0;
+  bool goto_cp = false;
+  bool found = false;
+
+  // Find the edge we bumped into
+  for(int i=0; i<edges.size(); i++){
+    auto& edge_opt = edges[i];
+    if(!edge_opt){
+      continue;
+    }
+
+    edge_t edge = edge_opt.value();
+    bool equal_to_p1 = bg::equals(next_point.point, edge.p1.point);
+    bool equal_to_p2 = bg::equals(next_point.point, edge.p2.point);
+    if((equal_to_p1 && edge.follow_cp) || (equal_to_p2 && !edge.follow_cp)){
+      found_edge = edge;
+      found_edge_i = i;
+      goto_cp = true;
+      found = true;
+      break;
+    }
+    if((equal_to_p1 && !edge.follow_cp) || (equal_to_p2 && edge.follow_cp)){
+      found_edge = edge;
+      found_edge_i = i;
+      goto_cp = false;
+      found = true;
+      break;
+    }
+  }
+
+  if(!found){
+    next_point = getNext(cur_border, cur_holes, next_point);
+    is_prev_edge = false;
+    return;
+  }
+
+  std::cout << "\tgoto is " << (goto_cp ? "true" : "false") << std::endl;
+  std::cout << "\tfound_edge.follow_cp is " << (found_edge.follow_cp ? "true" : "false") << std::endl;
+  
+  // Briefly: insert part of edge into current partition,
+  //          set next_point to crit_point or p1 or p2
+  is_prev_edge = true;
+  if(found_edge.follow_cp && goto_cp){
+    first_used[found_edge_i] = true;
+    pushPoints(cur_cell.partition, found_edge.part1);
+    next_point = found_edge.crit_p;
+    std::cout << "\tfound_edge: " << (found_edge.crit_p.is_crit_p ? "true" : "false") << std::endl;
+    std::cout << "\tnext_point: " << (next_point.is_crit_p ? "true" : "false") << std::endl;
+  }
+  if(found_edge.follow_cp && !goto_cp){
+    big_used[found_edge_i] = true;
+    std::cout << "big_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
+    std::cout << "big_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    vector<point_t> to_insert;
+    to_insert.reserve(found_edge.part1.size() + found_edge.part2.size() + 1);
+    for(point_t& p : found_edge.part2){
+      to_insert.push_back(p);
+    }
+    std::reverse(to_insert.begin(), to_insert.end());
+
+    // If crit point of the edge is the start point, partition is complete
+    if(bg::equals(found_edge.crit_p.point, start_point.point)){
+      pushPoints(cur_cell.partition, to_insert);
+      next_point = found_edge.crit_p;
+      return;
+    }
+
+    to_insert.push_back(found_edge.crit_p);
+    for(int i=found_edge.part1.size() - 1; i>=0; i--){
+    // for(point_t& p : found_edge.part1){
+      to_insert.push_back(found_edge.part1[i]);
+    }
+    pushPoints(cur_cell.partition, to_insert);
+    next_point = found_edge.p1;
+  }
+  if(!found_edge.follow_cp && goto_cp){
+    first_used[found_edge_i] = true;
+    vector<point_t> to_insert = found_edge.part2;
+    std::reverse(to_insert.begin(), to_insert.end());
+    pushPoints(cur_cell.partition, to_insert);
+    next_point = found_edge.crit_p;
+  }
+  if(!found_edge.follow_cp && !goto_cp){
+    big_used[found_edge_i] = true;
+    std::cout << "big_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
+    std::cout << "big_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    pushPoints(cur_cell.partition, found_edge.part1);
+
+    // If crit point of the edge is the start point, partition is complete
+    if(bg::equals(found_edge.crit_p.point, start_point.point)){
+      next_point = found_edge.crit_p;
+      return;
+    }
+
+    cur_cell.partition.push_back(found_edge.crit_p.point);
+    pushPoints(cur_cell.partition, found_edge.part2);
+    next_point = found_edge.p2;
+  }
+}
 
 Ogre::Vector3 MorseDecomposition::toLine(Point2d start, float twist) {
   Ogre::Vector3 line;
@@ -473,6 +847,8 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
 
   edge_t result;
   result.crit_p = crit_point;
+  std::cout << "getEdge: crit_point is " << (crit_point.is_crit_p ? "true" : "false") << std::endl;
+  std::cout << "getEdge: res.crit_p is " << (result.crit_p.is_crit_p ? "true" : "false") << std::endl;
   result.p1 = closest_negative_point;
   result.p2 = closest_positive_point;
 
