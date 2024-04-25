@@ -4,7 +4,8 @@
 #include <optional>
 #include <numeric>
 #include <limits>
-#include <cmath>
+#include <random> 
+#include <cmath> 
 
 namespace bg = boost::geometry;
 
@@ -22,61 +23,125 @@ void MorseDecomposition::initialize (rviz::Property* property_container, Ogre::S
   ExactDecomposition::initialize(property_container, scene_manager, root_node);
 }
 
+MorseDecomposition::~MorseDecomposition(){
+  std::cout << "Morse destructor called\n";
+}
+
+void MorseDecomposition::start() {
+  std::cout << "start\n";
+}
+
+void MorseDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
+  current_polygon_ = new_polygon;
+  std::default_random_engine generator;
+  float upper = 0.02;
+  float lower = -0.02;
+  std::uniform_real_distribution<float> distribution(lower, upper);
+
+  for(Point2d& p : current_polygon_.outer()){
+    float x = bg::get<0>(p);
+    float y = bg::get<1>(p);
+
+    x += distribution(generator);
+    y += distribution(generator);
+
+    bg::set<0>(p, x);
+    bg::set<1>(p, y);
+  }
+  current_polygon_.outer().back() = current_polygon_.outer().front();
+
+  auto& holes = bg::interior_rings(current_polygon_);
+  for(auto& hole : holes){
+    for(Point2d& p : hole){
+      float x = bg::get<0>(p);
+      float y = bg::get<1>(p);
+
+      x += distribution(generator);
+      y += distribution(generator);
+
+      bg::set<0>(p, x);
+      bg::set<1>(p, y);
+    }
+    hole.back() = hole.front();
+  }
+
+  ExactDecomposition::setPolygon(frame_id, current_polygon_, update);
+}
+
 void MorseDecomposition::compute() {
   std::cout << "compute\n";
 
-  Polygon poly;
+  // Polygon poly;
 
-  {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{4, 3}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{2, 4}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{5, 5}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{7, 5}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{8, 2}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{7, 0}; bg::append(poly, p);}
-  {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{4, 3}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{2, 4}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{5, 5}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{7, 5}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{8, 2}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{7, 0}; bg::append(poly, p);}
+  // {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
 
-  bg::interior_rings(poly).resize(2);
+  // bg::interior_rings(poly).resize(2);
 
-  {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
-  {mrs_lib::Point2d p{3, 2.38}; bg::append(poly, p, 0);}
-  {mrs_lib::Point2d p{3.68, 2}; bg::append(poly, p, 0);}
-  {mrs_lib::Point2d p{3, 1.62}; bg::append(poly, p, 0);}
-  {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{3, 2.38}; bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{3.68, 2}; bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{3, 1.62}; bg::append(poly, p, 0);}
+  // {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
 
 
-  {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
-  {mrs_lib::Point2d p{6.64386, 2.79007}; bg::append(poly, p, 1);}
-  {mrs_lib::Point2d p{5.57257, 1.47828}; bg::append(poly, p, 1);}
-  {mrs_lib::Point2d p{6.00983, 2.72448}; bg::append(poly, p, 1);}
-  {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
+  // {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
+  // {mrs_lib::Point2d p{6.64386, 2.79007}; bg::append(poly, p, 1);}
+  // {mrs_lib::Point2d p{5.57257, 1.47828}; bg::append(poly, p, 1);}
+  // {mrs_lib::Point2d p{6.00983, 2.72448}; bg::append(poly, p, 1);}
+  // {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
 
+  // 
   std::string msg;
-  if (!bg::is_valid(poly, msg)){
-    std::cout << "poly is not valid: " << msg << std::endl;
+  if (!bg::is_valid(current_polygon_, msg)){
+    ROS_ERROR("[MorseDecomposition]: current polygon is not valid. Either invalid polygon has been recieved or vertices has been shifted inappropriately. Try increase distance between vertices");
+    // std::cout << "current_polygon is not valid: " << msg << std::endl;
+    return;
   }
-  bg::correct(poly);
-  bg::is_valid(poly, msg);
-  std::cout << "after correcting: " << msg << std::endl;
+  // bg::correct(poly);
+  // bg::is_valid(poly, msg);
+  // std::cout << "after correcting: " << msg << std::endl;
 
-  bg::is_valid(poly, msg);
-  std::cout << "after reversing holes" << msg << std::endl;
+  // bg::is_valid(poly, msg);
+  // std::cout << "after reversing holes" << msg << std::endl;
 
-  Point2d start{6, 2};
+  geometry_msgs::Point start_p;
+  start_p.x = start_position_.x;
+  start_p.y = start_position_.y;
+  start_p.z = start_position_.z;
+  auto transformed = transformer_.transformSingle(current_frame_, start_p, polygon_frame_);
+  if(!transformed){
+    ROS_ERROR("[MorseDecomposition]: Could not transform start position from %s to %s. Terminating computation.", current_frame_.c_str(), polygon_frame_.c_str());
+    return;
+  }
+  start_p = transformed.value();
+  Point2d start{start_p.x, start_p.y};
 
-  vector<point_t> cps = getCriticalPoints(start, poly.outer(), 0, -1);
-  vector<Ring> holes = bg::interior_rings(poly); 
+  vector<point_t> cps = getCriticalPoints(start, current_polygon_.outer(), 0, -1);
+  vector<Ring> holes = bg::interior_rings(current_polygon_); 
   for(int i=0; i<holes.size(); i++){
     vector<point_t> tmp = getCriticalPoints(start, holes[i], 0, i);
     cps.insert(cps.end(), tmp.begin(), tmp.end());
   }
 
-  vector<cell_t> asldkfj = getDecomposition(poly, cps, start, 0);
+ {
+  vector<cell_t> decomposition = getDecomposition(current_polygon_, cps, start, 0);
+  vector<Ring> decomposition_rings;
+  decomposition_rings.reserve(decomposition.size());
+  for(cell_t& cell : decomposition){
+    decomposition_rings.push_back(cell.partition);
+  }
+  drawDecomposition(decomposition_rings);
+  std::cout << "exiting the block\n";
+ }
+  std::cout << "exiting compute()\n";
   return;
-}
-
-void MorseDecomposition::start() {
-  std::cout << "start\n";
 }
 
   //|------------------------------------------------------------------|
@@ -139,8 +204,6 @@ vector<size_t> sort_indexes(const vector<T> &v) {
 }
 
 vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon& polygon, vector<MorseDecomposition::point_t>& crit_points, mrs_lib::Point2d start, float twist) {
-  // TODO: implement me!
-  
   // 1. Find all the edges generated by critical points
   vector<std::optional<edge_t>> edges;
   for(point_t& cp : crit_points){
@@ -151,7 +214,7 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
 
   // 2. Transform polygon into more convenient format
   vector<point_t> cur_border(polygon.outer().size()-1);
-  for(int i=0; i<polygon.outer().size(); i++){
+  for(int i=0; i<polygon.outer().size() - 1; i++){
     cur_border[i].id = i;
     cur_border[i].ring_id = -1;
     cur_border[i].point = polygon.outer()[i];
@@ -427,6 +490,7 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     } // end of while(!bg:equals(next_point.point, crit_points[i].point))
 
     std::cout << "pushback cur cell\n";
+    cur_cell.partition.push_back(cur_cell.partition.front());
     decomposition.push_back(cur_cell);
 
     // if critical point generated all 3 partitions, move to the next one

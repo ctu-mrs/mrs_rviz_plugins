@@ -18,6 +18,10 @@ public:
 
   void start() override;
 
+  void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) override;
+
+  ~MorseDecomposition();
+
 protected:
   typedef mrs_lib::Polygon::ring_type Ring;
   typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
@@ -29,7 +33,6 @@ protected:
     mrs_lib::Point2d crit_point1;
     mrs_lib::Point2d crit_point2;
   } cell_t;
-  // todo: add is_crit_p to point_t
   typedef struct{
     mrs_lib::Point2d point;
     int id = -1;
