@@ -53,15 +53,25 @@ protected:
 
   virtual std::vector<point_t> getCriticalPoints(mrs_lib::Point2d start, Ring obstacle, float twist, int ring_id);
 
-  virtual std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon, 
+  std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon, 
                                               std::vector<point_t>& crit_points, 
                                               mrs_lib::Point2d start,
                                               float twist);
+
+  virtual void fillCells(std::vector<cell_t>& cells, mrs_lib::Point2d start, float twist);
+
+  std::vector<int> getAdjacentCells(std::vector<cell_t>& cells, int index);
 
   // |--------------------- Tools ---------------------|
   point_t getNext(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
   
   point_t getPrev(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
+
+  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
+
+  bool getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
+
+  mrs_msgs::PathSrv generatePath(std::vector<cell_t> cells, std::vector<int> path, mrs_lib::Point2d start);
 
   void moveToNextAtCritPoint(point_t& next_point,
                           bool& is_prev_edge,
@@ -92,7 +102,6 @@ protected:
 
   std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
 
-
   double signedDistComparable(Line line, mrs_lib::Point2d point);
 
   double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
@@ -100,7 +109,7 @@ protected:
 // private:
 
   // line is the slice containing the crit_point
-  virtual std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
+  std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
 }; // class MorseDecomposition
 } // namespace mrs_rviz_plugins
 
