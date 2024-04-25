@@ -1190,51 +1190,55 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
       cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
     }
   }
-  #ifdef DEBUG
-  std::cout << "Making the path lie in safety area only\n";
-  #endif // DEBUG
-  std::vector<mrs_msgs::Reference> updated_points;
-  for(int i=0; i<result.request.path.points.size()-1; i++){
-    updated_points.push_back(result.request.path.points[i]);
-    Point2d p1 {result.request.path.points[i].position.x, result.request.path.points[i].position.y};
-    Point2d p2 {result.request.path.points[i+1].position.x, result.request.path.points[i+1].position.y};
+  // #ifdef DEBUG
+  // std::cout << "Making the path lie in safety area only\n";
+  // #endif // DEBUG
+  // std::vector<mrs_msgs::Reference> updated_points;
+  // for(int i=0; i<result.request.path.points.size()-1; i++){
+  //   updated_points.push_back(result.request.path.points[i]);
+  //   Point2d p1 {result.request.path.points[i].position.x, result.request.path.points[i].position.y};
+  //   Point2d p2 {result.request.path.points[i+1].position.x, result.request.path.points[i+1].position.y};
     
-    Line line;
-    line.push_back(p1);
-    line.push_back(p2);
-    if(bg::within(line, current_polygon_)){
-      continue;
-    }
-    #ifdef DEBUG
-    std::cout << bg::wkt(line) << " does not lie within the polygon.\n";
-    #endif // DEBUG
+  //   Line line;
+  //   line.push_back(p1);
+  //   line.push_back(p2);
+  //   if(bg::within(line, current_polygon_)){
+  //     continue;
+  //   }
+  //   #ifdef DEBUG
+  //   std::cout << bg::wkt(line) << " does not lie within the polygon.\n";
+  //   #endif // DEBUG
 
-    auto new_partial_path = getPath(p1, p2);
-    std::cout << "partial path len = " << new_partial_path.size() << std::endl;
-    for(Point2d& new_p : new_partial_path){
-      mrs_msgs::Reference new_r;
-      new_r.position.x = bg::get<0>(new_p);
-      new_r.position.y = bg::get<1>(new_p);
-      new_r.position.z = height_;
-      updated_points.push_back(new_r);
-    }
-  }
-  updated_points.push_back(result.request.path.points.back());
+  //   auto new_partial_path = getPath(p1, p2);
+  //   std::cout << "partial path len = " << new_partial_path.size() << std::endl;
+  //   for(Point2d& new_p : new_partial_path){
+  //     mrs_msgs::Reference new_r;
+  //     new_r.position.x = bg::get<0>(new_p);
+  //     new_r.position.y = bg::get<1>(new_p);
+  //     new_r.position.z = height_;
+  //     updated_points.push_back(new_r);
+  //   }
+  // }
+  // updated_points.push_back(result.request.path.points.back());
+  // #ifdef DEBUG
+  // std::cout << "erasing same waypoints\n";
+  // #endif // DEBUG
+
+  // for(int i=0; i<updated_points.size()-1;){
+  //   if(updated_points[i] == updated_points[i+1]){
+  //     updated_points.erase(updated_points.begin() + i);
+  //   } else{
+  //     i++;
+  //   }
+  // }
+
+  // // todo: erase points that lie on the same [infinite] line
+
   #ifdef DEBUG
-  std::cout << "erasing same waypoints\n";
+  std::cout <<"Fixing the path\n";
   #endif // DEBUG
 
-  for(int i=0; i<updated_points.size()-1;){
-    if(updated_points[i] == updated_points[i+1]){
-      updated_points.erase(updated_points.begin() + i);
-    } else{
-      i++;
-    }
-  }
-
-  // todo: erase points that lie on the same [infinite] line
-
-  result.request.path.points = updated_points;
+  result.request.path.points = fixPath(result.request.path.points);
 
   #ifdef DEBUG
   std::cout <<"PATH GENERATED\n";

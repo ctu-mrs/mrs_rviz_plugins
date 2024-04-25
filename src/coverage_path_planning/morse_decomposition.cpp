@@ -4,8 +4,9 @@
 #include <optional>
 #include <numeric>
 #include <limits>
-#include <random> 
-#include <cmath> 
+#include <random>
+#include <cmath>
+#include <list>
 
 namespace bg = boost::geometry;
 
@@ -21,6 +22,10 @@ namespace mrs_rviz_plugins{
 
 void MorseDecomposition::initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) {
   ExactDecomposition::initialize(property_container, scene_manager, root_node);
+  twist_property_ = new rviz::IntProperty("Twist", 0, "Twist of the morse funstion", property_container);
+
+  twist_property_->setMin(0);
+  twist_property_->setMax(180);
 }
 
 MorseDecomposition::~MorseDecomposition(){
@@ -111,6 +116,8 @@ void MorseDecomposition::compute() {
   // bg::is_valid(poly, msg);
   // std::cout << "after reversing holes" << msg << std::endl;
 
+  float twist_rad = (((float)twist_property_->getInt()) / 180) * M_PI;
+
   geometry_msgs::Point start_p;
   start_p.x = start_position_.x;
   start_p.y = start_position_.y;
@@ -123,14 +130,14 @@ void MorseDecomposition::compute() {
   start_p = transformed.value();
   Point2d start{start_p.x, start_p.y};
 
-  vector<point_t> cps = getCriticalPoints(start, current_polygon_.outer(), 0, -1);
+  vector<point_t> cps = getCriticalPoints(start, current_polygon_.outer(), twist_rad, -1);
   vector<Ring> holes = bg::interior_rings(current_polygon_); 
   for(int i=0; i<holes.size(); i++){
-    vector<point_t> tmp = getCriticalPoints(start, holes[i], 0, i);
+    vector<point_t> tmp = getCriticalPoints(start, holes[i], twist_rad, i);
     cps.insert(cps.end(), tmp.begin(), tmp.end());
   }
 
-  vector<cell_t> decomposition = getDecomposition(current_polygon_, cps, start, 0);
+  vector<cell_t> decomposition = getDecomposition(current_polygon_, cps, start, twist_rad);
   vector<Ring> decomposition_rings;
   decomposition_rings.reserve(decomposition.size());
   for(cell_t& cell : decomposition){
@@ -138,9 +145,32 @@ void MorseDecomposition::compute() {
   }
   drawDecomposition(decomposition_rings);
 
-  fillCells(decomposition, start, 0);
+  fillCells(decomposition, start, twist_rad);
+  std::cout << "cells are filled\n";
 
-  mrs_msgs::PathSrv path = generatePath(decomposition, {}, start);
+  vector<int> optimal_cell_sequence;
+  float optimal_len = std::numeric_limits<float>::max();
+  bool found = false;
+  std::cout << "searching for cell seq\n";
+  for(int i=0; i<decomposition.size(); i++){
+    float cur_len = 0;
+    vector<int> cur_path = findPath(decomposition, i, start, cur_len);
+    if(cur_len >= 0 && cur_len < optimal_len){
+      optimal_len = cur_len;
+      optimal_cell_sequence = cur_path;
+      found = true;
+    }
+  }
+
+
+  if(!found){
+    ROS_ERROR("[MorseDecomposition]: Could not find any cell sequence. No path has been computed");
+    return;
+  }
+  std::cout << "cell seq found\n";
+
+  mrs_msgs::PathSrv path = generatePath(decomposition, optimal_cell_sequence, start);
+  std::cout << "path generated\n";
   drawPath(path);
   std::cout << "exiting compute()\n";
   return;
@@ -479,7 +509,7 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
       // std::cout << "second cond: " << ( (next_point.is_new_edge && !is_prev_edge) ? "true" : "false") << std::endl;
 
       if(next_point.is_crit_p){
-        if(!bg::equals(cur_cell.crit_point2, next_point.point)){
+        if(!bg::equals(cur_cell.crit_point1, next_point.point)){
           cur_cell.crit_point2 = next_point.point;
         }
         moveToNextAtCritPoint(next_point, is_prev_edge, cur_cell, edges, crit_points, cur_border, cur_holes, big_used, first_used, second_used);
@@ -519,8 +549,8 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   return decomposition;
 } // end of getDecomposition()
 
-mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t> cells, vector<int> path, Point2d start){
-  // todo: implement me property
+// Note: start must be in polygon_frame_
+mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t>& cells, vector<int>& path, Point2d start){
   mrs_msgs::PathSrv result;
   result.request.path.header.frame_id = polygon_frame_;
   result.request.path.stop_at_waypoints = false;
@@ -528,19 +558,147 @@ mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t> cells, vector<
   result.request.path.fly_now = true;
   result.request.path.loop = false;
 
-  for(cell_t& cell : cells){
-    if(cell.paths.size() == 0){
-      continue;
-    }
-    for(Point2d& p : cell.paths[0]){
+  mrs_msgs::Reference start_r;
+  start_r.position.x = bg::get<0>(start);
+  start_r.position.y = bg::get<1>(start);
+  start_r.position.z = height_;
+  result.request.path.points.push_back(start_r);
+
+  Point2d last_point = start;
+
+  for(int cell_i : path){
+    int closest_i = findClosest(cells[cell_i], last_point);
+    for(Point2d& point : cells[cell_i].paths[closest_i]){
       mrs_msgs::Reference ref;
-      ref.position.x = bg::get<0>(p);
-      ref.position.y = bg::get<1>(p);
+      ref.position.x = bg::get<0>(point);
+      ref.position.y = bg::get<1>(point);
       ref.position.z = height_;
       result.request.path.points.push_back(ref);
     }
+
+    if(cells[cell_i].paths[closest_i].size() != 0){
+      last_point = cells[cell_i].paths[closest_i].back();
+    }
   }
+
+  result.request.path.points = fixPath(result.request.path.points);
+
   return result;
+}
+
+vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index, Point2d start_pos, float& total_len){
+  // Results
+  std::vector<float> total_lens;
+  std::vector<vector<int>> total_paths;
+
+  // Queues
+  std::list<int> cells_to_visit{start_index};
+  std::list<float> path_len{0};
+  std::list<Point2d> last_point{start_pos};
+  std::list<vector<int>> path_to_cell{{}}; // also serves as <visited>
+
+  while(!cells_to_visit.empty()){
+    // Take the info of current cell
+    int cur_cell_i = cells_to_visit.front();
+    float cur_path_len = path_len.front();
+    Point2d cur_last_point = last_point.front();
+    vector<int> cur_path = path_to_cell.front();
+
+    // Pop the queue
+    cells_to_visit.pop_front();
+    path_len.pop_front();
+    last_point.pop_front();
+    path_to_cell.pop_front();
+
+    // Find next cells
+    std::list<int> next_cells;
+    for(int neighbor : cells[cur_cell_i].adjacent_cells){
+      if(std::find(cur_path.begin(), cur_path.end(), neighbor) == cur_path.end()){
+        next_cells.emplace_back(neighbor);
+      }
+    }
+    if(next_cells.empty()){
+      for(int i=0; i<cells.size(); i++){
+        if(std::find(cur_path.begin(), cur_path.end(), i) == cur_path.end() && i != cur_cell_i){
+          next_cells.emplace_back(i);
+        }
+      }
+    }
+
+    // If no next cell was found, then all of them has been visited and we must record the path
+    if(next_cells.empty()){
+      vector<int> total_path = cur_path;
+      total_path.push_back(cur_cell_i);
+
+      total_paths.push_back(total_path);
+      total_lens.push_back(cur_path_len);
+      continue;
+    }
+
+    // How we ge to next cells
+    std::list<float> d_len;
+    std::list<Point2d> finish_points;
+    for(int next_cell_i : next_cells){
+      int closest_i = findClosest(cells[next_cell_i], cur_last_point);
+      if(closest_i < 0){
+        d_len.emplace_back(0);
+        finish_points.emplace_back(cur_last_point);
+      }else{
+        d_len.emplace_back(bg::distance(cur_last_point, cells[next_cell_i].paths[closest_i].front()));
+        finish_points.emplace_back(cells[next_cell_i].paths[closest_i].back());
+      }
+    }
+
+    // Add next cells to the queue
+    for(int next_cell : next_cells){
+      vector<int> new_path = cur_path;
+      new_path.push_back(cur_cell_i);
+
+      path_to_cell.emplace_front(new_path);
+      cells_to_visit.emplace_front(next_cell);
+    }
+    for(float dl : d_len){
+      path_len.emplace_front(cur_path_len + dl);
+    }
+    for(Point2d point : finish_points){
+      last_point.emplace_front(point);
+    }
+  }
+
+  // Find optimal path
+  int argmin = -1;
+  float min_len = std::numeric_limits<float>::max();
+  for(int i=0; i<total_lens.size(); i++){
+    if(min_len > total_lens[i]){
+      min_len = total_lens[i];
+      argmin = i;
+    }
+  }
+
+  if(argmin == -1){
+    total_len = -1;
+    return {};
+  }
+  total_len = total_lens[argmin];
+  return total_paths[argmin];
+}
+
+int MorseDecomposition::findClosest(cell_t& cell, Point2d point){
+  int res_i = -1;
+  float min_dist = std::numeric_limits<float>::max();
+  for(int i=0; i<cell.paths.size(); i++){
+    if(cell.paths[i].size() == 0){
+      ROS_WARN("[MorseDecomposition]: Cell #%d has empty path #%d", cell.id, i);
+      continue;
+    }
+
+    float cur_dist = bg::comparable_distance(point, cell.paths[i].front());
+    if(cur_dist < min_dist){
+      min_dist = cur_dist;
+      res_i = i;
+    }
+  }
+  return res_i;
 }
 
 void MorseDecomposition::fillCells(vector<cell_t>& cells, Point2d start, float twist){

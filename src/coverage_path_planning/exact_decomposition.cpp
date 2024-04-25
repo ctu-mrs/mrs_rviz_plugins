@@ -220,6 +220,48 @@ std::vector<mrs_lib::Point2d> ExactDecomposition::getPath(mrs_lib::Point2d p1, m
   return {};
 }
 
+std::vector<mrs_msgs::Reference> ExactDecomposition::fixPath(std::vector<mrs_msgs::Reference>& path){
+  std::vector<mrs_msgs::Reference> updated_points;
+
+  // Make points lie within the current_polygon_
+  for(int i=0; i<path.size()-1; i++){
+    updated_points.push_back(path[i]);
+    mrs_lib::Point2d p1 {path[i].position.x, path[i].position.y};
+    mrs_lib::Point2d p2 {path[i+1].position.x, path[i+1].position.y};
+    
+    boost::geometry::model::linestring<mrs_lib::Point2d> line;
+    line.push_back(p1);
+    line.push_back(p2);
+    if(bg::within(line, current_polygon_)){
+      continue;
+    }
+
+    auto new_partial_path = getPath(p1, p2);
+    std::cout << "partial path len = " << new_partial_path.size() << std::endl;
+    for(mrs_lib::Point2d& new_p : new_partial_path){
+      mrs_msgs::Reference new_r;
+      new_r.position.x = bg::get<0>(new_p);
+      new_r.position.y = bg::get<1>(new_p);
+      new_r.position.z = height_;
+      updated_points.push_back(new_r);
+    }
+  }
+  updated_points.push_back(path.back());
+
+  // Erase same references
+  for(int i=0; i<updated_points.size()-1;){
+    if(updated_points[i] == updated_points[i+1]){
+      updated_points.erase(updated_points.begin() + i);
+    } else{
+      i++;
+    }
+  }
+
+  // todo: erase points that lie on the same [infinite] line
+
+  return updated_points;
+}
+
 float ExactDecomposition::getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2) {
   float res = 0;
   std::vector<mrs_lib::Point2d> path = getPath(p1, p2);

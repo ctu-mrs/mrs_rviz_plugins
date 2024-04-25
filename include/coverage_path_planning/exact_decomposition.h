@@ -42,6 +42,7 @@ protected:
   void drawPath(mrs_msgs::PathSrv& path);
   void drawCurrentPolygon();
   std::vector<mrs_lib::Point2d> getPath(mrs_lib::Point2d p1, mrs_lib::Point2d p2);
+  std::vector<mrs_msgs::Reference> fixPath(std::vector<mrs_msgs::Reference>& path);
 
   // Returns -1 if no path has been found
   float getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2);

@@ -3,6 +3,8 @@
 
 #include "coverage_path_planning/exact_decomposition.h"
 
+#include <rviz/properties/int_property.h>
+
 #include <optional>
 
 namespace mrs_rviz_plugins{
@@ -71,7 +73,11 @@ protected:
 
   bool getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
 
-  mrs_msgs::PathSrv generatePath(std::vector<cell_t> cells, std::vector<int> path, mrs_lib::Point2d start);
+  mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int>& path, mrs_lib::Point2d start);
+
+  std::vector<int> findPath(std::vector<cell_t>& cells, int start_index, mrs_lib::Point2d start_pos, float& total_len);
+
+  int findClosest(cell_t& cell, mrs_lib::Point2d point);
 
   void moveToNextAtCritPoint(point_t& next_point,
                           bool& is_prev_edge,
@@ -110,6 +116,9 @@ protected:
 
   // line is the slice containing the crit_point
   std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
+
+  rviz::IntProperty* twist_property_;
+
 }; // class MorseDecomposition
 } // namespace mrs_rviz_plugins
 
