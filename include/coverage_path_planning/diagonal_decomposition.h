@@ -26,7 +26,7 @@ public:
 
 protected:
   //|----------------------------  Types ----------------------------|
-  // For more derailed description view .cpp file
+  // For more detailed description view README
   typedef struct{
     mrs_lib::Point2d point;
     int ring_index;
@@ -38,8 +38,6 @@ protected:
     int polygon_id = 0;
   } cell_t;
   typedef std::pair<point_t, point_t> line_t;
-  typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
-  typedef mrs_lib::Polygon::ring_type Ring;
 
   //|------------------- Procedures of MP3 algorithm-------------------|
   
@@ -117,21 +115,12 @@ protected:
 
   mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
 
-  // Shifts p1 and p2 towards each other by dist
-  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
-
   // ang(a, b, c) denotes the angle between 0 and 360 degrees
   // swept by a counterclockwise rotation from line segment ba to line segment bc.
   double ang(mrs_lib::Point2d a, mrs_lib::Point2d b, mrs_lib::Point2d c);
   
   // Convenient overload of ang()
   double ang(point_t a, point_t b, point_t c);
-
-  // returns distance from point to infinite line, such that:
-  //    1) distance from 2 points have the same sign iff there 
-  //       are on the same side from the line
-  //    2) abs(distance) is lower for the point that is closer to the line
-  double signedDistComparable(Line line, mrs_lib::Point2d point);
 
   point_t getClosestPoint(std::vector<std::vector<point_t>>& holes, point_t point);
 

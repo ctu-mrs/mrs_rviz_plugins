@@ -10,7 +10,7 @@
 #include <list>
 
 // Uncomment this for useful outputs during computations
-#define DEBUG
+// #define DEBUG
 
 namespace bg = boost::geometry;
 
@@ -370,10 +370,14 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
   is_covered = bg::within(center1, polygon) && bg::within(center2, polygon);
 
   if(!is_covered){
+    #ifdef DEBUG
     printf("edge (%.7f %.7f)  (%.7f %.7f) is not covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
+    #endif // DEBUG
     return std::nullopt;
   }
+  #ifdef DEBUG
   printf("edge (%.7f %.7f)  (%.7f %.7f) is covered by the polygon\n", bg::get<0>(result.p1.point), bg::get<1>(result.p1.point), bg::get<0>(result.p2.point), bg::get<1>(result.p2.point));
+  #endif // DEBUG
 
   // 6. Define where to go after p1
   Point2d next_point;
@@ -1237,26 +1241,6 @@ MorseDecomposition::point_t MorseDecomposition::getPrev(vector<point_t>& border,
   return res;
 }
 
-MorseDecomposition::Line MorseDecomposition::shrink(Point2d p1, Point2d p2, float dist) {
-  float as_vector_x = bg::get<0>(p2) - bg::get<0>(p1);
-  float as_vector_y = bg::get<1>(p2) - bg::get<1>(p1);
-
-  float normalizer = std::pow(as_vector_x * as_vector_x + as_vector_y * as_vector_y, 0.5);
-  float subtrahend_vector_x = (as_vector_x / normalizer) * dist;
-  float subtrahend_vector_y = (as_vector_y / normalizer) * dist;
-
-  float res_p1_x = bg::get<0>(p1) + subtrahend_vector_x;
-  float res_p1_y = bg::get<1>(p1) + subtrahend_vector_y;
-
-  float res_p2_x = bg::get<0>(p2) - subtrahend_vector_x;
-  float res_p2_y = bg::get<1>(p2) - subtrahend_vector_y;
-
-  Line res;
-  res.push_back(Point2d{res_p1_x, res_p1_y});
-  res.push_back(Point2d{res_p2_x, res_p2_y});
-  return res;
-}
-
 bool MorseDecomposition::getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<Point2d, Point2d>& res){
   int found_num = 0;
   Point2d first;
@@ -1351,18 +1335,6 @@ std::optional<Point2d> MorseDecomposition::getIntersection(Ogre::Vector3 line, M
   }
 
   return std::nullopt;
-}
-
-double MorseDecomposition::signedDistComparable(Line line, Point2d point) {
-  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
-  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
-  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
-
-  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
-}
-
-double MorseDecomposition::signedDistComparable(Ogre::Vector3 line, Point2d point) {
-  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
 }
 
 } // namespace mrs_rviz_plugins

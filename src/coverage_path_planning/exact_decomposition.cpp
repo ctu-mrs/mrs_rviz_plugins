@@ -274,6 +274,38 @@ float ExactDecomposition::getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2) {
   return res;
 }
 
+double ExactDecomposition::signedDistComparable(Line line, mrs_lib::Point2d point) {
+  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
+  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
+  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
+
+  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
+}
+
+double ExactDecomposition::signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point) {
+  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
+}
+
+ExactDecomposition::Line ExactDecomposition::shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist) {
+  float as_vector_x = bg::get<0>(p2) - bg::get<0>(p1);
+  float as_vector_y = bg::get<1>(p2) - bg::get<1>(p1);
+
+  float normalizer = std::pow(as_vector_x * as_vector_x + as_vector_y * as_vector_y, 0.5);
+  float subtrahend_vector_x = (as_vector_x / normalizer) * dist;
+  float subtrahend_vector_y = (as_vector_y / normalizer) * dist;
+
+  float res_p1_x = bg::get<0>(p1) + subtrahend_vector_x;
+  float res_p1_y = bg::get<1>(p1) + subtrahend_vector_y;
+
+  float res_p2_x = bg::get<0>(p2) - subtrahend_vector_x;
+  float res_p2_y = bg::get<1>(p2) - subtrahend_vector_y;
+
+  Line res;
+  res.push_back(mrs_lib::Point2d{res_p1_x, res_p1_y});
+  res.push_back(mrs_lib::Point2d{res_p2_x, res_p2_y});
+  return res;
+}
+
 // |----------------------- Public methods -----------------------|
 
 void ExactDecomposition::initialize(rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) {

@@ -27,8 +27,6 @@ public:
 
 protected:
   //|----------------------------  Types ----------------------------|
-  typedef mrs_lib::Polygon::ring_type Ring;
-  typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
   typedef struct{
     Ring partition;
     std::vector<std::vector<mrs_lib::Point2d>> paths;
@@ -145,8 +143,6 @@ protected:
 
   point_t getPrev(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
 
-  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
-
   bool getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
 
   void pushPoints(Ring& ring, std::vector<point_t>& points);
@@ -154,10 +150,6 @@ protected:
   Ogre::Vector3 toLine(mrs_lib::Point2d start, float twist);
 
   std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
-
-  double signedDistComparable(Line line, mrs_lib::Point2d point);
-
-  double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
 
   //|---------------------------- Attributes----------------------------|
   bool is_computed_ = false;

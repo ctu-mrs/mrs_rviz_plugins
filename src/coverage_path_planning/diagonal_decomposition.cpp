@@ -1176,26 +1176,6 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   return result;
 }
 
-DiagonalDecomposition::Line DiagonalDecomposition::shrink(Point2d p1, Point2d p2, float dist) {
-  float as_vector_x = bg::get<0>(p2) - bg::get<0>(p1);
-  float as_vector_y = bg::get<1>(p2) - bg::get<1>(p1);
-
-  float normalizer = std::pow(as_vector_x * as_vector_x + as_vector_y * as_vector_y, 0.5);
-  float subtrahend_vector_x = (as_vector_x / normalizer) * dist;
-  float subtrahend_vector_y = (as_vector_y / normalizer) * dist;
-
-  float res_p1_x = bg::get<0>(p1) + subtrahend_vector_x;
-  float res_p1_y = bg::get<1>(p1) + subtrahend_vector_y;
-
-  float res_p2_x = bg::get<0>(p2) - subtrahend_vector_x;
-  float res_p2_y = bg::get<1>(p2) - subtrahend_vector_y;
-
-  Line res;
-  res.push_back(Point2d{res_p1_x, res_p1_y});
-  res.push_back(Point2d{res_p2_x, res_p2_y});
-  return res;
-}
-
 double DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
   bg::subtract_point(a, b);
   bg::subtract_point(c, b);
@@ -1219,14 +1199,6 @@ double DiagonalDecomposition::ang(Point2d a, Point2d b, Point2d c) {
 
 double DiagonalDecomposition::ang(point_t a, point_t b, point_t c){
   return ang(a.point, b.point, c.point);
-}
-
-double DiagonalDecomposition::signedDistComparable(Line line, Point2d point) {
-  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
-  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
-  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
-
-  return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
 }
 
 DiagonalDecomposition::point_t DiagonalDecomposition::getClosestPoint(vector<vector<point_t>>& holes, point_t point){
