@@ -1,5 +1,18 @@
 # Note for whoever decided to change this code (we feel sorry for you)
 
+# Approximate cellular decomposition
+``Ogre::Vector2`` is used  to store indices of grid cells. It is not a good 
+container for storing indices as ``Ogre::Vector`` is composed of ``float`` 
+numbers, but it should not cause any troubles as grid size is not that big.  
+
+Known issues: 
+ - The last cells of perfectly rectangle grid often turn to be invalid.
+
+## Stride method
+The code is an implementation of "Path Planning for Rapid Aerial Mapping 
+with Unmanned Aircraft Systems" by Eduard Santamaria et. al. It does not 
+use any heuristic to determine next direction if strides int several directions have same lengths.
+
 # Exact cellular decomposition
 
 ``Point2d``, ``Line``, ``Ring`` and ``Polygon`` are types registered in 
@@ -7,7 +20,7 @@
 https://www.boost.org/doc/libs/1_84_0/libs/geometry/doc/html/index.html)  
 ``Ogre::Vector3`` is only used for denoting infinite lines in 2d plane 
 (vector.x * X + vector.y * Y + vector.z = 0)  
-``point_t``, and ``cell_t`` are types defined in diagonal_decomposition.h
+``point_t``, and ``cell_t`` are types defined in diagonal_decomposition.h 
 and morse_decomposition.h for more convenient computations of the algorithms.
 
 If points are written in ``std::vector<point_t>``, the last and the first 
