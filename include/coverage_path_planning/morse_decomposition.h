@@ -4,6 +4,7 @@
 #include "coverage_path_planning/exact_decomposition.h"
 
 #include <rviz/properties/int_property.h>
+#include <rviz/properties/editable_enum_property.h>
 
 #include <optional>
 
@@ -117,7 +118,14 @@ protected:
   // line is the slice containing the crit_point
   std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
 
-  rviz::IntProperty* twist_property_;
+  bool is_computed_ = false;
+  mrs_msgs::PathSrv path_;
+  ros::ServiceClient client_;
+
+  rviz::IntProperty* twist_property_;  
+  rviz::EditableEnumProperty* drone_name_property_;
+  rviz::IntProperty* cell_num_property_;
+  rviz::IntProperty* turn_num_property_;
 
 }; // class MorseDecomposition
 } // namespace mrs_rviz_plugins

@@ -1,4 +1,5 @@
 #include "coverage_path_planning/morse_decomposition.h"
+#include "coverage_path_planning/planner_tool.h"
 
 #include <algorithm>
 #include <optional>
@@ -23,17 +24,51 @@ namespace mrs_rviz_plugins{
 void MorseDecomposition::initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) {
   ExactDecomposition::initialize(property_container, scene_manager, root_node);
   twist_property_ = new rviz::IntProperty("Twist", 0, "Twist of the morse funstion", property_container);
+  drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
+  cell_num_property_ = new rviz::IntProperty("Cell number", 0, "Number of cells in current decomposition", property_container);
+  turn_num_property_ = new rviz::IntProperty("Turn number", 0, "Number of turns in current path", property_container);
 
   twist_property_->setMin(0);
   twist_property_->setMax(180);
+  cell_num_property_->setReadOnly(true);
+  turn_num_property_->setReadOnly(true);
+
+  std::vector<std::string> drone_names = PlannerTool::getUavNames();
+  for(auto& name : drone_names){
+    drone_name_property_->addOption(name.c_str());
+  }
+
+  if(drone_names.size() > 0){
+    drone_name_property_->setString(drone_names[0].c_str());
+  }else{
+    ROS_WARN("[MorseDecomposition]: could not find any uav for coverage mission");
+  }
 }
 
 MorseDecomposition::~MorseDecomposition(){
-  std::cout << "Morse destructor called\n";
+  delete twist_property_;
+  delete drone_name_property_;
+  delete cell_num_property_;
+  delete turn_num_property_;
 }
 
 void MorseDecomposition::start() {
-  std::cout << "start\n";
+  if(!is_computed_){
+    ROS_WARN("[MorseDecomposition]: Could not start the mission. The path has not been computed yet.");
+    return;
+  }
+  client_ = nh_.serviceClient<mrs_msgs::PathSrv>("/" + drone_name_property_->getStdString() + "/trajectory_generation/path");
+
+  // Make the call
+  if(!client_.call(path_)){
+    ROS_INFO("[MorseDecomposition]: Call failed. Service name: %s", client_.getService().c_str());
+    return;
+  }
+  if (!path_.response.success) {
+    ROS_INFO("[MorseDecomposition]: Call failed: %s", path_.response.message.c_str());
+    return;
+  } 
+  ROS_INFO("[MorseDecomposition]: Call processed successfully");
 }
 
 void MorseDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
@@ -144,6 +179,7 @@ void MorseDecomposition::compute() {
     decomposition_rings.push_back(cell.partition);
   }
   drawDecomposition(decomposition_rings);
+  cell_num_property_->setInt(decomposition.size());
 
   fillCells(decomposition, start, twist_rad);
   std::cout << "cells are filled\n";
@@ -169,9 +205,12 @@ void MorseDecomposition::compute() {
   }
   std::cout << "cell seq found\n";
 
-  mrs_msgs::PathSrv path = generatePath(decomposition, optimal_cell_sequence, start);
+  path_ = generatePath(decomposition, optimal_cell_sequence, start);
+  is_computed_ = true;
+  turn_num_property_->setInt(path_.request.path.points.size() - 1);
   std::cout << "path generated\n";
-  drawPath(path);
+
+  drawPath(path_);
   std::cout << "exiting compute()\n";
   return;
 }
