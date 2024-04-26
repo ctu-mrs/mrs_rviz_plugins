@@ -98,32 +98,6 @@ void DiagonalDecomposition::start() {
 }
 
 void DiagonalDecomposition::compute() {
-// {
-//   std::cout << bg::wkt(current_polygon_) << std::endl;
-//   Point2d start{0, 0};
-//   Point2d finish{start_position_.x, start_position_.y};
-//   std::cout << "start: " << bg::wkt(start) << std::endl;
-//   std::cout << "finish: " << bg::wkt(finish) << std::endl;
-//   std::cout << "starting bfs\n";
-//   vector<Point2d> path = getPath(start, finish);
-//   std::cout << "bfs finished\n";
-//   mrs_msgs::PathSrv path_to_draw;
-//   path_to_draw.request.path.header.frame_id = polygon_frame_;
-//   std::cout << "path: \n";
-//   for(Point2d& point : path){
-//     mrs_msgs::Reference tmp;
-//     tmp.position.x = bg::get<0>(point);
-//     tmp.position.y = bg::get<1>(point);
-//     tmp.position.z = height_;
-//     path_to_draw.request.path.points.push_back(tmp);
-//     std::cout << "\t" << bg::wkt(point) << std::endl;
-//   }
-//   std::cout << "drawing path..\n";
-//   drawPath(path_to_draw);
-//   return;
-// }
-
-
   std::string msg;
   if(!bg::is_valid(current_polygon_, msg)){
     ROS_WARN("[DiagonalDecomposition]: Current polygon is invalid. Cannot perform the decomposition. Msg: %s", msg.c_str());
@@ -1190,50 +1164,6 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
       cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
     }
   }
-  // #ifdef DEBUG
-  // std::cout << "Making the path lie in safety area only\n";
-  // #endif // DEBUG
-  // std::vector<mrs_msgs::Reference> updated_points;
-  // for(int i=0; i<result.request.path.points.size()-1; i++){
-  //   updated_points.push_back(result.request.path.points[i]);
-  //   Point2d p1 {result.request.path.points[i].position.x, result.request.path.points[i].position.y};
-  //   Point2d p2 {result.request.path.points[i+1].position.x, result.request.path.points[i+1].position.y};
-    
-  //   Line line;
-  //   line.push_back(p1);
-  //   line.push_back(p2);
-  //   if(bg::within(line, current_polygon_)){
-  //     continue;
-  //   }
-  //   #ifdef DEBUG
-  //   std::cout << bg::wkt(line) << " does not lie within the polygon.\n";
-  //   #endif // DEBUG
-
-  //   auto new_partial_path = getPath(p1, p2);
-  //   std::cout << "partial path len = " << new_partial_path.size() << std::endl;
-  //   for(Point2d& new_p : new_partial_path){
-  //     mrs_msgs::Reference new_r;
-  //     new_r.position.x = bg::get<0>(new_p);
-  //     new_r.position.y = bg::get<1>(new_p);
-  //     new_r.position.z = height_;
-  //     updated_points.push_back(new_r);
-  //   }
-  // }
-  // updated_points.push_back(result.request.path.points.back());
-  // #ifdef DEBUG
-  // std::cout << "erasing same waypoints\n";
-  // #endif // DEBUG
-
-  // for(int i=0; i<updated_points.size()-1;){
-  //   if(updated_points[i] == updated_points[i+1]){
-  //     updated_points.erase(updated_points.begin() + i);
-  //   } else{
-  //     i++;
-  //   }
-  // }
-
-  // // todo: erase points that lie on the same [infinite] line
-
   #ifdef DEBUG
   std::cout <<"Fixing the path\n";
   #endif // DEBUG

@@ -9,6 +9,9 @@
 #include <cmath>
 #include <list>
 
+// Uncomment this for useful outputs during computations
+#define DEBUG
+
 namespace bg = boost::geometry;
 
 using Polygon = mrs_lib::Polygon;
@@ -71,6 +74,8 @@ void MorseDecomposition::start() {
   ROS_INFO("[MorseDecomposition]: Call processed successfully");
 }
 
+// All the vertices of the polygon are shifted with random noise in order to
+// avoid edge cases of searching for critical points and constructing edges
 void MorseDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update){
   current_polygon_ = new_polygon;
   std::default_random_engine generator;
@@ -109,47 +114,11 @@ void MorseDecomposition::setPolygon(std::string frame_id, mrs_lib::Polygon &new_
 }
 
 void MorseDecomposition::compute() {
-  std::cout << "compute\n";
-
-  // Polygon poly;
-
-  // {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{4, 3}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{2, 4}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{5, 5}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{7, 5}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{8, 2}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{7, 0}; bg::append(poly, p);}
-  // {mrs_lib::Point2d p{0, 2}; bg::append(poly, p);}
-
-  // bg::interior_rings(poly).resize(2);
-
-  // {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{3, 2.38}; bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{3.68, 2}; bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{3, 1.62}; bg::append(poly, p, 0);}
-  // {mrs_lib::Point2d p{2, 2}; bg::append(poly, p, 0);}
-
-
-  // {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
-  // {mrs_lib::Point2d p{6.64386, 2.79007}; bg::append(poly, p, 1);}
-  // {mrs_lib::Point2d p{5.57257, 1.47828}; bg::append(poly, p, 1);}
-  // {mrs_lib::Point2d p{6.00983, 2.72448}; bg::append(poly, p, 1);}
-  // {mrs_lib::Point2d p{5.46326, 3.99254}; bg::append(poly, p, 1);}
-
-  // 
   std::string msg;
   if (!bg::is_valid(current_polygon_, msg)){
     ROS_ERROR("[MorseDecomposition]: current polygon is not valid. Either invalid polygon has been recieved or vertices has been shifted inappropriately. Try increase distance between vertices");
-    // std::cout << "current_polygon is not valid: " << msg << std::endl;
     return;
   }
-  // bg::correct(poly);
-  // bg::is_valid(poly, msg);
-  // std::cout << "after correcting: " << msg << std::endl;
-
-  // bg::is_valid(poly, msg);
-  // std::cout << "after reversing holes" << msg << std::endl;
 
   float twist_rad = (((float)twist_property_->getInt()) / 180) * M_PI;
 
@@ -182,12 +151,16 @@ void MorseDecomposition::compute() {
   cell_num_property_->setInt(decomposition.size());
 
   fillCells(decomposition, start, twist_rad);
+  #ifdef DEBUG
   std::cout << "cells are filled\n";
+  #endif // DEBUG
 
   vector<int> optimal_cell_sequence;
   float optimal_len = std::numeric_limits<float>::max();
   bool found = false;
+  #ifdef DEBUG
   std::cout << "searching for cell seq\n";
+  #endif // DEBUG
   for(int i=0; i<decomposition.size(); i++){
     float cur_len = 0;
     vector<int> cur_path = findPath(decomposition, i, start, cur_len);
@@ -198,20 +171,22 @@ void MorseDecomposition::compute() {
     }
   }
 
-
   if(!found){
     ROS_ERROR("[MorseDecomposition]: Could not find any cell sequence. No path has been computed");
     return;
   }
+  #ifdef DEBUG
   std::cout << "cell seq found\n";
+  #endif // DEBUG
 
   path_ = generatePath(decomposition, optimal_cell_sequence, start);
   is_computed_ = true;
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
+  #ifdef DEBUG
   std::cout << "path generated\n";
+  #endif // DEBUG
 
   drawPath(path_);
-  std::cout << "exiting compute()\n";
   return;
 }
 
@@ -222,15 +197,12 @@ void MorseDecomposition::compute() {
 vector<MorseDecomposition::point_t> MorseDecomposition::getCriticalPoints(Point2d start, Ring obstacle, float twist, int ring_id) {
   // 1. Compute parameters of infinite line (the slice)
   Ogre::Vector3 line = toLine(start, twist);
-  std::cout << "line.x:" << line.x << " y:" << line.y << " z:" << line.z << std::endl;
 
   // 2. Compute values of the (linear) function at each vertex
   vector<float> values(obstacle.size() - 1);
   for(int i=0; i<obstacle.size() - 1; i++){
     values[i] = line.x * bg::get<0>(obstacle[i]) + line.y * bg::get<1>(obstacle[i]) + line.z; // Note: line.z seems to be redundant since we compare all the values afterwards
-    std::cout << values[i] << " ";
   }
-  std::cout << std::endl;
 
   // 3. Find values that are greater than previous and next ones.
   //    Points of these values are critical ones.
@@ -246,7 +218,9 @@ vector<MorseDecomposition::point_t> MorseDecomposition::getCriticalPoints(Point2
       crit_point.ring_id = ring_id;
       crit_point.is_crit_p = true;
       result.push_back(crit_point);
-      std::cout << "value: " << cur << " point: " << bg::wkt(crit_point.point) << std::endl;
+      #ifdef DEBUG
+      std::cout << "Critical point found: " << bg::wkt(crit_point.point) << std::endl;
+      #endif // DEBUG
     }
     prev = cur;
     cur = next;
@@ -279,9 +253,11 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   vector<std::optional<edge_t>> edges;
   for(point_t& cp : crit_points){
     Ogre::Vector3 line = toLine(cp.point, twist);
-    edges.push_back(getEdge(polygon, cp, line));
+    edges.push_back(getEdge(polygon, cp, start, twist));
   }
+  #ifdef DEBUG
   std::cout << "edges computed\n";
+  #endif // DEBUG
 
   // 2. Transform polygon into more convenient format
   vector<point_t> cur_border(polygon.outer().size()-1);
@@ -290,7 +266,9 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     cur_border[i].ring_id = -1;
     cur_border[i].point = polygon.outer()[i];
   }
+  #ifdef DEBUG
   std::cout << "border transformed\n";
+  #endif // DEBUG
   vector<Ring> holes = bg::interior_rings(polygon);
   vector<vector<point_t>> cur_holes(holes.size());
   for(int i=0; i<holes.size(); i++){
@@ -305,7 +283,9 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     }
     cur_holes[i] = new_hole;
   }
+  #ifdef DEBUG
   std::cout << "holes transformed\n";
+  #endif // DEBUG
 
   // 3. Insert points of edges into the border
   vector<point_t> new_border;
@@ -328,13 +308,17 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
       if(new_edge.p1.prev_point == i && new_edge.p1.ring_id == -1){
         new_points.push_back(new_edge.p1);
         distances.push_back(bg::comparable_distance(cur_edge[0], new_edge.p1.point));
+        #ifdef DEBUG
         std::cout << "\t" << bg::wkt(new_edge.p1.point) << " is covered by " << bg::wkt(cur_edge) << std::endl;
+        #endif // DEBUG
       }
 
       if(new_edge.p2.prev_point == i && new_edge.p2.ring_id == -1){
         new_points.push_back(new_edge.p2);
         distances.push_back(bg::comparable_distance(cur_edge[0], new_edge.p2.point));
+        #ifdef DEBUG
         std::cout << "\t" << bg::wkt(new_edge.p2.point) << " is covered by " << bg::wkt(cur_edge) << std::endl;
+        #endif // DEBUG
       }
     }
 
@@ -343,7 +327,9 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     }
   }
   cur_border = new_border;
+  #ifdef DEBUG
   std::cout << "points inserted into border\n";
+  #endif // DEBUG
 
   // 4. Insert points of edges into the holes
   vector<vector<point_t>> new_holes(cur_holes.size());
@@ -368,13 +354,17 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
         if(new_edge.p1.prev_point == j && new_edge.p1.ring_id == i){
           new_points.push_back(new_edge.p1);
           distances.push_back(bg::comparable_distance(cur_edge[0], new_edge.p1.point));
+          #ifdef DEBUG
           std::cout << "\t" << bg::wkt(new_edge.p1.point) << " is covered by " << bg::wkt(cur_edge) << std::endl;
+          #endif // DEBUG
         }
 
         if(new_edge.p2.prev_point == j && new_edge.p2.ring_id == i){
           new_points.push_back(new_edge.p2);
           distances.push_back(bg::comparable_distance(cur_edge[0], new_edge.p2.point));
+          #ifdef DEBUG
           std::cout << "\t" << bg::wkt(new_edge.p2.point) << " is covered by " << bg::wkt(cur_edge) << std::endl;
+          #endif // DEBUG
         }
       }
 
@@ -385,37 +375,46 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     new_holes[i] = new_hole;
   }
   cur_holes = new_holes;
-
+  #ifdef DEBUG
   std::cout << "points inserted into holes\n";
+  #endif // DEBUG
 
   // 5. Update data of points in cur_border and cur_holes
+  #ifdef DEBUG
   std::cout << "border: \n";
+  #endif // DEBUG
   for(int i=0; i<cur_border.size(); i++){
     cur_border[i].id = i;
     cur_border[i].ring_id = -1;
+    #ifdef DEBUG
     std::cout << "\t" << bg::wkt(cur_border[i].point) << " " << cur_border[i].id << " " << (cur_border[i].is_new_edge ? "is new edge" : "")<< std::endl;
+    #endif // DEBUG
   }
+  #ifdef DEBUG
   std::cout << "holes:\n";
+  #endif // DEBUG
   for(int i=0; i<cur_holes.size(); i++){
     for(int j=0; j<cur_holes[i].size(); j++){
       cur_holes[i][j].ring_id = i;
       cur_holes[i][j].id = j;
+      #ifdef DEBUG
       std::cout << "\t" << bg::wkt(cur_holes[i][j].point) << " ring: " << i << " " << cur_holes[i][j].id << " " << (cur_holes[i][j].is_new_edge ? "is new edge" : "")<< std::endl;
+      #endif // DEBUG
     }
+    #ifdef DEBUG
     std::cout << std::endl;
+    #endif // DEBUG
   }
 
   // 6. Update data of edge points
+  #ifdef DEBUG
   std::cout << "Update data of edge points\n";
+  #endif // DEBUG
   for(int i=0; i<edges.size(); i++){
     if(!edges[i]){
       continue;
     }
     edge_t& edge = edges[i].value();
-
-    // bool updated1 = false;
-    // bool updated2 = false;
-    // bool updated_cp = false;
 
     for(point_t& cur_p : cur_border){
       if(bg::equals(cur_p.point, edge.p1.point)){
@@ -447,7 +446,9 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   }
 
   // 7. Update data of crit_points
+  #ifdef DEBUG
   std::cout << "Update data of crit_points\n";
+  #endif // DEBUG
   for(int i=0; i<crit_points.size(); i++){
     point_t& cp = crit_points[i];
 
@@ -468,19 +469,10 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     }
   }
 
-
-  for(int i=0; i<crit_points.size(); i++){
-    std::cout << bg::wkt(crit_points[i].point) << " ";
-    if(!edges[i]){
-      std::cout << "no edge\n";
-    }else{
-      std::cout << bg::wkt(edges[i].value().crit_p.point) << std::endl;
-    }
-  }
-
-
   // 8. Divide the polygon into partitions
+  #ifdef DEBUG
   std::cout << "Divide the polygon into partitions\n";
+  #endif // DEBUG
   vector<cell_t> decomposition;
   vector<bool> big_used(crit_points.size(), false);
   vector<bool> first_used(crit_points.size(), false);
@@ -489,7 +481,9 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   for(int i=0; i<crit_points.size();){
     // if critical point generated all 3 partitions, move to the next one
     if(big_used[i] && first_used[i] && second_used[i]){
+      #ifdef DEBUG
       std::cout << "\nskipping " << bg::wkt(crit_points[i].point) << std::endl;
+      #endif // DEBUG
       i++;
       continue;
     }
@@ -498,16 +492,22 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     point_t next_point = crit_points[i];
     point_t start_point = crit_points[i];
     bool is_prev_edge = false;
-    
+
+    #ifdef DEBUG
     std::cout << "\nstarting with " << bg::wkt(crit_points[i].point) << std::endl;
+    #endif // DEBUG
     // Briefly: find first unused end, insert edge and set next_point on p1 or p2
     if(!edges[i]){
+      #ifdef DEBUG
       std::cout << "no edge\n";
+      #endif // DEBUG
       big_used[i] = true;
       first_used[i] = true;
       second_used[i] = true;
     } else if(!big_used[i]){
+      #ifdef DEBUG
       std::cout << "big edge\n";
+      #endif // DEBUG
       big_used[i] = true;
       cur_cell.partition.push_back(crit_points[i].point);
       edge_t edge = edges[i].value();
@@ -515,21 +515,23 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
       if(edge.follow_cp){
         insert = edge.part1;
         std::reverse(insert.begin(), insert.end());
-        // insert.push_back(edge.p1);
         next_point = edge.p1;
       } else{
         insert = edge.part2;
-        // insert.push_back(edge.p2);
         next_point = edge.p2;
       }
       is_prev_edge = true;
       pushPoints(cur_cell.partition, insert);
     } else if(!first_used[i]){
+      #ifdef DEBUG
       std::cout << "first edge\n";
+      #endif // DEBUG
       first_used[i] = true;
       is_prev_edge = true;
     } else if(!second_used[i]){
+      #ifdef DEBUG
       std::cout << "second edge\n";
+      #endif // DEBUG
       second_used[i] = true;
       is_prev_edge = false;
     } else{
@@ -543,38 +545,30 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     while(!bg::equals(next_point.point, crit_points[i].point) || inserted == 0){
       inserted++;
       cur_cell.partition.push_back(next_point.point);
+      #ifdef DEBUG
       std::cout << "inserted " << bg::wkt(next_point.point) << " " << next_point.ring_id << " " << next_point.id << std::endl;
-      // std::cout << "is crit: " << (next_point.is_crit_p ? "true" : "false") << std::endl;
-      // std::cout << "second cond: " << ( (next_point.is_new_edge && !is_prev_edge) ? "true" : "false") << std::endl;
+      #endif // DEBUG
 
       if(next_point.is_crit_p){
         if(!bg::equals(cur_cell.crit_point1, next_point.point)){
           cur_cell.crit_point2 = next_point.point;
         }
         moveToNextAtCritPoint(next_point, is_prev_edge, cur_cell, edges, crit_points, cur_border, cur_holes, big_used, first_used, second_used);
-      }// end of if(next_point.is_crit_p)
+      }
       else if(next_point.is_new_edge && !is_prev_edge){
         moveToNextAtNewEdge(next_point, start_point, is_prev_edge, cur_cell, edges, crit_points, cur_border, cur_holes, big_used, first_used, second_used);
       }
       else{
-        // std::cout << "moving to next\n";
         next_point = getNext(cur_border, cur_holes, next_point);
-        // std::cout << "moved to " << bg::wkt(next_point.point) << " " << next_point.ring_id << " " << next_point.id << std::endl;
         is_prev_edge = false;
       }
-    } // end of while(!bg:equals(next_point.point, crit_points[i].point))
+    }
 
-    std::cout << "pushback cur cell\n";
     cur_cell.partition.push_back(cur_cell.partition.front());
     decomposition.push_back(cur_cell);
-
-    // if critical point generated all 3 partitions, move to the next one
-    // if(big_used[i] && first_used[i] && second_used[i]){
-    //   std::cout << "i++\n";
-    //   i++;
-    // }
   } // end of for(int i=0; i<crit_points.size();)
 
+  #ifdef DEBUG
   std::cout << "\nDECOMPOSED!\n";
   for(cell_t& cell : decomposition){
     std::cout << "partition:\n";
@@ -583,12 +577,11 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
     }
     std::cout << std::endl;
   }
+  #endif // DEBUG
 
-  std::cout << "exiting the function\n";
   return decomposition;
 } // end of getDecomposition()
 
-// Note: start must be in polygon_frame_
 mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t>& cells, vector<int>& path, Point2d start){
   mrs_msgs::PathSrv result;
   result.request.path.header.frame_id = polygon_frame_;
@@ -674,7 +667,7 @@ vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index,
       continue;
     }
 
-    // How we ge to next cells
+    // How we go to next cells
     std::list<float> d_len;
     std::list<Point2d> finish_points;
     for(int next_cell_i : next_cells){
@@ -747,7 +740,9 @@ void MorseDecomposition::fillCells(vector<cell_t>& cells, Point2d start, float t
 
   for(int i=0; i<cells.size(); i++){
     cell_t& cell = cells[i];
+    #ifdef DEBUG
     std::cout << "\nfilling cell #" << i << std::endl;
+    #endif // DEBUG
 
     cell.id = i;
     cell.adjacent_cells = getAdjacentCells(cells, i);
@@ -767,7 +762,9 @@ void MorseDecomposition::fillCells(vector<cell_t>& cells, Point2d start, float t
       std::pair<Point2d, Point2d> waypoint_pair;
       if(getWaypointPair(cell.partition, line, waypoint_pair)){
         waypoints.push_back(waypoint_pair);
+        #ifdef DEBUG
         std::cout << "found waypoint: " << bg::wkt(waypoint_pair.first) << " " << bg::wkt(waypoint_pair.second) << std::endl;
+        #endif // DEBUG
         continue;
       }
       break;
@@ -951,7 +948,6 @@ void MorseDecomposition::pushPoints(Ring& ring, std::vector<MorseDecomposition::
   }
 }
 
-
 void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
                         bool& is_prev_edge,
                         cell_t& cur_cell,
@@ -962,10 +958,12 @@ void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
                         std::vector<bool>& big_used,
                         std::vector<bool>& first_used,
                         std::vector<bool>& second_used){
+  #ifdef DEBUG
+  std::cout << "\tbumped into a crit point\n";
+  #endif
   edge_t found_edge;
   size_t found_edge_i = 0;
   bool found = false;
-  std::cout << "\tentered crit point\n";
   // Find the edge we bumped into
   for(int i=0; i<edges.size(); i++){
     auto& edge_opt = edges[i];
@@ -981,7 +979,6 @@ void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
   }
 
   if(!found){
-    std::cout << "\t404 not found\n";
     int cp_index = 0;
     for(int i=0; i<crit_points.size(); i++){
       if(bg::equals(crit_points[i].point, next_point.point)){
@@ -989,8 +986,9 @@ void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
         break;
       }
     }
-
+    #ifdef DEBUG
     std::cout << "\t" << bg::wkt(crit_points[cp_index].point) << " has no edge\n";
+    #endif // DEBUG
 
     big_used[cp_index] = true;
     first_used[cp_index] = true;
@@ -1000,8 +998,10 @@ void MorseDecomposition::moveToNextAtCritPoint(point_t& next_point,
     return;
   }
 
+  #ifdef DEBUG
   std::cout << "\tmoving on after crit point\n";
-  std::cout << "\tis_prev_edge is " << (is_prev_edge ? "true" : "false") << std::endl;
+  std::cout << "\tis_prev_edge: " << (is_prev_edge ? "true" : "false") << std::endl;
+  #endif // DEBUG
 
   if(is_prev_edge){
     first_used[found_edge_i] = true;
@@ -1033,6 +1033,9 @@ void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point,
                         std::vector<bool>& big_used,
                         std::vector<bool>& first_used,
                         std::vector<bool>& second_used){
+  #ifdef DEBUG
+  std::cout << "\tbumped into new edge\n";
+  #endif // DEBUG
   edge_t found_edge;
   size_t found_edge_i = 0;
   bool goto_cp = false;
@@ -1070,8 +1073,10 @@ void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point,
     return;
   }
 
-  std::cout << "\tgoto is " << (goto_cp ? "true" : "false") << std::endl;
+  #ifdef DEBUG
+  std::cout << "\tgoto_cp is " << (goto_cp ? "true" : "false") << std::endl;
   std::cout << "\tfound_edge.follow_cp is " << (found_edge.follow_cp ? "true" : "false") << std::endl;
+  #endif // DEBUG
   
   // Briefly: insert part of edge into current partition,
   //          set next_point to crit_point or p1 or p2
@@ -1080,13 +1085,13 @@ void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point,
     first_used[found_edge_i] = true;
     pushPoints(cur_cell.partition, found_edge.part1);
     next_point = found_edge.crit_p;
-    std::cout << "\tfound_edge: " << (found_edge.crit_p.is_crit_p ? "true" : "false") << std::endl;
-    std::cout << "\tnext_point: " << (next_point.is_crit_p ? "true" : "false") << std::endl;
   }
   if(found_edge.follow_cp && !goto_cp){
     big_used[found_edge_i] = true;
-    std::cout << "big_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
-    std::cout << "big_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    #ifdef DEBUG
+    std::cout << "\tbig_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
+    std::cout << "\tbig_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    #endif // DEBUG
     vector<point_t> to_insert;
     to_insert.reserve(found_edge.part1.size() + found_edge.part2.size() + 1);
     for(point_t& p : found_edge.part2){
@@ -1119,8 +1124,10 @@ void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point,
   }
   if(!found_edge.follow_cp && !goto_cp){
     big_used[found_edge_i] = true;
-    std::cout << "big_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
-    std::cout << "big_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    #ifdef DEBUG
+    std::cout << "\tbig_used for " << bg::wkt(found_edge.crit_p.point) << std::endl;
+    std::cout << "\tbig_used for " << bg::wkt(crit_points[found_edge_i].point) << std::endl;
+    #endif // DEBUG
     pushPoints(cur_cell.partition, found_edge.part1);
 
     // If crit point of the edge is the start point, partition is complete
@@ -1143,7 +1150,6 @@ Ogre::Vector3 MorseDecomposition::toLine(Point2d start, float twist) {
   line.z = - (line.x * bg::get<0>(start) + line.y * bg::get<1>(start)); // ????
   return line;
 }
-
 
 std::optional<Point2d> MorseDecomposition::getIntersection(Ogre::Vector3 line, MorseDecomposition::Line edge){
   Ogre::Vector3 line2;
@@ -1197,7 +1203,6 @@ std::optional<Point2d> MorseDecomposition::getIntersection(Ogre::Vector3 line, M
   return std::nullopt;
 }
 
-
 double MorseDecomposition::signedDistComparable(Line line, Point2d point) {
   double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
   double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
@@ -1210,12 +1215,12 @@ double MorseDecomposition::signedDistComparable(Ogre::Vector3 line, Point2d poin
   return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
 }
 
-
   //|------------------------------------------------------------------|
   //|---------------------------- Private -----------------------------|
   //|------------------------------------------------------------------|
 
-std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& polygon, point_t crit_point, Ogre::Vector3 line) {
+std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& polygon, point_t crit_point, mrs_lib::Point2d start, float twist) {
+  Ogre::Vector3 line = toLine(start, twist);
   // 1. Find all the intersections of line with edges of polygon
   vector<point_t> intersections;
   for(int i=0; i<polygon.outer().size() - 1; i++){
@@ -1237,7 +1242,6 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
       tmp.ring_id = -1;
       tmp.id = -1;
       intersections.push_back(tmp);
-      // std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
     }
   }
 
@@ -1264,7 +1268,6 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
         tmp.ring_id = j;
         tmp.id = -1;
         intersections.push_back(tmp);
-        // std::cout << "intersection found: " << bg::wkt(tmp.point) << " after point #" << tmp.prev_point << std::endl;
       }
     }
   }
@@ -1312,11 +1315,13 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
 
   edge_t result;
   result.crit_p = crit_point;
-  std::cout << "getEdge: crit_point is " << (crit_point.is_crit_p ? "true" : "false") << std::endl;
-  std::cout << "getEdge: res.crit_p is " << (result.crit_p.is_crit_p ? "true" : "false") << std::endl;
   result.p1 = closest_negative_point;
   result.p2 = closest_positive_point;
-
+  #ifdef DEBUG
+  std::cout << "getEdge: crit_point is " << (crit_point.is_crit_p ? "true" : "false") << std::endl;
+  std::cout << "getEdge: p1 is " << bg::wkt(result.p1) << std::endl;
+  std::cout << "getEdge: p1 is " << bg::wkt(result.p2) << std::endl;
+  #endif // DEBUG
 
   // 5. Checking if the edge lies within the polygon
   // Note: bg::covered_by() does not work properly in this case,
@@ -1354,7 +1359,9 @@ std::optional<MorseDecomposition::edge_t> MorseDecomposition::getEdge(Polygon& p
   tmp_line.push_back(result.p1.point);
   tmp_line.push_back(result.p2.point);
   result.follow_cp = signedDistComparable(tmp_line, next_point) > 0;
+  #ifdef DEBUG
   std::cout << "\t" << (result.follow_cp ? "follows cp" : "does not follow cp") << std::endl;
+  #endif // DEBUG
 
   return result;
 }

@@ -26,6 +26,7 @@ public:
   ~MorseDecomposition();
 
 protected:
+  //|----------------------------  Types ----------------------------|
   typedef mrs_lib::Polygon::ring_type Ring;
   typedef boost::geometry::model::linestring<mrs_lib::Point2d> Line;
   typedef struct{
@@ -51,35 +52,49 @@ protected:
     std::vector<point_t> part2;
     point_t p2;
     bool follow_cp;
-
   } edge_t;
 
+  //|----------------- Procedures of Morse decomposition -----------------|
+
+  // Fairly the main function of the class.
+  // Given critical points it decomposes the whole polygon into partitions
+  // and returns array of cells representing them.
+  // 
+  // start must be in polygon_frame
+  // twist in radians [0, pi]
+  std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon,
+                                      std::vector<point_t>& crit_points, 
+                                      mrs_lib::Point2d start,
+                                      float twist);
+
+  // Computes critical points (extrems) of function f(x) = a*x1 + b*x2 + c restricted
+  // to obstacle boundaries. a and b are given by start and twist.
+  // This function can be overriden in order to implement Morse decomposition 
+  // with another [Morse] function. In that case getEdge() and fillCells()
+  // must be overriden too.
   virtual std::vector<point_t> getCriticalPoints(mrs_lib::Point2d start, Ring obstacle, float twist, int ring_id);
 
-  std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon, 
-                                              std::vector<point_t>& crit_points, 
-                                              mrs_lib::Point2d start,
-                                              float twist);
+  // Returns edge_t corresponding to the critical point. 
+  // In this implementation, edge is a straight finite line with ends of boundaries of 
+  // the polygon. This corresponds to [Morse] function f(x) = a*x1 + b*x2 + c
+  // View README for detailed explanation.
+  // This function can be overriden in order to implement Morse decomposition 
+  // with another [Morse] function. In that case getCriticalPoints() and fillCells()
+  // must be overriden too.
+  virtual std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, mrs_lib::Point2d start, float twist);
 
+  // Initialises cell_t.paths and cell_t.adjacent_cells of the given cells.
+  // In this implementation paths are boustrophedon coverage paths, which corresponds 
+  // to [Morse] function f(x) = a*x1 + b*x2 + c.
+  // Inserted paths must cover whole cells and can be reversed versions of one another,
+  // since generatePath() does not reverse path on its own
+  // This function can be overriden in order to implement Morse decomposition 
+  // with another [Morse] function. In that case getEdge() and getCriticalPoints()
+  // must be overriden too.
   virtual void fillCells(std::vector<cell_t>& cells, mrs_lib::Point2d start, float twist);
 
-  std::vector<int> getAdjacentCells(std::vector<cell_t>& cells, int index);
-
-  // |--------------------- Tools ---------------------|
-  point_t getNext(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
-  
-  point_t getPrev(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
-
-  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
-
-  bool getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
-
-  mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int>& path, mrs_lib::Point2d start);
-
-  std::vector<int> findPath(std::vector<cell_t>& cells, int start_index, mrs_lib::Point2d start_pos, float& total_len);
-
-  int findClosest(cell_t& cell, mrs_lib::Point2d point);
-
+  // Support function for getDecomposition() to prevent it from overblowing (because it already is xd)
+  // The function is called once decomposition algorithm runs into critical point
   void moveToNextAtCritPoint(point_t& next_point,
                           bool& is_prev_edge,
                           cell_t& cur_cell,
@@ -91,6 +106,8 @@ protected:
                           std::vector<bool>& first_used,
                           std::vector<bool>& second_used);
 
+  // Support function for getDecomposition() to prevent it from overblowing (because it already is xd)
+  // The function is called once decomposition algorithm runs into point where a new edge must start
   void moveToNextAtNewEdge(point_t& next_point,
                           point_t& start_point,
                           bool& is_prev_edge,
@@ -103,6 +120,35 @@ protected:
                           std::vector<bool>& first_used,
                           std::vector<bool>& second_used);
 
+  // |------------------------- Generating path -------------------------|
+
+  // Returns sequence of cell indices that produce optimal (in sence of length) path.
+  // Implementation is DFS, where non-adjacent cells can be visited only if all adjacent 
+  // ones has been visited
+  // total_len is sum of lengths of transitions between cells
+  // total_len is set to -1 if no path has been found
+  std::vector<int> findPath(std::vector<cell_t>& cells, int start_index, mrs_lib::Point2d start_pos, float& total_len);
+
+  // Converts cell sequence into coverage path
+  // Note: start must be in polygon_frame_
+  mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int>& path, mrs_lib::Point2d start);
+
+  std::vector<int> getAdjacentCells(std::vector<cell_t>& cells, int index);
+
+  // Returns index of the path, which start is closest to point 
+  // Returns -1 if cell has no path or all paths are empty
+  int findClosest(cell_t& cell, mrs_lib::Point2d point);
+
+  // |-------------------------- General tools --------------------------|
+
+  point_t getNext(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
+
+  point_t getPrev(std::vector<point_t>& border, std::vector<std::vector<point_t>>& holes, point_t& cur);
+
+  Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
+
+  bool getWaypointPair(Ring& partition, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
+
   void pushPoints(Ring& ring, std::vector<point_t>& points);
 
   Ogre::Vector3 toLine(mrs_lib::Point2d start, float twist);
@@ -113,16 +159,12 @@ protected:
 
   double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
 
-// private:
-
-  // line is the slice containing the crit_point
-  std::optional<edge_t> getEdge(mrs_lib::Polygon& polygon, point_t crit_point, Ogre::Vector3 line);
-
+  //|---------------------------- Attributes----------------------------|
   bool is_computed_ = false;
   mrs_msgs::PathSrv path_;
   ros::ServiceClient client_;
 
-  rviz::IntProperty* twist_property_;  
+  rviz::IntProperty* twist_property_;
   rviz::EditableEnumProperty* drone_name_property_;
   rviz::IntProperty* cell_num_property_;
   rviz::IntProperty* turn_num_property_;
