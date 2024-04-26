@@ -1,27 +1,3 @@
-// Note for whoever decided to change this code (we feel sorry for you):
-//
-// Point2d, Line, Ring and Polygon are types registered in boost::geometry
-//    (viz https://www.boost.org/doc/libs/1_84_0/libs/geometry/doc/html/index.html)
-// point_t, line_t and cell_t are types defined in coverage_path_planning/diagonal_decomposition.h
-//    for more convenient computations of the algorithm
-// Ogre::Vector3 is only used for denoting infinite lines in 2d plane 
-//    (vector.x * X + vector.y * Y + vector.z = 0)
-//
-// If points are written in std::vector<point_t>, the last and the first vertices
-//     are not equal. They are equal if points are in Polygon or Ring
-// 
-// The following code is an implementation of "A practical algorithm for decomposing polygonal
-//    domains into convex polygons by diagonals" by Jose Fernandez et al. with further
-//    coverage path planning described in "Coverage path planning with unmanned aerial vehicles for 3D terrain
-//    reconstruction" by Marina Torres et al.
-// Polygon decomposition algorithm is MP3 and can be upgraded to MP4 or MP5 both with merging process.
-// The algorithm does not need any start point as it finds the optimal one automatically.
-//
-// Known issues:
-// generatePath() does not add heading to the references
-// Final path may exceed safety area.
-// getIntersection() may return invalid result due to inaccuracy of float type.
-
 #include "coverage_path_planning/diagonal_decomposition.h"
 #include "coverage_path_planning/planner_tool.h"
 

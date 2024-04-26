@@ -134,6 +134,8 @@ void MorseDecomposition::compute() {
     cps.insert(cps.end(), tmp.begin(), tmp.end());
   }
 
+  // todo: add crit points into the polygon
+
   vector<cell_t> decomposition = getDecomposition(current_polygon_, cps, start, twist_rad);
   vector<Ring> decomposition_rings;
   decomposition_rings.reserve(decomposition.size());
@@ -505,7 +507,7 @@ vector<MorseDecomposition::cell_t> MorseDecomposition::getDecomposition(Polygon&
   vector<std::optional<edge_t>> edges;
   for(point_t& cp : crit_points){
     Ogre::Vector3 line = toLine(cp.point, twist);
-    edges.push_back(getEdge(polygon, cp, start, twist));
+    edges.push_back(getEdge(polygon, cp, cp.point, twist));
   }
   #ifdef DEBUG
   std::cout << "edges computed\n";

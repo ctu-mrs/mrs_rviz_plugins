@@ -99,6 +99,29 @@ The click-and-pull input supplies a 2D position with heading (a waypoint). Tool 
 
 ![Demonstration](icons/classes/Waypoint_planner_demonstration.gif)
 
+#### Coverage path planner
+
+Adds option to plan and start coverage mission. 
+Multiple coverage path planning algorithms are available (chose the proper one in tool properties panel). 
+
+|       Key       |      Action     |
+|:---------------:|:---------------:|
+| Alt+Right-click | Set start point |
+|   Right-click   |    Open menu    |
+|    Left-click   |      Rotate     |
+|   Middle-click  |     Move X/Y    |
+|   Mouse wheel   |       Zoom      |
+|      Shift      |   More options  |
+
+Adding new algorithms is available: 
+ 1. Extend your class from ``mrs_rviz_plugins::CoverageMethod`` 
+ 2. Implement it 
+ 3. Export the plugin (view ``cpp_methods.xml`` and ``package.xml``) 
+
+Note: if you want to implement MorseDecomposition with another Morse function, it is enough to extend from ``mrs_rviz_plugins::MorseDecomposition``. 
+Also consider extending from ``ApproximateDecomposition`` and ``ExactDecomposition`` as a number of useful tools is already implemented there.  
+For details of the implementation view ``src/coverage_peth_planning/README.md``.
+
 ## ROS Nodes - the ROS-Rviz interface
 
 #### RvizNavGoal
