@@ -17,11 +17,11 @@ public:
 
   void initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node) override;
 
-  void compute() override;
+  void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) override;
 
   void start() override;
 
-  void setPolygon(std::string frame_id, mrs_lib::Polygon &new_polygon, bool update=true) override;
+  void compute() override;
 
   ~MorseDecomposition();
 
@@ -56,17 +56,6 @@ protected:
 
   //|----------------- Procedures of Morse decomposition -----------------|
 
-  // Fairly the main function of the class.
-  // Given critical points it decomposes the whole polygon into partitions
-  // and returns array of cells representing them.
-  // 
-  // start must be in polygon_frame
-  // twist in radians [0, pi]
-  std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon,
-                                      std::vector<point_t>& crit_points, 
-                                      mrs_lib::Point2d start,
-                                      float twist);
-
   // Computes critical points (extrems) of function f(x) = a*x1 + b*x2 + c restricted
   // to obstacle boundaries. a and b are given by start and twist.
   // This function can be overriden in order to implement Morse decomposition 
@@ -92,6 +81,17 @@ protected:
   // with another [Morse] function. In that case getEdge() and getCriticalPoints()
   // must be overriden too.
   virtual void fillCells(std::vector<cell_t>& cells, mrs_lib::Point2d start, float twist);
+
+  // Fairly the main function of the class.
+  // Given critical points it decomposes the whole polygon into partitions
+  // and returns array of cells representing them.
+  // 
+  // start must be in polygon_frame
+  // twist in radians [0, pi]
+  std::vector<cell_t> getDecomposition(mrs_lib::Polygon& polygon,
+                                      std::vector<point_t>& crit_points, 
+                                      mrs_lib::Point2d start,
+                                      float twist);
 
   // Support function for getDecomposition() to prevent it from overblowing (because it already is xd)
   // The function is called once decomposition algorithm runs into critical point
