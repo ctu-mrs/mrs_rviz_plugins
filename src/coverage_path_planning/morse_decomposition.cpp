@@ -439,13 +439,20 @@ void MorseDecomposition::fillCells(vector<cell_t>& cells, Point2d start, float t
     }
 
     if(waypoints.size() == 0){
-      std::cout << "cell does not have waypoints\n";
-      Point2d center;
-      bg::centroid(cell.partition, center);
-      if(bg::within(center, cell.partition)){
-        cell.paths.push_back({center});
+      Ogre::Vector3 line1 = toLine(cell.crit_point1, twist);
+      Ogre::Vector3 line2 = toLine(cell.crit_point2, twist);
+      Ogre::Vector3 sweep_line = line1;
+      sweep_line.z = (line1.z + line2.z) / 2;
+
+      std::pair<Point2d, Point2d> waypoint_pair;
+      if(getWaypointPair(cell.partition, sweep_line, waypoint_pair)){
+        waypoints.push_back(waypoint_pair);
+      }else{
+        #ifdef DEBUG
+        std::cout << "Could not add any waypoints to the cell\n";
+        #endif // DEBUG
+        continue;
       }
-      continue;
     }
 
     // Fix waypoints

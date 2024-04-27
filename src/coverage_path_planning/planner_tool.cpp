@@ -310,6 +310,7 @@ void PlannerTool::updatePolygon(){
 
 void PlannerTool::computePath(){
   if(current_coverage_method_){
+    updatePolygon();
     current_coverage_method_->compute();
   }else{
     ROS_WARN("[Coverage Path Planning]: Path planning method has not been selected");
