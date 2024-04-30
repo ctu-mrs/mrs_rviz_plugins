@@ -203,8 +203,6 @@ void WorldManager::save_config() {
       continue;
     }
 
-    std::cout << srv.response.message << std::endl;
-
     std::ofstream ofs(cur_filename, std::ofstream::out | std::ofstream::trunc);
     if (!ofs.is_open()) {
       ROS_ERROR("[WorldManager]: Could not open file %s", cur_filename.c_str());
