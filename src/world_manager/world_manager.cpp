@@ -62,8 +62,8 @@ void WorldManager::onInitialize(){
       rviz::BoolProperty* tmp  = new rviz::BoolProperty(drone_names[i].c_str(), true, "Actions of the tool will affect chosen uav's SafetyAreaManger", getPropertyContainer());
       properties.push_back(tmp);
       add_obstacle_clients.push_back(node_handler.serviceClient<mrs_msgs::ReferenceStampedSrv>("/" + drone_names[i] + "/safety_area_manager/add_obstacle"));
-      save_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/save_world_config"));
-      load_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/load_world_config"));
+      get_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/get_world_config"));
+      set_config_clients.push_back(node_handler.serviceClient<mrs_msgs::String>("/" + drone_names[i] + "/safety_area_manager/set_world_config"));
     }
     setStatus("Several drones found.");
   }
@@ -182,26 +182,37 @@ void WorldManager::save_config() {
     }
 
     // Correcting filenames to avoid name conflicts 
-    mrs_msgs::String srv;
-    srv.request.value = filename.toStdString();
+    std::string cur_filename = filename.toStdString();
     if(drone_num > 1){
-      size_t pos = srv.request.value.find(".yaml");
+      size_t pos = cur_filename.find(".yaml");
       if(pos == std::string::npos){
-        srv.request.value = srv.request.value + "_" + properties[i]->getNameStd();
+        cur_filename = cur_filename + "_" + properties[i]->getNameStd();
       } else{
-        srv.request.value.insert(pos, "_" + properties[i]->getNameStd());
+        cur_filename.insert(pos, "_" + properties[i]->getNameStd());
       }
     }
 
     // Sending requests
-    if(!save_config_clients[i].call(srv)){
+    mrs_msgs::String srv;
+    if(!get_config_clients[i].call(srv)){
       ROS_WARN("[WorldManager]: Could not call save_world_config service for drone %s", properties[i]->getNameStd().c_str());
       continue;
     }
     if(!srv.response.success){
-      ROS_WARN("[WorldManager]: Could save config for drone %s: %s", properties[i]->getNameStd().c_str(), srv.response.message.c_str());
+      ROS_WARN("[WorldManager]: Could get config for drone %s: %s", properties[i]->getNameStd().c_str(), srv.response.message.c_str());
       continue;
     }
+
+    std::cout << srv.response.message << std::endl;
+
+    std::ofstream ofs(cur_filename, std::ofstream::out | std::ofstream::trunc);
+    if (!ofs.is_open()) {
+      ROS_ERROR("[WorldManager]: Could not open file %s", cur_filename.c_str());
+      return;
+    }
+    ofs << srv.response.message;
+    ofs.close();
+
     ROS_INFO("[WorldManager]: Config has been saved successfully");
   }
 }
@@ -221,12 +232,22 @@ void WorldManager::load_config() {
     return;
   }
 
+  // Preparing srv
+  mrs_msgs::String srv;
+  srv.request.value = filename.toStdString();
+  std::ifstream ifs(filename.toStdString());
+  if (!ifs.is_open()) {
+    ROS_ERROR("[WorldManager]: Could not open file %s", filename.toStdString().c_str());
+    return;
+  }
+  std::stringstream buffer;
+  buffer << ifs.rdbuf();
+  srv.request.value = buffer.str();
+
   // Sending requests
   for(size_t i=0; i<properties.size(); i++){
-    mrs_msgs::String srv;
-    srv.request.value = filename.toStdString();
 
-    if(!load_config_clients[i].call(srv)){
+    if(!set_config_clients[i].call(srv)){
       ROS_WARN("[WorldManager]: Could not call load_world_config service for drone %s", properties[i]->getNameStd().c_str());
       std::string status = "Could not call load_world_config service for drone " + properties[i]->getNameStd();
       setStatus(status.c_str());
