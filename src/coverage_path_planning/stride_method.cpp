@@ -193,6 +193,22 @@ void StrideMethod::compute(){
   drawPath();
 }
 
+std::vector<mrs_msgs::Path> StrideMethod::getPath() {
+  std::vector<mrs_msgs::Path> result;
+  if(is_computed_){
+    result.push_back(path_.request.path);
+  }
+  return result;
+}
+
+void StrideMethod::setPath(std::vector<mrs_msgs::Path> paths) {
+  if(paths.size() != 0){
+    is_computed_ = true;
+    path_.request.path = paths.front();
+    drawPath();
+  }
+}
+
 void StrideMethod::drawPath(){
   // Delete previous path
   if(path_node_){

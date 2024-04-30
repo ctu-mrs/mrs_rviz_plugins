@@ -22,6 +22,10 @@ public:
 
   void start() override;
 
+  std::vector<mrs_msgs::Path> getPath() override;
+
+  void setPath(std::vector<mrs_msgs::Path> paths) override;
+
   ~DiagonalDecomposition();
 
 protected:

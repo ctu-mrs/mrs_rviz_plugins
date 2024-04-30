@@ -6,7 +6,10 @@
 #include <mrs_lib/safety_zone/prism.h>
 #include <rviz/properties/property.h>
 #include <OGRE/OgreSceneManager.h>
+#include <mrs_msgs/PathSrv.h>
 #include <QObject>
+
+#include <vector>
 
 namespace mrs_rviz_plugins{
 
@@ -38,6 +41,10 @@ public:
   virtual void setFrame(std::string new_frame, bool update=true) = 0;
 
   virtual void start() = 0;
+
+  virtual std::vector<mrs_msgs::Path> getPath() = 0;
+
+  virtual void setPath(std::vector<mrs_msgs::Path> paths) = 0;
 
 protected:
   // Visualisation

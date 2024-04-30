@@ -221,6 +221,22 @@ void DiagonalDecomposition::compute() {
   drawPath(path_);
 }
 
+vector<mrs_msgs::Path> DiagonalDecomposition::getPath() {
+  vector<mrs_msgs::Path> result;
+  if(is_computed_){
+    result.push_back(path_.request.path);
+  }
+  return result;
+}
+
+void DiagonalDecomposition::setPath(vector<mrs_msgs::Path> paths) {
+  if(paths.size() != 0){
+    is_computed_ = true;
+    path_.request.path = paths.front();
+    drawPath(path_);
+  }
+}
+
   //|------------------------------------------------------------------|
   //|------------------- Procedures of MP3 algorithm-------------------|
   //|------------------------------------------------------------------|

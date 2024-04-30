@@ -17,6 +17,9 @@
 #include <coverage_path_planning/coverage_method.h>
 
 #include <mrs_lib/transformer.h>
+#include <mrs_lib/param_loader.h>
+
+#include <mrs_msgs/Path.h>
 
 #include <pluginlib/class_loader.h>
 
@@ -43,6 +46,8 @@ protected Q_SLOTS:
   void overlapChanged();
   void startChanged();
 
+  void loadPath();
+  void savePath();
   void updatePolygon();
   void computePath();
   void startMission();

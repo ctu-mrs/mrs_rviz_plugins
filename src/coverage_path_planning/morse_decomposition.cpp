@@ -185,6 +185,22 @@ void MorseDecomposition::compute() {
   return;
 }
 
+vector<mrs_msgs::Path> MorseDecomposition::getPath() {
+  vector<mrs_msgs::Path> result;
+  if(is_computed_){
+    result.push_back(path_.request.path);
+  }
+  return result;
+}
+
+void MorseDecomposition::setPath(vector<mrs_msgs::Path> paths) {
+  if(paths.size() != 0){
+    is_computed_ = true;
+    path_.request.path = paths.front();
+    drawPath(path_);
+  }
+}
+
 MorseDecomposition::~MorseDecomposition(){
   delete twist_property_;
   delete drone_name_property_;

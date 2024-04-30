@@ -18,6 +18,10 @@ public:
 
   void initialize (rviz::Property* property_container, Ogre::SceneManager* scene_manager, Ogre::SceneNode* root_node);
 
+  std::vector<mrs_msgs::Path> getPath() override;
+
+  void setPath(std::vector<mrs_msgs::Path> paths) override;
+
   ~StrideMethod();
 
 private:
