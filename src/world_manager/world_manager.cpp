@@ -6,9 +6,11 @@
 
 #include <mrs_msgs/ReferenceStamped.h>
 
+#include <QDir>
 #include <QMenu>
-#include <QApplication>
 #include <QFileDialog>
+#include <QApplication>
+
 namespace mrs_rviz_plugins
 {
 WorldManager::WorldManager() {
@@ -151,7 +153,7 @@ void WorldManager::save_config() {
     setStatus("Current widget is nullptr. Could not open eplorer window");
     return;
   }
-  QString filename = QFileDialog::getSaveFileName(current_widget, tr("Save File"), "/home", tr("yaml files (*.yaml)"));
+  QString filename = QFileDialog::getSaveFileName(current_widget, tr("Save File"), QDir::homePath(), tr("yaml files (*.yaml)"));
   if(filename.isNull()){
     ROS_WARN("[WorldManager]: File has not been selected. No config has been saved");
     setStatus("File has not been selected. No config has been saved");
@@ -212,7 +214,7 @@ void WorldManager::load_config() {
     setStatus("Current widget is nullptr. Could not open eplorer window");
     return;
   }
-  QString filename = QFileDialog::getOpenFileName(current_widget, tr("Select File"), "/home", tr("All files (*);;yaml files (*.yaml)"));
+  QString filename = QFileDialog::getOpenFileName(current_widget, tr("Select File"), QDir::homePath(), tr("yaml files (*.yaml)"));
   if(filename.isNull()){
     ROS_WARN("[WorldManager]: File has not been selected. No config has been loaded");
     setStatus("File has not been selected. No config has been loaded");
