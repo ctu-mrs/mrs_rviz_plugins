@@ -147,13 +147,7 @@ void WorldManager::add_obstacle() {
 
 void WorldManager::save_config() {
   // Opening explorer window to choose a file
-  QWidget* current_widget = QApplication::focusWidget();
-  if(current_widget == nullptr){
-    ROS_ERROR("[WorldManager]: Current widget is nullptr. Could not open eplorer window");
-    setStatus("Current widget is nullptr. Could not open eplorer window");
-    return;
-  }
-  QString filename = QFileDialog::getSaveFileName(current_widget, tr("Save File"), QDir::homePath(), tr("yaml files (*.yaml)"));
+  QString filename = QFileDialog::getSaveFileName(Q_NULLPTR, tr("Save File"), QDir::homePath(), tr("yaml files (*.yaml)"));
   if(filename.isNull()){
     ROS_WARN("[WorldManager]: File has not been selected. No config has been saved");
     setStatus("File has not been selected. No config has been saved");
@@ -217,13 +211,7 @@ void WorldManager::save_config() {
 
 void WorldManager::load_config() {
   // Opening explorer window to choose a file
-  QWidget* current_widget = QApplication::focusWidget();
-  if(current_widget == nullptr){
-    ROS_ERROR("[WorldManager]: Current widget is nullptr. Could not open eplorer window");
-    setStatus("Current widget is nullptr. Could not open eplorer window");
-    return;
-  }
-  QString filename = QFileDialog::getOpenFileName(current_widget, tr("Select File"), QDir::homePath(), tr("yaml files (*.yaml)"));
+  QString filename = QFileDialog::getOpenFileName(Q_NULLPTR, tr("Select File"), QDir::homePath(), tr("yaml files (*.yaml)"));
   if(filename.isNull()){
     ROS_WARN("[WorldManager]: File has not been selected. No config has been loaded");
     setStatus("File has not been selected. No config has been loaded");
