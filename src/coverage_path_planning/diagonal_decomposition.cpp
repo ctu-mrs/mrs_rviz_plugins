@@ -1006,9 +1006,16 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
 
     // Find next cells
     std::vector<int> next_cells;
-    for(int i=0; i<cells.size(); i++){
-      if(std::find(cur_path.begin(), cur_path.end(), i) == cur_path.end() && i != cur_cell_i){
-        next_cells.push_back(i);
+    for(int neighbor : cells[cur_cell_i].adjacent_polygons){
+      if(std::find(cur_path.begin(), cur_path.end(), neighbor) == cur_path.end()){
+        next_cells.push_back(neighbor);
+      }
+    }
+    if(next_cells.empty()){
+      for(int i=0; i<cells.size(); i++){
+        if(std::find(cur_path.begin(), cur_path.end(), i) == cur_path.end() && i != cur_cell_i){
+          next_cells.push_back(i);
+        }
       }
     }
 
