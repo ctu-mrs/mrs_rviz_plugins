@@ -95,7 +95,7 @@ protected:
 
   // Generates all permutations of cells and their paths.
   // Writes parameters of the best one to res_len, res_cell_seq, res_path_i
-  // Must allways return true
+  // Returns true if path was found. (Teoretically it must always return true)
   bool findPath(std::vector<cell_t>& cells, 
               int start_index, 
               mrs_lib::Point2d start_pos, 
@@ -105,6 +105,8 @@ protected:
 
   //|------------------------------ Tools------------------------------|
 
+  // Converts cell sequence into coverage path
+  // Note: start must be in polygon_frame_
   mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
 
   // ang(a, b, c) denotes the angle between 0 and 360 degrees

@@ -140,26 +140,27 @@ void DiagonalDecomposition::compute() {
     std::cout << "cell " << cell.polygon_id << " has " << cell.paths.size() << " paths\n";
   }
 
+  // Transform start point into polgyon_frame_
+  Point2d drone_point;
+  geometry_msgs::Point drone_point_gm;
+  drone_point_gm.x = start_position_.x;
+  drone_point_gm.y = start_position_.y;
+  drone_point_gm.z = start_position_.z;
+  const auto& drone_point_trasformed = transformer_.transformSingle(current_frame_, drone_point_gm, polygon_frame_);
+  if(!drone_point_trasformed){
+    ROS_WARN("[DiagonalDecomposition]: Could not transform start position from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
+  } else{
+    drone_point_gm = drone_point_trasformed.value();
+  }
+  bg::set<0>(drone_point, drone_point_gm.x);
+  bg::set<1>(drone_point, drone_point_gm.y);
+
   vector<int> best_cell_seq;
   vector<int> best_chosen_paths;
   float best_total_len = std::numeric_limits<float>::max();
-  Point2d best_start;
   for(int i=0; i<cells.size(); i++){
 
     ROS_INFO("[DiagonalDecomposition]: partition %d out of %d is being processed", i, (int) cells.size());
-    Point2d drone_point;
-    geometry_msgs::Point drone_point_gm;
-    drone_point_gm.x = start_position_.x;
-    drone_point_gm.y = start_position_.y;
-    drone_point_gm.z = start_position_.z;
-    const auto& drone_point_trasformed = transformer_.transformSingle(current_frame_, drone_point_gm, polygon_frame_);
-    if(!drone_point_trasformed){
-      ROS_WARN("[DiagonalDecomposition]: Could not transform start position from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
-    } else{
-      drone_point_gm = drone_point_trasformed.value();
-    }
-    bg::set<0>(drone_point, drone_point_gm.x);
-    bg::set<1>(drone_point, drone_point_gm.y);
 
     float res_len = 0;
     vector<int> res_cell_seq;
@@ -180,7 +181,7 @@ void DiagonalDecomposition::compute() {
   #ifdef DEBUG
   std::cout << "Generating the path\n";
   #endif // DEBUG
-  path_ = generatePath(cells, best_cell_seq, best_start);
+  path_ = generatePath(cells, best_cell_seq, drone_point);
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
   is_computed_ = true;
   
@@ -1107,17 +1108,6 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   result.request.path.use_heading = true;
   result.request.path.fly_now = true;
   result.request.path.loop = false;
-  mrs_msgs::Reference start_r;
-  start_r.position.x = start_position_.x;
-  start_r.position.y = start_position_.y;
-  start_r.position.z = height_;
-  // todo: code crashes here
-  const auto& tr = transformer_.transformSingle(current_frame_, start_r, polygon_frame_);
-  if(!tr){
-    ROS_WARN("[DiagonalDecomposition]: could not transform start reference from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
-  }else{
-    result.request.path.points.push_back(tr.value());
-  }
 
   Point2d cur_point = start;
   bool is_front;
