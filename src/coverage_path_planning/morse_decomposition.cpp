@@ -1103,7 +1103,7 @@ vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index,
       total_path.push_back(cur_cell_i);
 
       total_paths.push_back(total_path);
-      total_lens.push_back(cur_path_len);
+      total_lens.push_back(cur_path_len); // todo: do we have to add bg::distance(cur_last_point, some_first_point)??
       continue;
     }
 

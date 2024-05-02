@@ -37,8 +37,9 @@ protected:
     int id;
   } point_t;
   typedef struct{
-    std::vector<std::pair<mrs_lib::Point2d, mrs_lib::Point2d>> waypoints;
+    std::vector<std::vector<mrs_lib::Point2d>> paths;
     std::vector<int> adjacent_polygons;
+    int chosen_path = -1;
     int polygon_id = 0;
   } cell_t;
   typedef std::pair<point_t, point_t> line_t;
@@ -75,10 +76,6 @@ protected:
   // param polygons: partitions of the decomposed polygon
   // returns a vector of cells that represent individual partitions
   std::vector<cell_t> fillCells(std::vector<std::vector<point_t>>& polygons);
-  
-  // Changes cell_t.waypoints of every cell so that each waypoint.first 
-  //    is on one side and each waypoint.second is on the other
-  void fixCells(std::vector<DiagonalDecomposition::cell_t>& cells);
 
   // For given infinite line represented by sweep_direction searches for 
   //    intersections with edges of the polygon.
@@ -96,26 +93,17 @@ protected:
   // sweep direction in sence of the publication (i.e. vector.x vector.y define sweep direction)
   Ogre::Vector3 getSweepDirection(std::vector<point_t>& polygon);
 
-  // DFS algorithm searching for the best permutation of cells
-  // If a dead end is reached, continue the search with any of unvisited cells
+  // Generates all permutations of cells and their paths.
+  // Writes parameters of the best one to res_len, res_cell_seq, res_path_i
   // Must allways return true
   bool findPath(std::vector<cell_t>& cells, 
-                mrs_lib::Point2d prev_point,
-                std::set<int> visited, 
-                int cur_cell_index, 
-                int path_len, 
-                std::vector<int>& path,
-                float& total_path_len);
+              int start_index, 
+              mrs_lib::Point2d start_pos, 
+              float& res_len,
+              std::vector<int>& res_cell_seq,
+              std::vector<int>& res_path_i);
 
   //|------------------------------ Tools------------------------------|
-
-  // Considering that a UAV is at prev_point, finds the closest point 
-  // to start coverage of the cell (start_point) and where the coverage 
-  // path finishes (finish_point).
-  void getStartAndFinish(mrs_lib::Point2d prev_point, 
-                        cell_t& cur_cell, 
-                        mrs_lib::Point2d& start_point, 
-                        mrs_lib::Point2d& finish_point);
 
   mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);
 

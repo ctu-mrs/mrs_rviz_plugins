@@ -9,6 +9,7 @@
 #include <vector>
 #include <limits>
 #include <cmath>
+#include <list>
 #include <set>
 
 // Uncomment this for useful outputs during computation
@@ -135,15 +136,15 @@ void DiagonalDecomposition::compute() {
 
   // Find the best cell permutation using DFS
   vector<cell_t> cells = fillCells(decomposition);
-  fixCells(cells);
+  for(cell_t& cell : cells){
+    std::cout << "cell " << cell.polygon_id << " has " << cell.paths.size() << " paths\n";
+  }
 
-  vector<int> shortest_path;
+  vector<int> best_cell_seq;
+  vector<int> best_chosen_paths;
+  float best_total_len = std::numeric_limits<float>::max();
   Point2d best_start;
-  float min_total_len = std::numeric_limits<float>::max();
   for(int i=0; i<cells.size(); i++){
-    if(cells[i].waypoints.size() == 0){
-      continue;
-    }
 
     ROS_INFO("[DiagonalDecomposition]: partition %d out of %d is being processed", i, (int) cells.size());
     Point2d drone_point;
@@ -160,58 +161,26 @@ void DiagonalDecomposition::compute() {
     bg::set<0>(drone_point, drone_point_gm.x);
     bg::set<1>(drone_point, drone_point_gm.y);
 
-    vector<int> path(cells.size());
-    std::set<int> visited;
+    float res_len = 0;
+    vector<int> res_cell_seq;
+    vector<int> res_path_i;
+    if(findPath(cells, i, drone_point, res_len, res_cell_seq, res_path_i)){
+      if(res_len < best_total_len){
+        best_total_len = res_len;
+        best_cell_seq = res_cell_seq;
+        best_chosen_paths = res_path_i;
+      }
+    }
+  }
 
-    Point2d prev_point = cells[i].waypoints.front().first;
-    Point2d start_point, finish_point;
-    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
-    float total_path_len = 0;
-    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
-    if(total_path_len < min_total_len){
-      shortest_path = path;
-      best_start = prev_point;
-      min_total_len = total_path_len;
-    }
-
-    visited.clear();
-    prev_point = cells[i].waypoints.front().second;
-    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
-    total_path_len = 0;
-    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
-    if(total_path_len < min_total_len){
-      shortest_path = path;
-      best_start = prev_point;
-      min_total_len = total_path_len;
-    }
-    
-    visited.clear();
-    prev_point = cells[i].waypoints.back().first;
-    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
-    total_path_len = 0;
-    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
-    if(total_path_len < min_total_len){
-      shortest_path = path;
-      best_start = prev_point;
-      min_total_len = total_path_len;
-    }
-
-    visited.clear();
-    prev_point = cells[i].waypoints.back().second;
-    getStartAndFinish(prev_point, cells[i], start_point, finish_point);
-    total_path_len = 0;
-    findPath(cells, drone_point, visited, i, 0, path, total_path_len);
-    if(total_path_len < min_total_len){
-      shortest_path = path;
-      best_start = prev_point;
-      min_total_len = total_path_len;
-    }
+  for(int i=0; i<best_cell_seq.size(); i++){
+    cells[best_cell_seq[i]].chosen_path = best_chosen_paths[i];
   }
 
   #ifdef DEBUG
   std::cout << "Generating the path\n";
   #endif // DEBUG
-  path_ = generatePath(cells, shortest_path, best_start);
+  path_ = generatePath(cells, best_cell_seq, best_start);
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
   is_computed_ = true;
   
@@ -803,22 +772,76 @@ vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<ve
     new_cell.polygon_id = i;
     new_cell.adjacent_polygons = getAdjacentPolygons(polygons, i);
 
+    vector<std::pair<Point2d, Point2d>> waypoints;
+
     // Filling waypoints
     Ogre::Vector3 sweep_dir = getSweepDirection(polygons[i]);
-    int num = 0;
     for(float c=sweep_dir.z-distance; ; c-=distance){
       sweep_dir.z = c;
       std::pair<Point2d, Point2d> waypoint_pair;
       if(getWaypointPair(polygons[i], sweep_dir, distance, waypoint_pair)){
-        new_cell.waypoints.push_back(waypoint_pair);
-        num++;
+        waypoints.push_back(waypoint_pair);
         continue;
       }
       break;
     }
 
+    // Fix waypoints
+    if(waypoints.size() != 0){
+      Point2d cur_point = waypoints[0].first;
+      for(std::pair<Point2d, Point2d>& pair : waypoints){
+        if(bg::comparable_distance(cur_point, pair.first) > bg::comparable_distance(cur_point, pair.second)){
+          Point2d tmp = pair.first;
+          pair.first = pair.second;
+          pair.second = tmp;
+        }
+        cur_point = pair.first;
+      }
+    }
+
+    // Shrink waypoints
+    for(std::pair<Point2d, Point2d>& pair : waypoints){
+      if(bg::distance(pair.first, pair.second) > 2*distance){
+        Line shrinked = shrink(pair.first, pair.second, distance);
+        pair.first = shrinked[0];
+        pair.second = shrinked[1];
+      }else{
+        float x = (bg::get<0>(pair.first) + bg::get<0>(pair.second)) / 2;
+        float y = (bg::get<1>(pair.first) + bg::get<1>(pair.second)) / 2;
+        pair.first = Point2d{x, y};
+        pair.second = Point2d{x, y};
+      }
+    }
+
+    // Add paths
+    vector<Point2d> path1;
+    vector<Point2d> path2;
+    path1.reserve(waypoints.size() * 2);
+    path2.reserve(waypoints.size() * 2);
+    bool is_first = true;
+    for(std::pair<Point2d, Point2d>& pair : waypoints){
+      if(is_first){
+        path1.push_back(pair.first);
+        path1.push_back(pair.second);
+        path2.push_back(pair.second);
+        path2.push_back(pair.first);
+      }else{
+        path1.push_back(pair.second);
+        path1.push_back(pair.first);
+        path2.push_back(pair.first);
+        path2.push_back(pair.second);
+      }
+      is_first = !is_first;
+    }
+    new_cell.paths.push_back(path1);
+    new_cell.paths.push_back(path2);
+    std::reverse(path1.begin(), path1.end());
+    std::reverse(path2.begin(), path2.end());
+    new_cell.paths.push_back(path1);
+    new_cell.paths.push_back(path2);
+
     #ifdef DEBUG
-    if(num == 0){
+    if(waypoints.size() == 0){
       std::cout << "polygon without any waypoint: " << printPolygon(polygons[i]) << std::endl;
     }
     #endif // DEBUG
@@ -934,120 +957,131 @@ std::optional<Point2d> DiagonalDecomposition::getIntersection(Ogre::Vector3 line
   return std::nullopt;
 }
 
-bool DiagonalDecomposition::findPath(
-      vector<DiagonalDecomposition::cell_t>& cells, 
-      Point2d prev_point,
-      std::set<int> visited, 
-      int cur_cell_index, 
-      int path_len, 
-      vector<int>& path,
-      float& total_path_len){
-  visited.insert(cur_cell_index);
-  path[path_len] = cur_cell_index;
+bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cells, 
+                                      int start_index, 
+                                      Point2d start_pos, 
+                                      float& res_len,
+                                      vector<int>& res_cell_seq,
+                                      vector<int>& res_path_i){
+  // Results
+  std::vector<float> total_lens;
+  std::vector<vector<int>> total_cell_seq;
+  std::vector<vector<int>> total_path_i;
 
-  // Finish condition
-  if(visited.size() == cells.size()){
-    return true;
-  }
+  // Queues
+  std::list<int> cells_to_visit{start_index};
+  std::list<float> path_len{0};
+  std::list<Point2d> last_point{start_pos};
+  std::list<vector<int>> path_to_cell{{}}; // also serves as "visited"
+  std::list<vector<int>> chosen_paths{{}}; // indices of chosen cell_t.paths
 
-  // All the found paths
-  vector<vector<int>> paths;
-  vector<float> path_total_lens;
+  while(!cells_to_visit.empty()){
+    // Take the info of current cell
+    int cur_cell_i = cells_to_visit.front();
+    float cur_path_len = path_len.front();
+    Point2d cur_last_point = last_point.front();
+    vector<int> cur_path = path_to_cell.front();
+    vector<int> cur_chosen_paths = chosen_paths.front();
 
-  bool found_adjacent = false;
+    // Pop the queue
+    cells_to_visit.pop_front();
+    path_len.pop_front();
+    last_point.pop_front();
+    path_to_cell.pop_front();
+    chosen_paths.pop_front();
 
-  // Continue search with adjacent cells
-  for(int next : cells[cur_cell_index].adjacent_polygons){
-    if(visited.find(next) != visited.end()){
+    // Add transition to the current cell
+    std::vector<float> d_len;
+    std::vector<Point2d> finish_points;
+    for(vector<Point2d>& path : cells[cur_cell_i].paths){
+      if(path.size() == 0){
+        d_len.push_back(0);
+        finish_points.push_back(cur_last_point);
+      }else{
+        d_len.push_back(bg::distance(cur_last_point, path.front()));
+        finish_points.push_back(path.back());
+      }
+    }
+
+    // Find next cells
+    std::vector<int> next_cells;
+    for(int i=0; i<cells.size(); i++){
+      if(std::find(cur_path.begin(), cur_path.end(), i) == cur_path.end() && i != cur_cell_i){
+        next_cells.push_back(i);
+      }
+    }
+
+    // If no next cell was found, then all of them has been visited and we must record the path
+    if(next_cells.size() == 0){
+      for(int i=0; i<cells[cur_cell_i].paths.size(); i++){
+        float total_len = cur_path_len;
+        vector<int> total_path = cur_path;
+        vector<int> total_chosen_paths = cur_chosen_paths;
+
+        total_len += d_len[i];
+        total_path.push_back(cur_cell_i);
+        total_chosen_paths.push_back(i);
+
+        total_lens.push_back(total_len);
+        total_cell_seq.push_back(total_path);
+        total_path_i.push_back(total_chosen_paths);
+      }
       continue;
     }
-    cell_t cur_cell = cells[next];
 
-    // Get finish point of cur polygon
-    Point2d start_point;
-    Point2d finish_point = prev_point;
-    float new_total_path_len = total_path_len;
-    if(cur_cell.waypoints.size() != 0){
-      getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-      new_total_path_len = total_path_len + bg::distance(prev_point, start_point); // getPath() takes too much time
-    }
+    // Add next cells and points to the queue
+    for(int i=0; i<next_cells.size(); i++){
+      if(cells[cur_cell_i].paths.size() == 0){
+        vector<int> new_path = cur_path;
+        vector<int> new_chosen_paths = cur_chosen_paths;
+        float new_len = cur_path_len;
 
-    if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
-      paths.push_back(path);
-      path_total_lens.push_back(new_total_path_len);
-      found_adjacent = true;
-    }
-  }
+        new_path.push_back(cur_cell_i);
+        new_chosen_paths.push_back(-1);
 
-  if(!found_adjacent){
-    // Continue search with every unvisited cell
-    for(int next=0; next<cells.size(); next++){
-      if(visited.find(next) != visited.end()){
-        continue;
-      }
-      cell_t cur_cell = cells[next];
-
-      // Get finish point of cur polygon
-      Point2d start_point;
-      Point2d finish_point = prev_point;
-      float new_total_path_len = total_path_len;
-      if(cur_cell.waypoints.size() != 0){
-        getStartAndFinish(prev_point, cur_cell, start_point, finish_point);
-        new_total_path_len = total_path_len + bg::distance(prev_point, start_point); // getPath() takes too much time
+        cells_to_visit.emplace_front(next_cells[i]);
+        path_len.emplace_front(new_len);
+        last_point.emplace_front(cur_last_point);
+        path_to_cell.emplace_front(new_path);
+        chosen_paths.emplace_front(new_chosen_paths);
       }
 
-      if(findPath(cells, finish_point, visited, next, path_len+1, path, new_total_path_len)){
-        paths.push_back(path);
-        path_total_lens.push_back(new_total_path_len);
+      for(int j=0; j<cells[cur_cell_i].paths.size(); j++){
+        vector<int> new_path = cur_path;
+        vector<int> new_chosen_paths = cur_chosen_paths;
+        float new_len = cur_path_len;
+
+        new_path.push_back(cur_cell_i);
+        new_chosen_paths.push_back(j);
+        new_len += d_len[j];
+
+        cells_to_visit.emplace_front(next_cells[i]);
+        path_len.emplace_front(new_len);
+        last_point.emplace_front(finish_points[j]);
+        path_to_cell.emplace_front(new_path);
+        chosen_paths.emplace_front(new_chosen_paths);
       }
     }
   }
 
-  int index=0;
-  float min_total_path_len = std::numeric_limits<float>::max();
-  for(int i=0; i<paths.size(); i++){
-    if(path_total_lens[i] < min_total_path_len){
-      min_total_path_len = path_total_lens[i];
-      index = i;
+  // Find optimal path
+  int argmin = -1;
+  float min_len = std::numeric_limits<float>::max();
+  for(int i=0; i<total_lens.size(); i++){
+    if(min_len > total_lens[i]){
+      min_len = total_lens[i];
+      argmin = i;
     }
   }
-  path = paths[index];
-  total_path_len = min_total_path_len;
+
+  if(argmin == -1){
+    res_len = -1;
+    return false;
+  }
+  res_len = total_lens[argmin];
+  res_cell_seq = total_cell_seq[argmin];
+  res_path_i = total_path_i[argmin];
   return true;
-}
-
-void DiagonalDecomposition::getStartAndFinish(Point2d prev_point, DiagonalDecomposition::cell_t& cur_cell, Point2d& start_point, Point2d& finish_point){
-  start_point = cur_cell.waypoints.front().first;
-  finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.back().first : cur_cell.waypoints.back().second;
-  if(bg::comparable_distance(prev_point, cur_cell.waypoints.front().second) < bg::comparable_distance(prev_point, start_point)){
-    start_point = cur_cell.waypoints.front().second;
-    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.back().second : cur_cell.waypoints.back().first;
-  }
-  if(bg::comparable_distance(prev_point, cur_cell.waypoints.back().first) < bg::comparable_distance(prev_point, start_point)){
-    start_point = cur_cell.waypoints.back().first;
-    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.front().first : cur_cell.waypoints.front().second;
-  }
-  if(bg::comparable_distance(prev_point, cur_cell.waypoints.back().second) < bg::comparable_distance(prev_point, start_point)){
-    start_point = cur_cell.waypoints.back().second;
-    finish_point = cur_cell.waypoints.size() % 2 == 0 ? cur_cell.waypoints.front().second : cur_cell.waypoints.front().first;
-  }
-}
-
-void DiagonalDecomposition::fixCells(vector<DiagonalDecomposition::cell_t>& cells){
-  for(cell_t& cell : cells){
-    if(cell.waypoints.size() == 0){
-      continue;
-    }
-    Point2d cur_point = cell.waypoints[0].first;
-    for(std::pair<Point2d, Point2d>& pair : cell.waypoints){
-      if(bg::comparable_distance(cur_point, pair.first) > bg::comparable_distance(cur_point, pair.second)){
-        Point2d tmp = pair.first;
-        pair.first = pair.second;
-        pair.second = tmp;
-      }
-      cur_point = pair.first;
-    }
-  }
 }
 
 // |---------------------------------------------------------------|
@@ -1065,6 +1099,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   start_r.position.x = start_position_.x;
   start_r.position.y = start_position_.y;
   start_r.position.z = height_;
+  // todo: code crashes here
   const auto& tr = transformer_.transformSingle(current_frame_, start_r, polygon_frame_);
   if(!tr){
     ROS_WARN("[DiagonalDecomposition]: could not transform start reference from %s to %s", current_frame_.c_str(), polygon_frame_.c_str());
@@ -1072,9 +1107,9 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
     result.request.path.points.push_back(tr.value());
   }
 
-  float angle_rad = (((float)angle_) / 180) * M_PI;
-  float camera_width = (std::tan(angle_rad / 2) * height_);
-  float distance = camera_width * (1 - overlap_);
+  // float angle_rad = (((float)angle_) / 180) * M_PI;
+  // float camera_width = (std::tan(angle_rad / 2) * height_);
+  // float distance = camera_width * (1 - overlap_);
   
   Point2d cur_point = start;
   bool is_front;
@@ -1084,76 +1119,19 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   #endif // DEBUG
   for(int cell_index : path){
     cell_t& cur_cell = cells[cell_index];
-    if(cur_cell.waypoints.size() == 0){
+    if(cur_cell.paths.size() == 0 || cur_cell.chosen_path == -1){
       #ifdef DEBUG
       std::cout << "\tfound a cell without waypoints. cell id: " << cur_cell.polygon_id << std::endl;
       #endif // DEBUG
       continue;
     }
-    // Find the first waypoint of the cell (getPathLen() takes too much time for)
-    Point2d start_point = cur_cell.waypoints.front().first;
-    is_front = true;
-    is_first = true;
-    if(bg::comparable_distance(cur_point, cur_cell.waypoints.front().second) < bg::comparable_distance(cur_point, start_point)){
-      start_point = cur_cell.waypoints.front().second;
-      is_front = true;
-      is_first = false;
-    }
-    if(bg::comparable_distance(cur_point, cur_cell.waypoints.back().first) < bg::comparable_distance(cur_point, start_point)){
-      start_point = cur_cell.waypoints.back().first;
-      is_front = false;
-      is_first = true;
-    }
-    if(bg::comparable_distance(cur_point, cur_cell.waypoints.back().second) < bg::comparable_distance(cur_point, start_point)){
-      start_point = cur_cell.waypoints.back().second;
-      is_front = false;
-      is_first = false;
-    }
 
-    auto waypoints = cells[cell_index].waypoints;
-    if(!is_front){
-      std::reverse(waypoints.begin(), waypoints.end());
-    }
-    for(auto& pair : waypoints){
-
-      Point2d cur_waypoint1;
-      Point2d cur_waypoint2;
-      if(is_first){
-        cur_waypoint1 = pair.first;
-        cur_waypoint2 = pair.second;
-      }else{
-        cur_waypoint1 = pair.second;
-        cur_waypoint2 = pair.first;
-      }
-      if(bg::distance(cur_waypoint1, cur_waypoint2) > 2 * distance){
-        mrs_msgs::Reference r1;
-        mrs_msgs::Reference r2;
-
-        Line shrinked = shrink(cur_waypoint1, cur_waypoint2, distance);
-
-        // TODO: add heading
-        r1.position.x = bg::get<0>(shrinked[0]);
-        r1.position.y = bg::get<1>(shrinked[0]);
-        r2.position.x = bg::get<0>(shrinked[1]);
-        r2.position.y = bg::get<1>(shrinked[1]);
-        r1.position.z = height_;
-        r2.position.z = height_;
-
-        result.request.path.points.push_back(r1);
-        result.request.path.points.push_back(r2);
-      }else{
-        // TODO: add heading
-        mrs_msgs::Reference r;
-        r.position.x = (bg::get<0>(cur_waypoint1) + bg::get<0>(cur_waypoint2)) / 2;
-        r.position.y = (bg::get<1>(cur_waypoint1) + bg::get<1>(cur_waypoint2)) / 2;
-        r.position.z = height_;
-
-        result.request.path.points.push_back(r);
-      }
-      is_first = !is_first;
-    }
-    if(result.request.path.points.size() != 0){
-      cur_point = Point2d(result.request.path.points.back().position.x, result.request.path.points.back().position.y);
+    for(Point2d& point : cur_cell.paths[cur_cell.chosen_path]){
+      mrs_msgs::Reference ref;
+      ref.position.x = bg::get<0>(point);
+      ref.position.y = bg::get<1>(point);
+      ref.position.z = height_;
+      result.request.path.points.push_back(ref);
     }
   }
   #ifdef DEBUG
