@@ -154,6 +154,7 @@ void StrideMethod::compute(){
         longest_stride = stride;
       }
     }
+    std::cout << longest_stride.len << std::endl;
 
     std::cout << "adding stride to the path\n";
     // 5. Add all cells of the stride to the path and mark them
@@ -417,7 +418,7 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
     Line step;
     step.push_back(p1);
     step.push_back(p2);
-    if(bg::within(step, current_polygon_)){
+    if(!bg::within(step, current_polygon_)){
       break;
     }
 

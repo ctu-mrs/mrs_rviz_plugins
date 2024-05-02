@@ -992,16 +992,12 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
     chosen_paths.pop_front();
 
     // Add transition to the current cell
-    std::vector<float> d_len;
-    std::vector<Point2d> finish_points;
-    for(vector<Point2d>& path : cells[cur_cell_i].paths){
-      if(path.size() == 0){
-        d_len.push_back(0);
-        finish_points.push_back(cur_last_point);
-      }else{
-        d_len.push_back(bg::distance(cur_last_point, path.front()));
-        finish_points.push_back(path.back());
-      }
+    float d_len;
+    int closest_path_i = findClosest(cells[cur_cell_i], cur_last_point);
+    Point2d finish_point;
+    if(closest_path_i >= 0){
+      finish_point = cells[cur_cell_i].paths[closest_path_i].back();
+      d_len = bg::distance(cur_last_point, cells[cur_cell_i].paths[closest_path_i].front());
     }
 
     // Find next cells
@@ -1031,16 +1027,14 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
         total_lens.push_back(total_len);
         total_cell_seq.push_back(total_path);
         total_path_i.push_back(total_chosen_paths);
-      }
-
-      for(int i=0; i<cells[cur_cell_i].paths.size(); i++){
+      } else{
         float total_len = cur_path_len;
         vector<int> total_path = cur_path;
         vector<int> total_chosen_paths = cur_chosen_paths;
 
-        total_len += d_len[i];
+        total_len += d_len;
         total_path.push_back(cur_cell_i);
-        total_chosen_paths.push_back(i);
+        total_chosen_paths.push_back(closest_path_i);
 
         total_lens.push_back(total_len);
         total_cell_seq.push_back(total_path);
@@ -1064,20 +1058,18 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
         last_point.emplace_front(cur_last_point);
         path_to_cell.emplace_front(new_path);
         chosen_paths.emplace_front(new_chosen_paths);
-      }
-
-      for(int j=0; j<cells[cur_cell_i].paths.size(); j++){
+      } else{
         vector<int> new_path = cur_path;
         vector<int> new_chosen_paths = cur_chosen_paths;
         float new_len = cur_path_len;
 
         new_path.push_back(cur_cell_i);
-        new_chosen_paths.push_back(j);
-        new_len += d_len[j];
+        new_chosen_paths.push_back(closest_path_i);
+        new_len += d_len;
 
         cells_to_visit.emplace_front(next_cells[i]);
         path_len.emplace_front(new_len);
-        last_point.emplace_front(finish_points[j]);
+        last_point.emplace_front(finish_point);
         path_to_cell.emplace_front(new_path);
         chosen_paths.emplace_front(new_chosen_paths);
       }
@@ -1108,6 +1100,24 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
 // |-------------------- Tools for convenience --------------------|
 // |---------------------------------------------------------------|
 
+int DiagonalDecomposition::findClosest(cell_t& cell, Point2d point){
+  int res_i = -1;
+  float min_dist = std::numeric_limits<float>::max();
+  for(int i=0; i<cell.paths.size(); i++){
+    if(cell.paths[i].size() == 0){
+      ROS_WARN("[MorseDecomposition]: Cell #%d has empty path #%d", cell.polygon_id, i);
+      continue;
+    }
+
+    float cur_dist = bg::comparable_distance(point, cell.paths[i].front());
+    if(cur_dist < min_dist){
+      min_dist = cur_dist;
+      res_i = i;
+    }
+  }
+  return res_i;
+}
+
 mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells, std::vector<int> path, Point2d start){
   mrs_msgs::PathSrv result;
   result.request.path.header.frame_id = polygon_frame_;
@@ -1116,7 +1126,12 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   result.request.path.fly_now = true;
   result.request.path.loop = false;
 
-  Point2d cur_point = start;
+  mrs_msgs::Reference start_r;
+  start_r.position.x = bg::get<0>(start);
+  start_r.position.y = bg::get<1>(start);
+  start_r.position.z = height_;
+  result.request.path.points.push_back(start_r);
+  
   bool is_front;
   bool is_first;
   #ifdef DEBUG

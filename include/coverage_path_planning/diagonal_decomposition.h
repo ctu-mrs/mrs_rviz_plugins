@@ -105,6 +105,10 @@ protected:
 
   //|------------------------------ Tools------------------------------|
 
+  // Returns index of the path, which start is closest to point 
+  // Returns -1 if cell has no path or all paths are empty
+  int findClosest(cell_t& cell, mrs_lib::Point2d point);
+
   // Converts cell sequence into coverage path
   // Note: start must be in polygon_frame_
   mrs_msgs::PathSrv generatePath(std::vector<cell_t>& cells, std::vector<int> path, mrs_lib::Point2d start);

@@ -1102,17 +1102,22 @@ bool MorseDecomposition::findPath(vector<cell_t>& cells,
     chosen_paths.pop_front();
 
     // Add transition to the current cell
-    std::vector<float> d_len;
-    std::vector<Point2d> finish_points;
-    for(vector<Point2d>& path : cells[cur_cell_i].paths){
-      if(path.size() == 0){
-        d_len.push_back(0);
-        finish_points.push_back(cur_last_point);
-      }else{
-        d_len.push_back(bg::distance(cur_last_point, path.front()));
-        finish_points.push_back(path.back());
-      }
+    float d_len;
+    int closest_path_i = findClosest(cells[cur_cell_i], cur_last_point);
+    Point2d finish_point;
+    if(closest_path_i >= 0){
+      finish_point = cells[cur_cell_i].paths[closest_path_i].back();
+      d_len = bg::distance(cur_last_point, cells[cur_cell_i].paths[closest_path_i].front());
     }
+    // for(vector<Point2d>& path : cells[cur_cell_i].paths){
+    //   if(path.size() == 0){
+    //     d_len.push_back(0);
+    //     finish_points.push_back(cur_last_point);
+    //   }else{
+    //     d_len.push_back(bg::distance(cur_last_point, path.front()));
+    //     finish_points.push_back(path.back());
+    //   }
+    // }
 
     // Find next cells
     std::vector<int> next_cells;
@@ -1141,15 +1146,14 @@ bool MorseDecomposition::findPath(vector<cell_t>& cells,
         total_lens.push_back(total_len);
         total_cell_seq.push_back(total_path);
         total_path_i.push_back(total_chosen_paths);
-      }
-      for(int i=0; i<cells[cur_cell_i].paths.size(); i++){
+      }else{
         float total_len = cur_path_len;
         vector<int> total_path = cur_path;
         vector<int> total_chosen_paths = cur_chosen_paths;
 
-        total_len += d_len[i];
+        total_len += d_len;
         total_path.push_back(cur_cell_i);
-        total_chosen_paths.push_back(i);
+        total_chosen_paths.push_back(closest_path_i);
 
         total_lens.push_back(total_len);
         total_cell_seq.push_back(total_path);
@@ -1173,20 +1177,18 @@ bool MorseDecomposition::findPath(vector<cell_t>& cells,
         last_point.emplace_front(cur_last_point);
         path_to_cell.emplace_front(new_path);
         chosen_paths.emplace_front(new_chosen_paths);
-      }
-
-      for(int j=0; j<cells[cur_cell_i].paths.size(); j++){
+      } else {
         vector<int> new_path = cur_path;
         vector<int> new_chosen_paths = cur_chosen_paths;
         float new_len = cur_path_len;
 
         new_path.push_back(cur_cell_i);
-        new_chosen_paths.push_back(j);
-        new_len += d_len[j];
+        new_chosen_paths.push_back(closest_path_i);
+        new_len += d_len;
 
         cells_to_visit.emplace_front(next_cells[i]);
         path_len.emplace_front(new_len);
-        last_point.emplace_front(finish_points[j]);
+        last_point.emplace_front(finish_point);
         path_to_cell.emplace_front(new_path);
         chosen_paths.emplace_front(new_chosen_paths);
       }
