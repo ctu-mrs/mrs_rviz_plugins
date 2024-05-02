@@ -38,6 +38,7 @@ protected:
     std::vector<int> adjacent_cells;
     mrs_lib::Point2d crit_point1;
     mrs_lib::Point2d crit_point2;
+    int chosen_path = -1;
   } cell_t;
   typedef struct{
     mrs_lib::Point2d point;
@@ -129,7 +130,12 @@ protected:
   // ones has been visited
   // total_len is sum of lengths of transitions between cells
   // total_len is set to -1 if no path has been found
-  std::vector<int> findPath(std::vector<cell_t>& cells, int start_index, mrs_lib::Point2d start_pos, float& total_len);
+  bool findPath(std::vector<cell_t>& cells, 
+                int start_index, 
+                mrs_lib::Point2d start_pos, 
+                float& total_len,
+                std::vector<int>& res_cell_seq,
+                std::vector<int>& res_path_i);
 
   // Converts cell sequence into coverage path
   // Note: start must be in polygon_frame_

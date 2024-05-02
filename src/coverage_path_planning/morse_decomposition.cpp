@@ -10,7 +10,7 @@
 #include <list>
 
 // Uncomment this for useful outputs during computations
-// #define DEBUG
+#define DEBUG
 
 namespace bg = boost::geometry;
 
@@ -151,18 +151,24 @@ void MorseDecomposition::compute() {
   #endif // DEBUG
 
   vector<int> optimal_cell_sequence;
+  vector<int> optimal_chosen_paths;
   float optimal_len = std::numeric_limits<float>::max();
   bool found = false;
   #ifdef DEBUG
   std::cout << "searching for cell seq\n";
   #endif // DEBUG
   for(int i=0; i<decomposition.size(); i++){
+    ROS_INFO("[DiagonalDecomposition]: partition %d out of %d is being processed", i, (int) decomposition.size());
     float cur_len = 0;
-    vector<int> cur_path = findPath(decomposition, i, start, cur_len);
-    if(cur_len >= 0 && cur_len < optimal_len){
-      optimal_len = cur_len;
-      optimal_cell_sequence = cur_path;
-      found = true;
+    vector<int> cur_cell_seq;
+    vector<int> cur_chosen_paths;
+    if(findPath(decomposition, i, start, cur_len, cur_cell_seq, cur_chosen_paths)){
+      if(cur_len < optimal_len){
+        optimal_len = cur_len;
+        optimal_cell_sequence = cur_cell_seq;
+        optimal_chosen_paths = cur_chosen_paths;
+        found = true;
+      }
     }
   }
 
@@ -173,6 +179,10 @@ void MorseDecomposition::compute() {
   #ifdef DEBUG
   std::cout << "cell seq found\n";
   #endif // DEBUG
+
+  for(int i=0; i<optimal_cell_sequence.size(); i++){
+    decomposition[optimal_cell_sequence[i]].chosen_path = optimal_chosen_paths[i];
+  }
 
   path_ = generatePath(decomposition, optimal_cell_sequence, start);
   is_computed_ = true;
@@ -1058,16 +1068,23 @@ void MorseDecomposition::moveToNextAtNewEdge(point_t& next_point,
   //|------------------------- Generating path ------------------------|
   //|------------------------------------------------------------------|
 
-vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index, Point2d start_pos, float& total_len){
+bool MorseDecomposition::findPath(vector<cell_t>& cells, 
+                                        int start_index, 
+                                        Point2d start_pos, 
+                                        float& res_len,
+                                        vector<int>& res_cell_seq,
+                                        vector<int>& res_path_i){
   // Results
   std::vector<float> total_lens;
-  std::vector<vector<int>> total_paths;
+  std::vector<vector<int>> total_cell_seq;
+  std::vector<vector<int>> total_path_i;
 
   // Queues
   std::list<int> cells_to_visit{start_index};
   std::list<float> path_len{0};
   std::list<Point2d> last_point{start_pos};
   std::list<vector<int>> path_to_cell{{}}; // also serves as <visited>
+  std::list<vector<int>> chosen_paths{{}}; // indices of chosen cell_t.paths
 
   while(!cells_to_visit.empty()){
     // Take the info of current cell
@@ -1075,65 +1092,104 @@ vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index,
     float cur_path_len = path_len.front();
     Point2d cur_last_point = last_point.front();
     vector<int> cur_path = path_to_cell.front();
+    vector<int> cur_chosen_paths = chosen_paths.front();
 
     // Pop the queue
     cells_to_visit.pop_front();
     path_len.pop_front();
     last_point.pop_front();
     path_to_cell.pop_front();
+    chosen_paths.pop_front();
+
+    // Add transition to the current cell
+    std::vector<float> d_len;
+    std::vector<Point2d> finish_points;
+    for(vector<Point2d>& path : cells[cur_cell_i].paths){
+      if(path.size() == 0){
+        d_len.push_back(0);
+        finish_points.push_back(cur_last_point);
+      }else{
+        d_len.push_back(bg::distance(cur_last_point, path.front()));
+        finish_points.push_back(path.back());
+      }
+    }
 
     // Find next cells
-    std::list<int> next_cells;
+    std::vector<int> next_cells;
     for(int neighbor : cells[cur_cell_i].adjacent_cells){
       if(std::find(cur_path.begin(), cur_path.end(), neighbor) == cur_path.end()){
-        next_cells.emplace_back(neighbor);
+        next_cells.push_back(neighbor);
       }
     }
     if(next_cells.empty()){
       for(int i=0; i<cells.size(); i++){
         if(std::find(cur_path.begin(), cur_path.end(), i) == cur_path.end() && i != cur_cell_i){
-          next_cells.emplace_back(i);
+          next_cells.push_back(i);
         }
       }
     }
 
     // If no next cell was found, then all of them has been visited and we must record the path
-    if(next_cells.empty()){
-      vector<int> total_path = cur_path;
-      total_path.push_back(cur_cell_i);
+    if(next_cells.size() == 0){
+      if(cells[cur_cell_i].paths.size() == 0){
+        float total_len = cur_path_len;
+        vector<int> total_path = cur_path;
+        vector<int> total_chosen_paths = cur_chosen_paths;
 
-      total_paths.push_back(total_path);
-      total_lens.push_back(cur_path_len); // todo: do we have to add bg::distance(cur_last_point, some_first_point)??
+        total_path.push_back(cur_cell_i);
+
+        total_lens.push_back(total_len);
+        total_cell_seq.push_back(total_path);
+        total_path_i.push_back(total_chosen_paths);
+      }
+      for(int i=0; i<cells[cur_cell_i].paths.size(); i++){
+        float total_len = cur_path_len;
+        vector<int> total_path = cur_path;
+        vector<int> total_chosen_paths = cur_chosen_paths;
+
+        total_len += d_len[i];
+        total_path.push_back(cur_cell_i);
+        total_chosen_paths.push_back(i);
+
+        total_lens.push_back(total_len);
+        total_cell_seq.push_back(total_path);
+        total_path_i.push_back(total_chosen_paths);
+      }
       continue;
     }
 
-    // How we go to next cells
-    std::list<float> d_len;
-    std::list<Point2d> finish_points;
-    for(int next_cell_i : next_cells){
-      int closest_i = findClosest(cells[next_cell_i], cur_last_point);
-      if(closest_i < 0){
-        d_len.emplace_back(0);
-        finish_points.emplace_back(cur_last_point);
-      }else{
-        d_len.emplace_back(bg::distance(cur_last_point, cells[next_cell_i].paths[closest_i].front()));
-        finish_points.emplace_back(cells[next_cell_i].paths[closest_i].back());
-      }
-    }
-
     // Add next cells to the queue
-    for(int next_cell : next_cells){
-      vector<int> new_path = cur_path;
-      new_path.push_back(cur_cell_i);
+    for(int i=0; i<next_cells.size(); i++){
+      if(cells[cur_cell_i].paths.size() == 0){
+        vector<int> new_path = cur_path;
+        vector<int> new_chosen_paths = cur_chosen_paths;
+        float new_len = cur_path_len;
 
-      path_to_cell.emplace_front(new_path);
-      cells_to_visit.emplace_front(next_cell);
-    }
-    for(float dl : d_len){
-      path_len.emplace_front(cur_path_len + dl);
-    }
-    for(Point2d point : finish_points){
-      last_point.emplace_front(point);
+        new_path.push_back(cur_cell_i);
+        new_chosen_paths.push_back(-1);
+
+        cells_to_visit.emplace_front(next_cells[i]);
+        path_len.emplace_front(new_len);
+        last_point.emplace_front(cur_last_point);
+        path_to_cell.emplace_front(new_path);
+        chosen_paths.emplace_front(new_chosen_paths);
+      }
+
+      for(int j=0; j<cells[cur_cell_i].paths.size(); j++){
+        vector<int> new_path = cur_path;
+        vector<int> new_chosen_paths = cur_chosen_paths;
+        float new_len = cur_path_len;
+
+        new_path.push_back(cur_cell_i);
+        new_chosen_paths.push_back(j);
+        new_len += d_len[j];
+
+        cells_to_visit.emplace_front(next_cells[i]);
+        path_len.emplace_front(new_len);
+        last_point.emplace_front(finish_points[j]);
+        path_to_cell.emplace_front(new_path);
+        chosen_paths.emplace_front(new_chosen_paths);
+      }
     }
   }
 
@@ -1148,11 +1204,13 @@ vector<int> MorseDecomposition::findPath(vector<cell_t>& cells, int start_index,
   }
 
   if(argmin == -1){
-    total_len = -1;
-    return {};
+    res_len = -1;
+    return false;
   }
-  total_len = total_lens[argmin];
-  return total_paths[argmin];
+  res_len = total_lens[argmin];
+  res_cell_seq = total_cell_seq[argmin];
+  res_path_i = total_path_i[argmin];
+  return true;
 }
 
 mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t>& cells, vector<int>& path, Point2d start){
@@ -1169,20 +1227,21 @@ mrs_msgs::PathSrv MorseDecomposition::generatePath(vector<cell_t>& cells, vector
   start_r.position.z = height_;
   result.request.path.points.push_back(start_r);
 
-  Point2d last_point = start;
-
   for(int cell_i : path){
-    int closest_i = findClosest(cells[cell_i], last_point);
-    for(Point2d& point : cells[cell_i].paths[closest_i]){
+    cell_t& cur_cell = cells[cell_i];
+    if(cur_cell.paths.size() == 0 || cur_cell.chosen_path == -1){
+      #ifdef DEBUG
+      std::cout << "\tfound a cell without waypoints. cell id: " << cur_cell.id << std::endl;
+      #endif // DEBUG
+      continue;
+    }
+
+    for(Point2d& point : cur_cell.paths[cur_cell.chosen_path]){
       mrs_msgs::Reference ref;
       ref.position.x = bg::get<0>(point);
       ref.position.y = bg::get<1>(point);
       ref.position.z = height_;
       result.request.path.points.push_back(ref);
-    }
-
-    if(cells[cell_i].paths[closest_i].size() != 0){
-      last_point = cells[cell_i].paths[closest_i].back();
     }
   }
 

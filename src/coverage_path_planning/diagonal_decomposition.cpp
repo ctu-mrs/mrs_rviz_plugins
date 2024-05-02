@@ -1013,6 +1013,18 @@ bool DiagonalDecomposition::findPath(vector<DiagonalDecomposition::cell_t>& cell
 
     // If no next cell was found, then all of them has been visited and we must record the path
     if(next_cells.size() == 0){
+      if(cells[cur_cell_i].paths.size() == 0){
+        float total_len = cur_path_len;
+        vector<int> total_path = cur_path;
+        vector<int> total_chosen_paths = cur_chosen_paths;
+
+        total_path.push_back(cur_cell_i);
+
+        total_lens.push_back(total_len);
+        total_cell_seq.push_back(total_path);
+        total_path_i.push_back(total_chosen_paths);
+      }
+
       for(int i=0; i<cells[cur_cell_i].paths.size(); i++){
         float total_len = cur_path_len;
         vector<int> total_path = cur_path;
@@ -1107,10 +1119,6 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
     result.request.path.points.push_back(tr.value());
   }
 
-  // float angle_rad = (((float)angle_) / 180) * M_PI;
-  // float camera_width = (std::tan(angle_rad / 2) * height_);
-  // float distance = camera_width * (1 - overlap_);
-  
   Point2d cur_point = start;
   bool is_front;
   bool is_first;

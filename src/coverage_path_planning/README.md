@@ -45,6 +45,8 @@ with merging process.
 
 Known issues:
  - generatePath() does not add heading to the references
+ - findPath() iterates over all possible permutations, which has O(n! * 4^n) time complexity.
+ It crashes even if n=8
  - getIntersection() may return invalid result due to inaccuracy of float type.
  - If partition is too small, no coverage path is planned within it.
 
@@ -67,9 +69,6 @@ Worth noting:
 Known issues:
  - generatePath() does not add heading to the references
  - getIntersection() may return invalid result due to inaccuracy of float type.
- - findPath() seems to return not optimal sequence of cells even considering 
- how the DFS goes
- - If partition is too small, no coverage path is planned within it.
  - If critical point is not already in the polygon (i.e. lies on one of the 
  edges), behaviour is undefined.
 
