@@ -776,15 +776,25 @@ vector<DiagonalDecomposition::cell_t> DiagonalDecomposition::fillCells(vector<ve
     vector<std::pair<Point2d, Point2d>> waypoints;
 
     // Filling waypoints
-    Ogre::Vector3 sweep_dir = getSweepDirection(polygons[i]);
+    Point2d opposed_vertex;
+    Ogre::Vector3 sweep_dir = getSweepDirection(polygons[i], opposed_vertex);
+    Ogre::Vector3 sweep_dir_backup = sweep_dir;
     for(float c=sweep_dir.z-distance; ; c-=distance){
       sweep_dir.z = c;
       std::pair<Point2d, Point2d> waypoint_pair;
-      if(getWaypointPair(polygons[i], sweep_dir, distance, waypoint_pair)){
+      if(getWaypointPair(polygons[i], sweep_dir, waypoint_pair)){
         waypoints.push_back(waypoint_pair);
         continue;
       }
       break;
+    }
+    if(waypoints.size() == 0){
+      float new_z = - (sweep_dir_backup.x * bg::get<0>(opposed_vertex) + sweep_dir_backup.y * bg::get<1>(opposed_vertex));
+      sweep_dir.z = (sweep_dir_backup.z + new_z) / 2;
+      std::pair<Point2d, Point2d> waypoint_pair;
+      if(getWaypointPair(polygons[i], sweep_dir, waypoint_pair)){
+        waypoints.push_back(waypoint_pair);
+      }
     }
 
     // Fix waypoints
@@ -876,7 +886,7 @@ vector<int> DiagonalDecomposition::getAdjacentPolygons(vector<vector<point_t>>& 
   return res;
 }
 
-bool DiagonalDecomposition::getWaypointPair(vector<point_t>& polygon, Ogre::Vector3 sweep_dir, float distance, std::pair<Point2d, Point2d>& res){
+bool DiagonalDecomposition::getWaypointPair(vector<point_t>& polygon, Ogre::Vector3 sweep_dir, std::pair<Point2d, Point2d>& res){
   int found_num = 0;
   Point2d first;
   Point2d second;
@@ -1105,7 +1115,6 @@ int DiagonalDecomposition::findClosest(cell_t& cell, Point2d point){
   float min_dist = std::numeric_limits<float>::max();
   for(int i=0; i<cell.paths.size(); i++){
     if(cell.paths[i].size() == 0){
-      ROS_WARN("[MorseDecomposition]: Cell #%d has empty path #%d", cell.polygon_id, i);
       continue;
     }
 
@@ -1131,7 +1140,7 @@ mrs_msgs::PathSrv DiagonalDecomposition::generatePath(std::vector<cell_t>& cells
   start_r.position.y = bg::get<1>(start);
   start_r.position.z = height_;
   result.request.path.points.push_back(start_r);
-  
+
   bool is_front;
   bool is_first;
   #ifdef DEBUG
@@ -1264,9 +1273,10 @@ std::string DiagonalDecomposition::printPoint(point_t& point){
   return ss.str();
 }
 
-Ogre::Vector3 DiagonalDecomposition::getSweepDirection(vector<point_t>& polygon) {
+Ogre::Vector3 DiagonalDecomposition::getSweepDirection(vector<point_t>& polygon, Point2d& opposed_vertex_res) {
   float optimal_dist = std::numeric_limits<float>::max();
   Ogre::Vector3 line_sweep;
+  Line optimal_edge;
   for(int i=0; i<polygon.size(); i++){
     int next_i = (i+1) % polygon.size();
     Line edge{polygon[i].point, polygon[next_i].point};
@@ -1289,6 +1299,8 @@ Ogre::Vector3 DiagonalDecomposition::getSweepDirection(vector<point_t>& polygon)
 
       float normalizer = std::pow((line_sweep.x * line_sweep.x) + (line_sweep.y * line_sweep.y), 0.5);
       line_sweep = line_sweep / normalizer;
+      optimal_edge = edge;
+      opposed_vertex_res = opposed_vertex;
     }
   }
   return line_sweep;

@@ -80,7 +80,7 @@ protected:
   // For given infinite line represented by sweep_direction searches for 
   //    intersections with edges of the polygon.
   // returns true if 2 intersections were found
-  bool getWaypointPair(std::vector<point_t>& polygon, Ogre::Vector3 sweep_dir, float distance, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
+  bool getWaypointPair(std::vector<point_t>& polygon, Ogre::Vector3 sweep_dir, std::pair<mrs_lib::Point2d, mrs_lib::Point2d>& res);
   
   // returns intersection point of infinite line and the edge (if any)
   std::optional<mrs_lib::Point2d> getIntersection(Ogre::Vector3 line, Line edge);
@@ -91,7 +91,8 @@ protected:
 
   // Returns vector which defines infinite line normal to 
   // sweep direction in sence of the publication (i.e. vector.x vector.y define sweep direction)
-  Ogre::Vector3 getSweepDirection(std::vector<point_t>& polygon);
+  // dist is the maximal quadratic distance from the infinite line to a vertex
+  Ogre::Vector3 getSweepDirection(std::vector<point_t>& polygon, mrs_lib::Point2d& opposed_vertex_res);
 
   // Generates all permutations of cells and their paths.
   // Writes parameters of the best one to res_len, res_cell_seq, res_path_i
