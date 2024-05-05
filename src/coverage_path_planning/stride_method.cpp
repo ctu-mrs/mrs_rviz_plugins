@@ -24,8 +24,10 @@ void StrideMethod::initialize (rviz::Property* property_container, Ogre::SceneMa
 
   turn_num_property_ = new rviz::IntProperty("Turns", 0, "Number of turns in current path", property_container);
   drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
+  length_property_ = new rviz::FloatProperty("Length", 0, "Length of the current path", property_container);
 
   turn_num_property_->setReadOnly(true);
+  length_property_->setReadOnly(true);
 
   std::vector<std::string> drone_names = PlannerTool::getUavNames();
   for(auto& name : drone_names){
@@ -154,7 +156,7 @@ void StrideMethod::compute(){
         longest_stride = stride;
       }
     }
-    std::cout << longest_stride.len << std::endl;
+    std::cout << "stride: len " << longest_stride.len << std::endl;
 
     std::cout << "adding stride to the path\n";
     // 5. Add all cells of the stride to the path and mark them
@@ -248,6 +250,14 @@ void StrideMethod::drawPath(){
   }
 
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
+  float len = 0;
+  for(int i=0; i<path_.request.path.points.size() - 1; i++){
+    mrs_lib::Point2d p1{path_.request.path.points[i].position.x, path_.request.path.points[i].position.y};
+    mrs_lib::Point2d p2{path_.request.path.points[i+1].position.x, path_.request.path.points[i+1].position.y};
+
+    len += bg::distance(p1, p2);
+  }
+  length_property_->setFloat(len);
 }
 
 void StrideMethod::addCellToPath(Ogre::Vector2 cell){
@@ -391,8 +401,8 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
   next_cell.y = start.y + direction.y;
 
   limit_t limits_start = getLimits(start, direction);
-  std::cout << "direction: " << direction.x << " " << direction.y << std::endl;
-  std::cout << "limits_start: " << (limits_start.first ? "true" : "false") << " " << (limits_start.first ? "true" : "false") << std::endl;
+  std::cout << "\ndirection: " << direction.x << " " << direction.y << std::endl;
+  std::cout << "\tlimits_start: " << (limits_start.first ? "true" : "false") << " " << (limits_start.first ? "true" : "false") << std::endl;
 
   while(true){
     last_cell = next_cell;
@@ -402,30 +412,31 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
     // We do not add next_cell if it is already in the generated path or 
     // if it falls outside the boundaries of the area
     if(next_cell.x < 0 || next_cell.x >= grid_.size()) {
-      std::cout << "break x size\n";
+      std::cout << "\tbreak x size\n";
       break;
     }
     if(next_cell.y < 0 || next_cell.y >= grid_[next_cell.x].size()){
-      std::cout << "break y size\n";
+      std::cout << "\tbreak y size\n";
       break;
     }
     if(grid_[next_cell.x][next_cell.y].visited || !grid_[next_cell.x][next_cell.y].valid){
-      std::cout << "break grid visited or valid \n";
+      std::cout << "\tbreak grid visited or valid \n";
       break;
     }
-    mrs_lib::Point2d p1{grid_[start.x][start.y].x, grid_[start.x][start.y].x};
-    mrs_lib::Point2d p2{grid_[next_cell.x][next_cell.y].x, grid_[next_cell.x][next_cell.y].x};
+    mrs_lib::Point2d p1{grid_[start.x][start.y].x, grid_[start.x][start.y].y};
+    mrs_lib::Point2d p2{grid_[next_cell.x][next_cell.y].x, grid_[next_cell.x][next_cell.y].y};
     Line step;
     step.push_back(p1);
     step.push_back(p2);
     if(!bg::within(step, current_polygon_)){
+      std::cout << "\tbreak not within\n";
       break;
     }
 
     limit_t limits_last = getLimits(last_cell, direction);
     limit_t limits_next = getLimits(next_cell, direction);
-    std::cout << "limits_last: " << (limits_last.first ? "true" : "false") << " " << (limits_last.first ? "true" : "false") << std::endl;
-    std::cout << "limits_next: " << (limits_next.first ? "true" : "false") << " " << (limits_next.first ? "true" : "false") << std::endl;
+    std::cout << "\tlimits_last: " << (limits_last.first ? "true" : "false") << " " << (limits_last.first ? "true" : "false") << std::endl;
+    std::cout << "\tlimits_next: " << (limits_next.first ? "true" : "false") << " " << (limits_next.first ? "true" : "false") << std::endl;
 
     // If getLimitNum(last_cell) = 2 we always add next_cell, because next_cell
     // is the only possible cell where we can go to from last_cell
@@ -438,16 +449,19 @@ StrideMethod::stride_t StrideMethod::computeStride(Ogre::Vector2 start, Ogre::Ve
     // prevent addition of next_cell to the stride:
 
     if(limits_next.num == 0){
+      std::cout << "\tbreak num=0\n";
       break;
     }
 
     if(limits_next.num != limits_start.num){
+      std::cout << "\tbreak next!=start\n";
       break;
     }
 
     if(limits_next.num == 1 &&
       limits_next.first == limits_start.second && 
       limits_next.second == limits_start.first){
+      std::cout << "\tbreak";
       break;
     }
 
@@ -495,6 +509,7 @@ bool StrideMethod::isLimit(Ogre::Vector2 cell){
 StrideMethod::~StrideMethod(){
   delete turn_num_property_;
   delete drone_name_property_;
+  delete length_property_;
   if(path_node_){
     scene_manager_->destroySceneNode(path_node_);
   }

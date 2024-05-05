@@ -4,6 +4,7 @@
 #include "coverage_path_planning/exact_decomposition.h"
 
 #include <rviz/properties/editable_enum_property.h>
+#include <rviz/properties/float_property.h>
 
 #include <mrs_msgs/PathSrv.h>
 
@@ -142,6 +143,7 @@ protected:
   rviz::EditableEnumProperty* drone_name_property_;
   rviz::IntProperty* cell_num_property_;
   rviz::IntProperty* turn_num_property_;
+  rviz::FloatProperty* length_property_;
 }; // class DiagonalDecomposition
 } // namespace mrs_rviz_plugins
 

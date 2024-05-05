@@ -274,6 +274,10 @@ float ExactDecomposition::getPathLen(mrs_lib::Point2d p1, mrs_lib::Point2d p2) {
   return res;
 }
 
+double ExactDecomposition::signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point) {
+  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
+}
+
 double ExactDecomposition::signedDistComparable(Line line, mrs_lib::Point2d point) {
   double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
   double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
@@ -282,8 +286,15 @@ double ExactDecomposition::signedDistComparable(Line line, mrs_lib::Point2d poin
   return (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
 }
 
-double ExactDecomposition::signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point) {
-  return (line.x * bg::get<0>(point)) + (line.y * bg::get<1>(point)) + line.z;
+double ExactDecomposition::signedDist(Line line, mrs_lib::Point2d point) {
+  double A =   (bg::get<1>(line[1]) - bg::get<1>(line[0]));
+  double B =  -(bg::get<0>(line[1]) - bg::get<0>(line[0]));
+  double C = bg::get<1>(line[0]) * bg::get<0>(line[1]) - bg::get<1>(line[1]) * bg::get<0>(line[0]);
+
+  double result = (A * bg::get<0>(point)) + (B * bg::get<1>(point)) + C;
+  result /= std::pow(A*A + B*B, 0.5);
+ 
+  return result;
 }
 
 ExactDecomposition::Line ExactDecomposition::shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist) {
@@ -304,6 +315,17 @@ ExactDecomposition::Line ExactDecomposition::shrink(mrs_lib::Point2d p1, mrs_lib
   res.push_back(mrs_lib::Point2d{res_p1_x, res_p1_y});
   res.push_back(mrs_lib::Point2d{res_p2_x, res_p2_y});
   return res;
+}
+
+float ExactDecomposition::computeLength(mrs_msgs::Path path){
+  float result = 0;
+  for(int i=0; i<path.points.size() - 1; i++){
+    mrs_lib::Point2d p1{path.points[i].position.x, path.points[i].position.y};
+    mrs_lib::Point2d p2{path.points[i+1].position.x, path.points[i+1].position.y};
+
+    result += bg::distance(p1, p2);
+  }
+  return result;
 }
 
 // |----------------------- Public methods -----------------------|

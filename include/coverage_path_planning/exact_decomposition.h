@@ -67,8 +67,15 @@ protected:
   //    2) abs(distance) is lower for the point that is closer to the line
   double signedDistComparable(Ogre::Vector3 line, mrs_lib::Point2d point);
 
+  // returns distance from point to infinite line, such that:
+  //    1) distance from 2 points have the same sign iff there 
+  //       are on the same side from the line
+  double signedDist(Line line, mrs_lib::Point2d point);
+
   // Shifts p1 and p2 towards each other by dist
   Line shrink(mrs_lib::Point2d p1, mrs_lib::Point2d p2, float dist);
+
+  float computeLength(mrs_msgs::Path path);
 
   // |-------------------------- Attributes --------------------------|
   Ogre::SceneNode* boundaries_node_ = nullptr;

@@ -8,6 +8,7 @@
 #include <mrs_msgs/PathSrv.h>
 
 #include <rviz/properties/editable_enum_property.h>
+#include <rviz/properties/float_property.h>
 
 namespace mrs_rviz_plugins{
 class StrideMethod : public ApproximateDecomposition {
@@ -66,7 +67,7 @@ private:
 
   rviz::IntProperty*          turn_num_property_;
   rviz::EditableEnumProperty* drone_name_property_;
-
+  rviz::FloatProperty*        length_property_;
 };
 } // namespace mrs_rviz_plugins
 

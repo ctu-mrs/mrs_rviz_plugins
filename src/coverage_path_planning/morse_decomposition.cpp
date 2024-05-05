@@ -30,11 +30,13 @@ void MorseDecomposition::initialize (rviz::Property* property_container, Ogre::S
   drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
   cell_num_property_ = new rviz::IntProperty("Cell number", 0, "Number of cells in current decomposition", property_container);
   turn_num_property_ = new rviz::IntProperty("Turn number", 0, "Number of turns in current path", property_container);
+  length_property_ = new rviz::FloatProperty("Length", 0, "Length of the current path", property_container);
 
   twist_property_->setMin(0);
   twist_property_->setMax(180);
   cell_num_property_->setReadOnly(true);
   turn_num_property_->setReadOnly(true);
+  length_property_->setReadOnly(true);
 
   std::vector<std::string> drone_names = PlannerTool::getUavNames();
   for(auto& name : drone_names){
@@ -187,6 +189,7 @@ void MorseDecomposition::compute() {
   path_ = generatePath(decomposition, optimal_cell_sequence, start);
   is_computed_ = true;
   turn_num_property_->setInt(path_.request.path.points.size() - 1);
+  length_property_->setFloat(computeLength(path_.request.path));
   #ifdef DEBUG
   std::cout << "path generated\n";
   #endif // DEBUG
@@ -216,6 +219,7 @@ MorseDecomposition::~MorseDecomposition(){
   delete drone_name_property_;
   delete cell_num_property_;
   delete turn_num_property_;
+  delete length_property_;
 }
 
   //|------------------------------------------------------------------|

@@ -33,7 +33,9 @@ void DiagonalDecomposition::initialize (rviz::Property* property_container, Ogre
   drone_name_property_ = new rviz::EditableEnumProperty("Uav", "", "Uav used to perform coverage mission", property_container);
   cell_num_property_ = new rviz::IntProperty("Cell number", 0, "Number of cells in current decomposition", property_container);
   turn_num_property_ = new rviz::IntProperty("Turn number", 0, "Number of turns in current path", property_container);
+  length_property_ = new rviz::FloatProperty("Length", 0, "Length of the current path", property_container);
 
+  length_property_->setReadOnly(true);
   cell_num_property_->setReadOnly(true);
   turn_num_property_->setReadOnly(true);
 
@@ -53,6 +55,7 @@ DiagonalDecomposition::~DiagonalDecomposition(){
   delete drone_name_property_;
   delete cell_num_property_;
   delete turn_num_property_;
+  delete length_property_;
 }
 
 void DiagonalDecomposition::start() {
@@ -1283,7 +1286,7 @@ Ogre::Vector3 DiagonalDecomposition::getSweepDirection(vector<point_t>& polygon,
     float max_dist_edge = 0;
     Point2d opposed_vertex;
     for(int j=0; j<polygon.size(); j++){
-      float distance = std::abs(signedDistComparable(edge, polygon[j].point));
+      float distance = std::abs(signedDist(edge, polygon[j].point));
       if(distance > max_dist_edge){
         max_dist_edge = distance;
         opposed_vertex = polygon[j].point;

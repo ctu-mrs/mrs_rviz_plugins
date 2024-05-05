@@ -45,10 +45,10 @@ with merging process.
 
 Known issues:
  - generatePath() does not add heading to the references
- - findPath() iterates over all possible permutations, which has O(n! * 4^n) time complexity.
- It crashes even if n=8
  - getIntersection() may return invalid result due to inaccuracy of float type.
- - If partition is too small, no coverage path is planned within it.
+ - No merging process
+ - If a partitions was generated, next one starts from the first vertex and
+ not from the lost one considered
 
 ## Morse decomposition
 
@@ -69,7 +69,7 @@ Worth noting:
 Known issues:
  - generatePath() does not add heading to the references
  - getIntersection() may return invalid result due to inaccuracy of float type.
- - If critical point is not already in the polygon (i.e. lies on one of the 
+ - If critical point is not yet in the polygon (i.e. lies on one of the 
  edges), behaviour is undefined.
 
 ### How to use and initialize edge_t
