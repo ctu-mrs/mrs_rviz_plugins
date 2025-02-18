@@ -212,7 +212,7 @@ std::vector<mrs_lib::Point2d> ExactDecomposition::getPath(mrs_lib::Point2d p1, m
         // Enqueue the new cell with the current path plus the new cell
         std::vector<Point2d> newPath = path;
         newPath.push_back(new_point);
-        q.push({{newRow, newCol}, newPath});
+        q.push({{static_cast<Ogre::Real>(newRow), static_cast<Ogre::Real>(newCol)}, newPath});
       }
     }
   }

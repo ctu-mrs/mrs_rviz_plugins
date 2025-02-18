@@ -364,7 +364,7 @@ std::vector<Ogre::Vector2> StrideMethod::getPathToNextCell(Ogre::Vector2 start){
         // Enqueue the new cell with the current path plus the new cell
         std::vector<Ogre::Vector2> newPath = path;
         newPath.push_back(currCell);
-        q.push({{newRow, newCol}, newPath}); 
+        q.push({{static_cast<Ogre::Real>(newRow), static_cast<Ogre::Real>(newCol)}, newPath});
       }
     }
   }
