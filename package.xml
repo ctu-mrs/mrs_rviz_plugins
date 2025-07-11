@@ -1,38 +1,28 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
 
   <name>mrs_rviz_plugins</name>
-  <version>1.0.4</version>
+  <version>2.0.0</version>
 
   <description>Plugin for rviz to work with the MRS system</description>
 
   <author email="vrbamato@fel.cvut.cz">Matous Vrba</author>
-  <maintainer email="vrbamato@fel.cvut.cz">Matous Vrba</maintainer>
+  <maintainer email="afzal.ahmad@fel.cvut.cz">Afzal Ahmad</maintainer>
 
   <license>BSD 3-Clause</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
-  <depend>cmake_modules</depend>
-  <depend>geometry_msgs</depend>
-  <depend>mrs_lib</depend>
-  <depend>mrs_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>nodelet</depend>
   <depend>pluginlib</depend>
-  <depend>roscpp</depend>
-  <depend>rviz</depend>
-  <depend>rviz_satellite</depend>
-  <depend>visualization_msgs</depend>
 
-  <depend>qtbase5-dev</depend>
-  <depend>libqt5-core</depend>
-  <depend>libqt5-gui</depend>
-  <depend>libqt5-widgets</depend>
+  <depend>rviz_common</depend>
+  <depend>rviz_ogre_vendor</depend>
+  <depend>QT</depend>
+  <depend>mrs_msgs</depend>
 
   <export>
-    <rviz plugin="${prefix}/plugins.xml"/>
-    <nodelet plugin="${prefix}/nodelets.xml" />
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>
