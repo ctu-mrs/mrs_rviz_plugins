@@ -6,3 +6,13 @@
     <message_type>mrs_msgs/msg/Sphere</message_type>
   </class>
 </library>
+
+<library path="MrsRvizPlugins_TexturedMeshDisplay">
+  <class name="mrs_rviz_plugins/TexturedMeshDisplay"
+         type="mrs_rviz_plugins::TexturedMeshDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      A display for textured meshes
+    </description>
+  </class>
+</library>

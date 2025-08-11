@@ -18,6 +18,16 @@ set(DEPENDENCIES
   rviz_common 
   rviz_ogre_vendor
   mrs_msgs
+
+  # for TexturedMeshDisplay
+  pcl_msgs
+  image_transport
+  cv_bridge
+  pcl_conversions
+  rclcpp
+  message_filters
+  sensor_msgs
+  std_msgs
   )
 
 foreach(DEP IN LISTS DEPENDENCIES)
@@ -28,12 +38,20 @@ find_package(Qt5 REQUIRED Core Widgets)
 set(QT_LIBRARIES Qt5::Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
 
+# for TexturedMeshDisplay
+find_package(OpenCV REQUIRED)
+find_package(PkgConfig REQUIRED)
+
 # VERY IMPORTANT
 # pre-compliation of the headers by QT to generate Q_SLOTS
 set(CMAKE_AUTOMOC ON)
 qt5_wrap_cpp(MOC_FILES
   include/mrs_rviz_plugins/sphere/display.h
   include/mrs_rviz_plugins/sphere/visual.h
+)
+
+qt5_wrap_cpp(MOC_FILES_TEXTURED_MESH
+  include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
 )
 
 set(LIBRARIES
@@ -50,6 +68,7 @@ set(LIBRARIES
   # MrsRvizPlugins_OdomViz
   # MrsRvizPlugins_WaypointPlanner
   # MrsRvizPlugins_Status
+  MrsRvizPlugins_TexturedMeshDisplay
   )
 
 ## --------------------------------------------------------------
@@ -79,6 +98,42 @@ ament_target_dependencies(MrsRvizPlugins_Sphere
 target_link_libraries(MrsRvizPlugins_Sphere
   ${QT_LIBRARIES}
   )
+
+## TEXTURED MESH DISPLAY
+
+add_library(MrsRvizPlugins_TexturedMeshDisplay SHARED
+  src/textured_mesh_display/textured_mesh_display.cpp
+  src/textured_mesh_display/textured_mesh_visual.cpp
+  src/textured_mesh_display/surface_normals_visual.cpp
+  ${MOC_FILES_TEXTURED_MESH}
+)
+
+target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${OpenCV_INCLUDE_DIRS}
+)
+
+ament_target_dependencies(MrsRvizPlugins_TexturedMeshDisplay
+  pluginlib
+  rviz_common
+  rviz_ogre_vendor
+  mrs_msgs
+  pcl_msgs
+  image_transport
+  cv_bridge
+  pcl_conversions
+  rclcpp
+  message_filters
+  sensor_msgs
+  std_msgs
+)
+
+target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
+  ${QT_LIBRARIES}
+  #${OGRE_LIBRARIES}           # Add this
+  ${OpenCV_LIBRARIES}         # Add this too since you use OpenCV
+)
 
 ## --------------------------------------------------------------
 ## |                       export plugins                       |
