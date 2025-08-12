@@ -103,16 +103,17 @@ TexturedMeshDisplay::TexturedMeshDisplay() :
   scene_color_scale_prop_.setMin(0.0f);
 
   // Texture transport property.
-  connect(tex_transport_prop_.get(), SIGNAL(requestOptions(EnumProperty*)),
-          this, SLOT(fillTransportOptionList(EnumProperty*)));
-  connect(tex_transport_prop_.get(), SIGNAL(aboutToShowOptions()),
-        this, SLOT(fillTransportOptionList()));
-  connect(tex_transport_prop_.get(), SIGNAL(changed()),
-        this, SLOT(fillTransportOptionList()));
+  // connect(tex_transport_prop_.get(), SIGNAL(requestOptions(EnumProperty*)),
+  //         this, SLOT(fillTransportOptionList(EnumProperty*)));
+  // connect(tex_transport_prop_.get(), SIGNAL(aboutToShowOptions()),
+  //       this, SLOT(fillTransportOptionList()));
+  // connect(tex_transport_prop_.get(), SIGNAL(changed()),
+  //       this, SLOT(fillTransportOptionList()));
 
   tex_transport_prop_->addOptionStd("raw");
   tex_transport_prop_->addOptionStd("compressed");
   tex_transport_prop_->addOptionStd("theora");
+  tex_transport_prop_->setStdString("raw");
 
   // Queue size property
   queue_size_prop_.setMin(1);
@@ -156,8 +157,8 @@ void TexturedMeshDisplay::reset() {
   std::lock_guard<std::recursive_mutex> lock(mtx_);
 
   Display::reset();
-  visual_.reset();
-  normals_.reset();
+  // visual_.reset();
+  // normals_.reset();
 
   return;
 }
