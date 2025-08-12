@@ -379,6 +379,11 @@ void TexturedMeshVisual::updateIndexBuffer(const Ogre::MeshPtr& mesh,
 void TexturedMeshVisual::updateTexture(const Ogre::MaterialPtr& material,
                                        const cv::Mat3b& tex_img) {
   Ogre::Image ogre_img;
+  RCLCPP_DEBUG(rclcpp::get_logger("textured_mesh_visual"), "tex_img.cols: %d, tex_img.rows: %d", tex_img.cols, tex_img.rows);
+  if(!(tex_img.cols > 0 && tex_img.rows > 0)){
+    RCLCPP_DEBUG(rclcpp::get_logger("textured_mesh_visual"), "image has wrong size, skipping this image");
+    return;
+  }
   ogre_img.loadDynamicImage(tex_img.data, tex_img.cols, tex_img.rows,
                             Ogre::PixelFormat::PF_B8G8R8);
 

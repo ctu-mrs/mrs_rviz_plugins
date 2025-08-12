@@ -39,7 +39,7 @@
 #include "mrs_rviz_plugins/textured_mesh_display/surface_normals_visual.hpp"
 
 #include <message_filters/message_traits.hpp>
-//#include <rosidl_generator_traits/message_type_support_decl.hpp>
+#include <rosidl_runtime_cpp/message_type_support_decl.hpp>
 
 #include <rclcpp/exceptions.hpp>
 
@@ -102,34 +102,17 @@ TexturedMeshDisplay::TexturedMeshDisplay() :
   // Scene color scale property.
   scene_color_scale_prop_.setMin(0.0f);
 
-  QString mesh_msg_type = QString::fromStdString(
-      rosidl_generator_traits::data_type<pcl_msgs::msg::PolygonMesh>());
-  mesh_topic_prop_.setMessageType(mesh_msg_type);
-  mesh_topic_prop_.setDescription(mesh_msg_type + " topic to subscribe to.");
-
-  QString tex_msg_type = QString::fromStdString(
-      rosidl_generator_traits::data_type<sensor_msgs::msg::Image>());
-  tex_topic_prop_.setMessageType(tex_msg_type);
-  tex_topic_prop_.setDescription(tex_msg_type + " topic to subscribe to.");
-
   // Texture transport property.
-  // connect(tex_transport_prop_.get(), SIGNAL(requestOptions(EnumProperty*)),
-  //         this, SLOT(fillTransportOptionList(EnumProperty*)));
-  // connect(tex_transport_prop_.get(), SIGNAL(aboutToShowOptions()),
-  //       this, SLOT(fillTransportOptionList()));
+  connect(tex_transport_prop_.get(), SIGNAL(requestOptions(EnumProperty*)),
+          this, SLOT(fillTransportOptionList(EnumProperty*)));
+  connect(tex_transport_prop_.get(), SIGNAL(aboutToShowOptions()),
+        this, SLOT(fillTransportOptionList()));
   connect(tex_transport_prop_.get(), SIGNAL(changed()),
         this, SLOT(fillTransportOptionList()));
 
-  /*
-    There three commented-out options are here in case the the automatic
-    options discovery does not work. If that is problem in the future,
-    feel free to comment automatic discovery and uncomment this static
-    options definition.
-  */
-  // tex_transport_prop_->addOptionStd("raw");
-  // tex_transport_prop_->addOptionStd("compressed");
-  // tex_transport_prop_->addOptionStd("theora");
-  tex_transport_prop_->setStdString("raw");
+  tex_transport_prop_->addOptionStd("raw");
+  tex_transport_prop_->addOptionStd("compressed");
+  tex_transport_prop_->addOptionStd("theora");
 
   // Queue size property
   queue_size_prop_.setMin(1);
@@ -144,6 +127,18 @@ void TexturedMeshDisplay::onInitialize() {
   // Get the node from the RViz context
   ros_node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   tex_it_.reset(new image_transport::ImageTransport(ros_node));
+
+  // Initialize the topic properties with the ROS node
+  auto rviz_ros_node = context_->getRosNodeAbstraction();
+  mesh_topic_prop_.initialize(rviz_ros_node);
+  tex_topic_prop_.initialize(rviz_ros_node);
+
+  // Set message types with static strings (more reliable)
+  mesh_topic_prop_.setMessageType("pcl_msgs/msg/PolygonMesh");
+  mesh_topic_prop_.setDescription("pcl_msgs/msg/PolygonMesh topic to subscribe to.");
+
+  tex_topic_prop_.setMessageType("sensor_msgs/msg/Image");
+  tex_topic_prop_.setDescription("sensor_msgs/msg/Image topic to subscribe to.");
 
   // Scan for available transport plugins
   scanForTransportSubscriberPlugins();
@@ -458,17 +453,6 @@ void TexturedMeshDisplay::subscribe() {
     }
 
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
-  // } catch(rclcpp::Exception& e) {
-  //   RCLCPP_DEBUG(ros_node->get_logger(), "Error subscribing: %s", e.what());
-  //   setStatus(rviz_common::properties::StatusProperty::Error, "Topic",
-  //             QString("Error subscribing: ") + e.what());
-  // } catch (image_transport::TransportLoadException& e) {
-  //   RCLCPP_DEBUG(ros_node->get_logger(), "Error subscribing: %s", e.what());
-  //   setStatus(rviz_common::properties::StatusProperty::Error, "Message",
-  //             QString("Error subscribing: ") + e.what());
-  // } catch (...) {
-  //   RCLCPP_DEBUG(ros_node->get_logger(), "Caught unknown exception!");
-  // }
 
   } catch (const rclcpp::exceptions::RCLError& e) {
     RCLCPP_DEBUG(ros_node->get_logger(), "Error subscribing: %s", e.what());
@@ -498,13 +482,13 @@ void TexturedMeshDisplay::subscribe() {
 void TexturedMeshDisplay::unsubscribe() {
   std::lock_guard<std::recursive_mutex> lock(mtx_);
 
-  //try {
+  try {
     mesh_filter_.reset();
     tex_filter_.reset();
-  // } catch (rclcpp::Exception& e) {
-  //   setStatus(rviz_common::properties::StatusProperty::Error, "Message",
-  //             QString("Error unsubscribing: ") + e.what());
-  // }
+  } catch (const std::exception& e) {
+    setStatus(rviz_common::properties::StatusProperty::Error, "Message",
+              QString("Error unsubscribing: ") + e.what());
+  }
 
   return;
 }
@@ -548,6 +532,8 @@ processTextureMessage(const sensor_msgs::msg::Image::ConstSharedPtr& tex_msg) {
     tex_queue_.pop();
   }
 
+  RCLCPP_DEBUG(ros_node->get_logger(), "Processed a texture message!\n");
+
   return;
 }
 
@@ -573,21 +559,29 @@ processPolygonMeshMessage(const pcl_msgs::msg::PolygonMesh::ConstSharedPtr& msg)
   // Synchronize and process the texture and mesh messages.
   pcl_msgs::msg::PolygonMesh::ConstSharedPtr mesh_msg;
   sensor_msgs::msg::Image::ConstSharedPtr tex_msg;
-  double tol = 5e-3; // 5 ms tolerance.
+  //double tol = 5e-3; // 5 ms tolerance.
+  double tol = 1.5;
   while ((tex_queue_.size() > 0) && (mesh_queue_.size() > 0)) {
     double tex_time = tex_queue_.front()->header.stamp.sec + 10e-9 * tex_queue_.front()->header.stamp.nanosec;
     double mesh_time = mesh_queue_.front()->header.stamp.sec + 10e-9 * mesh_queue_.front()->header.stamp.nanosec;
+    RCLCPP_DEBUG(ros_node->get_logger(), "tex_time: %f", tex_time);
+    RCLCPP_DEBUG(ros_node->get_logger(), "mesh_time: %f", mesh_time);
 
+    RCLCPP_DEBUG(ros_node->get_logger(), "tex_time - mesh_time: %f", std::fabs(tex_time - mesh_time));
     if (std::fabs(tex_time - mesh_time) <= tol) {
+      RCLCPP_DEBUG(ros_node->get_logger(), "in tolerance, processing");
       mesh_msg = mesh_queue_.front();
       tex_msg = tex_queue_.front();
       mesh_queue_.pop();
       tex_queue_.pop();
       break;
     } else {
+      RCLCPP_DEBUG(ros_node->get_logger(), "out of tolernace");
       if (tex_time < mesh_time) {
+        RCLCPP_DEBUG(ros_node->get_logger(), "tex_queue_.pop()");
         tex_queue_.pop();
       } else {
+        RCLCPP_DEBUG(ros_node->get_logger(), "mesh_queue_.pop()");
         mesh_queue_.pop();
       }
     }
@@ -640,6 +634,8 @@ processTexturedMeshMessages(const pcl_msgs::msg::PolygonMesh::ConstSharedPtr& me
   }
 
   normals_->setFromMessage(mesh_msg);
+
+  RCLCPP_DEBUG(ros_node->get_logger(), "Processed a texture and mesh messages!\n");
 
   return;
 }
