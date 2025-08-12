@@ -99,8 +99,7 @@ class TexturedMeshDisplay: public rviz_common::Display {
    * @brief Fill list of available and working transport options.
    * Copied from rviz_common::DepthCloudDisplay.
    */
-  //void fillTransportOptionList(EnumProperty* property);
-  void fillTransportOptionList();
+  //void fillTransportOptionList();
 
  protected:
   std::shared_ptr<rclcpp::Node> ros_node;

@@ -157,6 +157,12 @@ void TexturedMeshDisplay::reset() {
   std::lock_guard<std::recursive_mutex> lock(mtx_);
 
   Display::reset();
+  /*
+    This causes the plugin to crash when switching the topics.
+    That is caused by recreating TexturedMeshVisual when old OGRE resources still exist.
+    So the easiest solution is to just not reset it and it won't be recreated with
+    old resources being reused.
+  */
   // visual_.reset();
   // normals_.reset();
 
@@ -231,62 +237,14 @@ void TexturedMeshDisplay::updateNormalSize() {
 }
 
 /*
-  The old method for enumerating available topics and detecting their transport type.
-  It uses old ROS1 discovery of the topics, so it has to be refactored completely.
+  I left this here in case dynamic topics exploration will be needed in the future...
 */
-// void TexturedMeshDisplay::fillTransportOptionList(EnumProperty* property) {
+// void TexturedMeshDisplay::fillTransportOptionList() {
 //   std::lock_guard<std::recursive_mutex> lock(mtx_);
 
-//   property->clearOptions();
-
-//   std::vector<std::string> choices;
-
-//   choices.push_back("raw");
-
-//   // Loop over all current ROS topic names
-//   rclcpp::master::V_TopicInfo topics;
-//   rclcpp::master::getTopics(topics);
-//   rclcpp::master::V_TopicInfo::iterator it = topics.begin();
-//   rclcpp::master::V_TopicInfo::iterator end = topics.end();
-//   for (; it != end; ++it) {
-//     // If the beginning of this topic name is the same as topic_,
-//     // and the whole string is not the same,
-//     // and the next character is /
-//     // and there are no further slashes from there to the end,
-//     // then consider this a possible transport topic.
-//     const ros::master::TopicInfo& ti = *it;
-//     const std::string& topic_name = ti.name;
-//     const std::string& topic = tex_topic_prop_.getStdString();
-
-//     // cppcheck-suppress stlIfStrFind
-//     if (topic_name.find(topic) == 0 && topic_name != topic && topic_name[topic.size()] == '/'
-//         && topic_name.find('/', topic.size() + 1) == std::string::npos) {
-//       std::string transport_type = topic_name.substr(topic.size() + 1);
-
-//       // If the transport type string found above is in the set of
-//       // supported transport type plugins, add it to the list.
-//       if (transport_plugin_types_.find(transport_type) !=
-//           transport_plugin_types_.end()) {
-//         choices.push_back(transport_type);
-//       }
-//     }
-//   }
-
-//   for (size_t ii = 0; ii < choices.size(); ii++) {
-//     property->addOptionStd(choices[ii]);
-//   }
-
-//   return;
-// }
-
-
-/*
-  Simple replacement of the old method above. Just assume basic transport types.
-  If you need them all, consider the method below.
-*/
-// void TexturedMeshDisplay::fillTransportOptionList(EnumProperty* property) {
-//   std::lock_guard<std::recursive_mutex> lock(mtx_);
-
+//   // Get the property that triggered this
+//   EnumProperty* property = tex_transport_prop_.get();
+  
 //   property->clearOptions();
 
 //   std::vector<std::string> choices;
@@ -298,82 +256,6 @@ void TexturedMeshDisplay::updateNormalSize() {
 //   }
 //   if (transport_plugin_types_.find("theora") != transport_plugin_types_.end()) {
 //     choices.push_back("theora");
-//   }
-
-//   for (size_t ii = 0; ii < choices.size(); ii++) {
-//     property->addOptionStd(choices[ii]);
-//   }
-
-//   return;
-// }
-
-void TexturedMeshDisplay::fillTransportOptionList() {
-  std::lock_guard<std::recursive_mutex> lock(mtx_);
-
-  // Get the property that triggered this
-  EnumProperty* property = tex_transport_prop_.get();
-  
-  property->clearOptions();
-
-  std::vector<std::string> choices;
-  choices.push_back("raw");
-  
-  // Add common image transport types
-  if (transport_plugin_types_.find("compressed") != transport_plugin_types_.end()) {
-    choices.push_back("compressed");
-  }
-  if (transport_plugin_types_.find("theora") != transport_plugin_types_.end()) {
-    choices.push_back("theora");
-  }
-
-  for (size_t ii = 0; ii < choices.size(); ii++) {
-    property->addOptionStd(choices[ii]);
-  }
-
-  return;
-}
-
-/*
-  More sophisticated method replacing the original method enumerating all topics,
-  searching for candidates for the transport topics.
-*/
-// void TexturedMeshDisplay::fillTransportOptionList(EnumProperty* property) {
-//   std::lock_guard<std::recursive_mutex> lock(mtx_);
-
-//   property->clearOptions();
-
-//   std::vector<std::string> choices;
-//   choices.push_back("raw");
-
-//   // Get node from context
-//   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-  
-//   // Get topic names and types
-//   auto topic_names_and_types = ros_node->get_topic_names_and_types();
-  
-//   const std::string& topic = tex_topic_prop_.getStdString();
-  
-//   // Loop over all current ROS topic names
-//   for (const auto& topic_info : topic_names_and_types) {
-//     const std::string& topic_name = topic_info.first;
-    
-//     // If the beginning of this topic name is the same as topic_,
-//     // and the whole string is not the same,
-//     // and the next character is /
-//     // and there are no further slashes from there to the end,
-//     // then consider this a possible transport topic.
-//     if (topic_name.find(topic) == 0 && topic_name != topic && 
-//         topic_name.size() > topic.size() && topic_name[topic.size()] == '/' &&
-//         topic_name.find('/', topic.size() + 1) == std::string::npos) {
-      
-//       std::string transport_type = topic_name.substr(topic.size() + 1);
-
-//       // If the transport type string found above is in the set of
-//       // supported transport type plugins, add it to the list.
-//       if (transport_plugin_types_.find(transport_type) != transport_plugin_types_.end()) {
-//         choices.push_back(transport_type);
-//       }
-//     }
 //   }
 
 //   for (size_t ii = 0; ii < choices.size(); ii++) {
