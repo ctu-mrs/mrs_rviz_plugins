@@ -13,6 +13,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra)
 endif()
 
+set(OGRE_VERSION "1.12" CACHE STRING "Ogre version to use")
+
 set(DEPENDENCIES
   pluginlib
   rviz_common 
