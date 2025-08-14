@@ -24,10 +24,10 @@
 
 #include <string>
 
-#include <OGRE/OgreVector3.h>
-#include <OGRE/OgreQuaternion.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
+#include <OgreVector3.h>
+#include <OgreQuaternion.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
 // #include <OGRE/OgreRenderOperation.h>
 
 namespace mrs_rviz_plugins {

@@ -29,12 +29,12 @@
 
 #include <cv_bridge/cv_bridge.hpp>
 
-#include <OGRE/OgreMeshManager.h>
-#include <OGRE/OgreHardwareBufferManager.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreTextureManager.h>
-#include <OGRE/OgreSubMesh.h>
-#include <OGRE/OgreEntity.h>
+#include <OgreMeshManager.h>
+#include <OgreHardwareBufferManager.h>
+#include <OgreMaterialManager.h>
+#include <OgreTextureManager.h>
+#include <OgreSubMesh.h>
+#include <OgreEntity.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 

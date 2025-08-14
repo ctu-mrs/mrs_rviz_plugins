@@ -25,8 +25,8 @@
 #include <memory>
 #include <vector>
 
-#include <OGRE/OgreColourValue.h>
-#include <OGRE/OgreManualObject.h>
+#include <OgreColourValue.h>
+#include <OgreManualObject.h>
 
 #include <pcl_msgs/msg/polygon_mesh.hpp>
 

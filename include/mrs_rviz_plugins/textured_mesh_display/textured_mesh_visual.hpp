@@ -27,13 +27,13 @@
 
 #include <opencv2/core.hpp>
 
-#include <OGRE/OgreHighLevelGpuProgramManager.h>
-#include <OGRE/OgreTechnique.h>
-#include <OGRE/OgrePass.h>
-#include <OGRE/OgreMaterial.h>
-#include <OGRE/OgreHighLevelGpuProgram.h>
+#include <OgreHighLevelGpuProgramManager.h>
+#include <OgreTechnique.h>
+#include <OgrePass.h>
+#include <OgreMaterial.h>
+#include <OgreHighLevelGpuProgram.h>
 //#include <OGRE/OgreGpuProgramParameters.h>
-#include <OGRE/OgreMesh.h>
+#include <OgreMesh.h>
 
 #include <pcl_msgs/msg/polygon_mesh.hpp>
 #include <sensor_msgs/msg/image.hpp>
