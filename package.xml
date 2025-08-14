@@ -18,7 +18,7 @@
 
   <depend>rviz_common</depend>
   <depend>rviz_ogre_vendor</depend>
-  <depend>QT</depend>
+  <depend>qtbase5-dev</depend>
   <depend>mrs_msgs</depend>
 
   <depend>image_transport</depend>
