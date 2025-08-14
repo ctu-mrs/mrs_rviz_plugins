@@ -443,7 +443,7 @@ processPolygonMeshMessage(const pcl_msgs::msg::PolygonMesh::ConstSharedPtr& msg)
   pcl_msgs::msg::PolygonMesh::ConstSharedPtr mesh_msg;
   sensor_msgs::msg::Image::ConstSharedPtr tex_msg;
   //double tol = 5e-3; // 5 ms tolerance.
-  double tol = 1.5;
+  double tol = 10;
   while ((tex_queue_.size() > 0) && (mesh_queue_.size() > 0)) {
     double tex_time = tex_queue_.front()->header.stamp.sec + 10e-9 * tex_queue_.front()->header.stamp.nanosec;
     double mesh_time = mesh_queue_.front()->header.stamp.sec + 10e-9 * mesh_queue_.front()->header.stamp.nanosec;

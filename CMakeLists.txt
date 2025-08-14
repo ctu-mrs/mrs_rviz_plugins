@@ -42,6 +42,16 @@ add_definitions(-DQT_NO_KEYWORDS)
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+set(REQUIRED_OGRE_VERSION "1.12")
+if(OGRE_VERSION)
+    message(STATUS "Found OGRE version: ${OGRE_VERSION}")
+    if(OGRE_VERSION VERSION_LESS ${REQUIRED_OGRE_VERSION})
+        message(FATAL_ERROR "OGRE version ${OGRE_VERSION} found, but version ${REQUIRED_OGRE_VERSION} or higher is required")
+    endif()
+else()
+    message(WARNING "OGRE version could not be determined")
+endif()
+
 # VERY IMPORTANT
 # pre-compliation of the headers by QT to generate Q_SLOTS
 set(CMAKE_AUTOMOC ON)
