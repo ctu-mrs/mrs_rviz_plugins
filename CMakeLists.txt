@@ -150,7 +150,7 @@ target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
   ${OpenCV_INCLUDE_DIRS}
 )
 
-if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+if($ENV{ROS_DISTRO} STREQUAL "lyrical")
   target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
     pluginlib::pluginlib
     rviz_common::rviz_common
@@ -165,8 +165,7 @@ if($ENV{ROS_DISTRO} STREQUAL "jazzy")
     ${sensor_msgs_TARGETS}
     ${std_msgs_TARGETS}
 )
-elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
-
+elseif($ENV{ROS_DISTRO} STREQUAL "jazzy")
   ament_target_dependencies(MrsRvizPlugins_TexturedMeshDisplay
     pluginlib
     rviz_common
