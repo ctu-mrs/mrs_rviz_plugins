@@ -323,10 +323,9 @@ void TexturedMeshDisplay::subscribe() {
 
     if (!mesh_topic.empty()) {
       // Subscribe to the mesh topic.
-#if defined(ROS_DISTRO) && strcmp(ROS_DISTRO, "jazzy") == 0
-  // Jazzy-specific code
+#ifdef ROS_DISTRO_JAZZY
       mesh_filter_->subscribe(ros_node, mesh_topic, rmw_qos_profile_default);
-#elif
+#elif defined(ROS_DISTRO_LYRICAL)
       auto qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
       mesh_filter_->subscribe(ros_node, mesh_topic, qos);        
 #endif
