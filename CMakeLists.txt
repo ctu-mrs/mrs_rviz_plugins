@@ -34,8 +34,14 @@ foreach(DEP IN LISTS DEPENDENCIES)
   find_package(${DEP} REQUIRED)
 endforeach()
 
-find_package(Qt6 REQUIRED Core Widgets)
-set(QT_LIBRARIES Qt6::Widgets)
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  find_package(Qt5 REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets)
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  find_package(Qt6 REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt6::Widgets)
+endif()
+
 add_definitions(-DQT_NO_KEYWORDS)
 
 # for TexturedMeshDisplay
@@ -55,14 +61,26 @@ endif()
 # VERY IMPORTANT
 # pre-compliation of the headers by QT to generate Q_SLOTS
 set(CMAKE_AUTOMOC ON)
-qt6_wrap_cpp(MOC_FILES
-  include/mrs_rviz_plugins/sphere/display.h
-  include/mrs_rviz_plugins/sphere/visual.h
-)
 
-qt6_wrap_cpp(MOC_FILES_TEXTURED_MESH
-  include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
-)
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  qt5_wrap_cpp(MOC_FILES
+    include/mrs_rviz_plugins/sphere/display.h
+    include/mrs_rviz_plugins/sphere/visual.h
+  )
+
+  qt5_wrap_cpp(MOC_FILES_TEXTURED_MESH
+    include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
+  )
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  qt6_wrap_cpp(MOC_FILES
+    include/mrs_rviz_plugins/sphere/display.h
+    include/mrs_rviz_plugins/sphere/visual.h
+  )
+
+  qt6_wrap_cpp(MOC_FILES_TEXTURED_MESH
+    include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
+  )
+endif()
 
 set(LIBRARIES
   # MrsRvizPlugins_Bumper
@@ -102,7 +120,7 @@ target_link_libraries(MrsRvizPlugins_Sphere
   pluginlib::pluginlib
   rviz_common::rviz_common
   ${rviz_ogre_vendor_TARGETS}
-  mrs_msgs::mrs_msgs
+  ${mrs_msgs_TARGETS}
   ${mrs_msgs_TARGETS}
   ${rviz_common_TARGETS}
   ${rviz_ogre_vendor_TARGETS}
@@ -131,15 +149,15 @@ target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
   pluginlib::pluginlib
   rviz_common::rviz_common
   ${rviz_ogre_vendor_TARGETS}
-  mrs_msgs::mrs_msgs
-  pcl_msgs::pcl_msgs
+  ${mrs_msgs_TARGETS}
+  ${pcl_msgs_TARGETS}
   image_transport::image_transport
   cv_bridge::cv_bridge
   pcl_conversions::pcl_conversions
   rclcpp::rclcpp
   message_filters::message_filters
-  sensor_msgs::sensor_msgs
-  std_msgs::std_msgs
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
 )
 
 target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
