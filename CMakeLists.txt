@@ -153,7 +153,7 @@ target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
   ${pcl_msgs_TARGETS}
   image_transport::image_transport
   cv_bridge::cv_bridge
-  pcl_conversions::pcl_conversions
+  ${pcl_conversions_TARGETS}
   rclcpp::rclcpp
   message_filters::message_filters
   ${sensor_msgs_TARGETS}
