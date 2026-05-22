@@ -323,7 +323,8 @@ void TexturedMeshDisplay::subscribe() {
 
     if (!mesh_topic.empty()) {
       // Subscribe to the mesh topic.
-      mesh_filter_->subscribe(ros_node, mesh_topic, rmw_qos_profile_default);
+      auto qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+      mesh_filter_->subscribe(ros_node, mesh_topic, qos);
       mesh_filter_->registerCallback(
           std::bind(&TexturedMeshDisplay::processPolygonMeshMessage, this, std::placeholders::_1));
 
