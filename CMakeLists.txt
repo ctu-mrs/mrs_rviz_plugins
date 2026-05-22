@@ -150,20 +150,38 @@ target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
   ${OpenCV_INCLUDE_DIRS}
 )
 
-target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
-  pluginlib::pluginlib
-  rviz_common::rviz_common
-  ${rviz_ogre_vendor_TARGETS}
-  ${mrs_msgs_TARGETS}
-  ${pcl_msgs_TARGETS}
-  image_transport::image_transport
-  cv_bridge::cv_bridge
-  ${pcl_conversions_TARGETS}
-  rclcpp::rclcpp
-  message_filters::message_filters
-  ${sensor_msgs_TARGETS}
-  ${std_msgs_TARGETS}
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
+    pluginlib::pluginlib
+    rviz_common::rviz_common
+    ${rviz_ogre_vendor_TARGETS}
+    ${mrs_msgs_TARGETS}
+    ${pcl_msgs_TARGETS}
+    image_transport::image_transport
+    cv_bridge::cv_bridge
+    pcl_conversions::pcl_conversions
+    rclcpp::rclcpp
+    message_filters::message_filters
+    ${sensor_msgs_TARGETS}
+    ${std_msgs_TARGETS}
 )
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+
+  ament_target_dependencies(MrsRvizPlugins_TexturedMeshDisplay
+    pluginlib
+    rviz_common
+    rviz_ogre_vendor
+    mrs_msgs
+    pcl_msgs
+    image_transport
+    cv_bridge
+    pcl_conversions
+    rclcpp
+    message_filters
+    sensor_msgs
+    std_msgs
+)
+endif()
 
 target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
   ${QT_LIBRARIES}
