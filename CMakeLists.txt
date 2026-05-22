@@ -138,6 +138,7 @@ add_library(MrsRvizPlugins_TexturedMeshDisplay SHARED
   src/textured_mesh_display/surface_normals_visual.cpp
   ${MOC_FILES_TEXTURED_MESH}
 )
+target_compile_definitions(MrsRvizPlugins_TexturedMeshDisplay PRIVATE ROS_DISTRO="$ENV{ROS_DISTRO}")
 
 target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
