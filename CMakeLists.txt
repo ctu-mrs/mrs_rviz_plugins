@@ -34,15 +34,21 @@ foreach(DEP IN LISTS DEPENDENCIES)
   find_package(${DEP} REQUIRED)
 endforeach()
 
-find_package(Qt5 REQUIRED Core Widgets)
-set(QT_LIBRARIES Qt5::Widgets)
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  find_package(Qt5 REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets)
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  find_package(Qt6 REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt6::Widgets)
+endif()
+
 add_definitions(-DQT_NO_KEYWORDS)
 
 # for TexturedMeshDisplay
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-set(REQUIRED_OGRE_VERSION "1.12")
+set(REQUIRED_OGRE_VERSION "1.9")
 if(OGRE_VERSION)
     message(STATUS "Found OGRE version: ${OGRE_VERSION}")
     if(OGRE_VERSION VERSION_LESS ${REQUIRED_OGRE_VERSION})
@@ -55,14 +61,26 @@ endif()
 # VERY IMPORTANT
 # pre-compliation of the headers by QT to generate Q_SLOTS
 set(CMAKE_AUTOMOC ON)
-qt5_wrap_cpp(MOC_FILES
-  include/mrs_rviz_plugins/sphere/display.h
-  include/mrs_rviz_plugins/sphere/visual.h
-)
 
-qt5_wrap_cpp(MOC_FILES_TEXTURED_MESH
-  include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
-)
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  qt5_wrap_cpp(MOC_FILES
+    include/mrs_rviz_plugins/sphere/display.h
+    include/mrs_rviz_plugins/sphere/visual.h
+  )
+
+  qt5_wrap_cpp(MOC_FILES_TEXTURED_MESH
+    include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
+  )
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  qt6_wrap_cpp(MOC_FILES
+    include/mrs_rviz_plugins/sphere/display.h
+    include/mrs_rviz_plugins/sphere/visual.h
+  )
+
+  qt6_wrap_cpp(MOC_FILES_TEXTURED_MESH
+    include/mrs_rviz_plugins/textured_mesh_display/textured_mesh_display.hpp
+  )
+endif()
 
 set(LIBRARIES
   # MrsRvizPlugins_Bumper
@@ -98,11 +116,14 @@ target_include_directories(MrsRvizPlugins_Sphere PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-ament_target_dependencies(MrsRvizPlugins_Sphere
-  pluginlib
-  rviz_common
-  rviz_ogre_vendor
-  mrs_msgs
+target_link_libraries(MrsRvizPlugins_Sphere
+  pluginlib::pluginlib
+  rviz_common::rviz_common
+  ${rviz_ogre_vendor_TARGETS}
+  ${mrs_msgs_TARGETS}
+  ${mrs_msgs_TARGETS}
+  ${rviz_common_TARGETS}
+  ${rviz_ogre_vendor_TARGETS}
 )
 
 target_link_libraries(MrsRvizPlugins_Sphere
@@ -117,6 +138,11 @@ add_library(MrsRvizPlugins_TexturedMeshDisplay SHARED
   src/textured_mesh_display/surface_normals_visual.cpp
   ${MOC_FILES_TEXTURED_MESH}
 )
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  target_compile_definitions(MrsRvizPlugins_TexturedMeshDisplay PRIVATE ROS_DISTRO_JAZZY)
+elseif($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  target_compile_definitions(MrsRvizPlugins_TexturedMeshDisplay PRIVATE ROS_DISTRO_LYRICAL)
+endif()
 
 target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -124,20 +150,37 @@ target_include_directories(MrsRvizPlugins_TexturedMeshDisplay PUBLIC
   ${OpenCV_INCLUDE_DIRS}
 )
 
-ament_target_dependencies(MrsRvizPlugins_TexturedMeshDisplay
-  pluginlib
-  rviz_common
-  rviz_ogre_vendor
-  mrs_msgs
-  pcl_msgs
-  image_transport
-  cv_bridge
-  pcl_conversions
-  rclcpp
-  message_filters
-  sensor_msgs
-  std_msgs
+if($ENV{ROS_DISTRO} STREQUAL "lyrical")
+  target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
+    pluginlib::pluginlib
+    rviz_common::rviz_common
+    ${rviz_ogre_vendor_TARGETS}
+    ${mrs_msgs_TARGETS}
+    ${pcl_msgs_TARGETS}
+    image_transport::image_transport
+    cv_bridge::cv_bridge
+    pcl_conversions::pcl_conversions
+    rclcpp::rclcpp
+    message_filters::message_filters
+    ${sensor_msgs_TARGETS}
+    ${std_msgs_TARGETS}
 )
+elseif($ENV{ROS_DISTRO} STREQUAL "jazzy")
+  ament_target_dependencies(MrsRvizPlugins_TexturedMeshDisplay
+    pluginlib
+    rviz_common
+    rviz_ogre_vendor
+    mrs_msgs
+    pcl_msgs
+    image_transport
+    cv_bridge
+    pcl_conversions
+    rclcpp
+    message_filters
+    sensor_msgs
+    std_msgs
+)
+endif()
 
 target_link_libraries(MrsRvizPlugins_TexturedMeshDisplay
   ${QT_LIBRARIES}

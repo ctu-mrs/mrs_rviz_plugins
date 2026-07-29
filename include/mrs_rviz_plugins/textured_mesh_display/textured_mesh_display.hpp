@@ -35,7 +35,7 @@
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
 
-#include <message_filters/subscriber.h>
+#include <message_filters/subscriber.hpp>
 
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
